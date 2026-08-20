@@ -1,0 +1,69 @@
+{
+  "name": "white-box",
+  "version": "0.1.0",
+  "private": true,
+  "description": "White Box — 自己実行管理システム / 自分との約束を、現実の行動と成果までつなぐ実行基盤",
+  "main": "dist-electron/electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:app": "concurrently -k -n vite,electron -c cyan,magenta \"vite\" \"npm:dev:electron\"",
+    "dev:electron": "tsc -p electron/tsconfig.json && wait-on tcp:127.0.0.1:5273 && cross-env VITE_DEV_SERVER_URL=http://localhost:5273 electron .",
+    "build": "tsc -p electron/tsconfig.json && vite build",
+    "start": "npm run build && electron .",
+    "app": "electron .",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p electron/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "icons": "node scripts/make-icon.mjs",
+    "pack": "npm run build && node scripts/pack.mjs",
+    "dist": "npm run build && electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.3.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8",
+    "wait-on": "^8.0.1",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.2"
+  },
+  "author": "menma22",
+  "build": {
+    "appId": "dev.whitebox.app",
+    "productName": "White Box",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "electron/preload.cjs",
+      "assets/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "White Box"
+    }
+  }
+}
