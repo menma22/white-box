@@ -1,0 +1,161 @@
+/*
+ * 面をフラットに寄せる調整。app.css / components.css の後に読み込む。
+ * ここで上書きしているのは「浮かせすぎ」だけで、色や配置はそれぞれの元の定義が正。
+ */
+
+/* カードは浮かせず、枠と地の差だけで立たせる */
+.card {
+  box-shadow: none;
+  border-color: var(--line);
+  transition: background 0.12s var(--ease), border-color 0.12s var(--ease), box-shadow 0.12s var(--ease);
+}
+.card:hover {
+  transform: none;
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+.card.is-selected,
+.card.is-selected:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  background: var(--panel);
+}
+
+/* 行はホバーで薄く色が乗るだけ。移動しない */
+.srow:hover,
+.current-row:hover,
+.hday-head:hover {
+  background: var(--surface-2);
+}
+
+.rail-start:hover,
+.rail-live:hover {
+  transform: none;
+  box-shadow: var(--shadow-2);
+}
+
+.btn-solid,
+.btn-primary {
+  box-shadow: var(--shadow-1);
+}
+.btn-solid:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  transform: none;
+  box-shadow: var(--shadow-2);
+}
+.start-go:hover:not(:disabled) {
+  transform: none;
+  box-shadow: var(--shadow-2);
+}
+
+.ribbon-band {
+  box-shadow: none;
+}
+
+/* 作業領域は紙の白。左のレールだけ地の色を残して奥行きを作る */
+.main-content {
+  background: var(--panel);
+  border-radius: var(--r-xl) 0 0 0;
+}
+.rail {
+  background: transparent;
+}
+
+/* ぼかしは重いだけで効果が薄いので使わない。幕は温かいグレーの一枚で足りる */
+.modal-scrim,
+.welcome {
+  backdrop-filter: none;
+}
+.modal-scrim {
+  background: rgba(55, 45, 34, 0.32);
+}
+.welcome {
+  background: rgba(55, 45, 34, 0.38);
+}
+
+/* セッションの行はもう少し詰める（Notion くらいの密度） */
+.srow-main {
+  padding: 11px 14px;
+  gap: 16px;
+}
+.today-list .srow + .srow,
+.hday-body .srow + .srow {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* 大きな時間表示。単位だけ小さく落として時刻との混同を防ぐ */
+.bigdur {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--accent-deep);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.bigdur b {
+  font-weight: 500;
+}
+.bigdur i {
+  font-style: normal;
+  font-size: 0.4em;
+  font-weight: 600;
+  margin: 0 0.2em 0 0.05em;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+/* Georgia の既定はオールドスタイル数字で、日本語文中の数字が小文字のように見える */
+.serif,
+.brand-name,
+.titlebar-title,
+.welcome-title,
+.expire-title,
+.review-lead h3,
+.set-title,
+.srow-note {
+  font-variant-numeric: lining-nums;
+  font-feature-settings: 'lnum' 1;
+}
+
+/* 開始画面は一覧性が要るので行を詰める */
+.start-row {
+  padding: 8px 13px;
+  gap: 12px;
+}
+.start-row-title {
+  font-size: 13.5px;
+}
+
+.set-name {
+  width: 180px;
+}
+
+/* 満了ポップアップは中身が窓より高くなると flex に潰されるので、縮小を禁止して中央に置く */
+.expire {
+  justify-content: center;
+}
+.expire > * {
+  flex: none;
+}
+
+/* 縦並びの箱の中身は縮ませない。縮むと高さ 0 になって文字が消える */
+.detail-body > *,
+.rail > *,
+.hud-body > *,
+.rail-live > *,
+.rail-start > *,
+.start-row-body > *,
+.current-focus-main > * {
+  flex: none;
+}
+
+/* 日本語の折り返しを文節で切る（Chromium 119+）。読点の途中で切れるのを防ぐ */
+body {
+  word-break: auto-phrase;
+}
+.num,
+.input,
+.detail-title {
+  word-break: normal;
+}

@@ -1,0 +1,60 @@
+/*
+ * 地はクラフト紙のクリーム、作業面は紙の白、差し色はハウスグリーン一点。
+ * 構造（面・枠）は Notion のように控えめで角丸は小さく、操作するもの（ボタン・チップ）だけ丸くする。
+ * 色は直接書かず必ずここのトークンを使うこと（散らすと空気感が壊れる）。
+ */
+:root {
+  /* 面。数字が大きいほど手前 */
+  --bg: #f5f2ec;
+  --bg-sunken: #ece7dd;
+  --panel: #fffefb;
+  --surface: #faf8f3;
+  --surface-2: #f1ede4;
+  --surface-3: #e6e0d4;
+
+  --line: #e7e1d5;
+  --line-soft: #efeae0;
+  --line-strong: #d5cdbd;
+
+  --text: #37312b;
+  --text-2: #6b6259;
+  --text-3: #948c81;
+  --text-4: #bab2a6;
+
+  /* ハウスグリーン＝主役。ボタン・実行中・進捗はすべてこれ */
+  --accent: #00704a;
+  --accent-hi: #00855a;
+  --accent-deep: #1e3932;
+  --accent-soft: rgba(0, 112, 74, 0.08);
+  --accent-line: rgba(0, 112, 74, 0.3);
+
+  --done: #1e3932;
+  --done-soft: rgba(30, 57, 50, 0.08);
+  --amber: #b8813a;
+  --amber-dim: rgba(184, 129, 58, 0.1);
+  --rose: #b4553f;
+  --rose-soft: rgba(180, 85, 63, 0.09);
+
+  --font-display: 'Segoe UI Variable Display', 'Yu Gothic UI', 'Segoe UI', system-ui, sans-serif;
+  --font-serif: Georgia, 'Constantia', 'Times New Roman', serif;
+  --font-body: 'Yu Gothic UI', 'Segoe UI Variable Text', 'Segoe UI', 'Meiryo', system-ui, sans-serif;
+  --font-mono: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+
+  /* 構造は小さく、操作するものだけ丸く */
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 13px;
+  --r-xl: 18px;
+  --r-pill: 999px;
+
+  /* 影は茶色寄り。黒い影はクリーム地の上で灰色に濁る */
+  --shadow-1: 0 0 0 1px rgba(74, 56, 38, 0.045);
+  --shadow-2: 0 0 0 1px rgba(74, 56, 38, 0.05), 0 2px 5px rgba(74, 56, 38, 0.07);
+  --shadow-3: 0 0 0 1px rgba(74, 56, 38, 0.05), 0 4px 12px rgba(50, 38, 26, 0.1),
+    0 16px 40px -12px rgba(50, 38, 26, 0.22);
+  --shadow-pop: var(--shadow-3);
+  --shadow-card: var(--shadow-1);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
