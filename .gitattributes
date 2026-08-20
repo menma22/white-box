@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# PowerShell 5.1 は CRLF のほうが安全なので、ここだけ変換しない
+*.ps1 text eol=crlf
+
+*.png binary
+*.ico binary
