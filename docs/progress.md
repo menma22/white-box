@@ -3,7 +3,7 @@
 このリポジトリの現在地。**生きた文書**なので、状態が変わったらこのファイルを更新する。
 何を作るかは [product-spec.md](product-spec.md)、なぜそう作ったかは [decisions.md](decisions.md)。
 
-最終更新: 2026-08-20
+最終更新: 2026-08-22
 
 ---
 
@@ -12,6 +12,8 @@
 **Phase 1（MVP）実装完了。日常投入の直前。**
 
 仕様書の開発原則どおり、ここで機能追加を止める。実際に毎日使って出た問題を溜めてから Phase 2 に入る。
+
+**再編（[rebuild-plan.md](rebuild-plan.md) Phase 0–5 / [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1–S7）は完了。** 実装の中身・機能は変わっていない（移行中に仕様は変えない方針）が、構成が pnpm monorepo（apps/desktop・apps/renderer・packages/core・packages/contracts）へ変わったため、下表「実装場所」列は新しいパスに更新した。実装の詳細は [architecture.md](architecture.md) を参照。
 
 ```
 Phase 1  ████████████████████  完了（1-26 を除く）
@@ -29,31 +31,31 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 
 | # | 項目 | 状態 | 実装場所 |
 | --- | --- | --- | --- |
-| 1-1 | Windows Desktop 基盤 | 済 | `electron/main.ts`, `electron/windows.ts` |
-| 1-2 | Project 管理 | 済 | `electron/mutations.ts`, `src/views/SettingsView.tsx`, `src/views/BoardView.tsx` |
-| 1-3 | Task Kanban | 済 | `src/views/BoardView.tsx` |
-| 1-4 | Task Tree | 済 | `src/views/BoardView.tsx`, `src/views/TaskDetail.tsx` |
-| 1-5 | Task Progress | 済 | `src/views/TaskDetail.tsx`, `src/routes/ReviewWindow.tsx` |
-| 1-6 | Start UI | 済 | `src/routes/StartWindow.tsx` |
+| 1-1 | Windows Desktop 基盤 | 済 | `apps/desktop/src/presentation/main.ts`, `apps/desktop/src/infra/windows.ts` |
+| 1-2 | Project 管理 | 済 | `apps/desktop/src/domain/task-ops.ts`, `apps/renderer/src/features/settings/SettingsView.tsx`, `apps/renderer/src/features/board/BoardView.tsx` |
+| 1-3 | Task Kanban | 済 | `apps/renderer/src/features/board/BoardView.tsx` |
+| 1-4 | Task Tree | 済 | `apps/renderer/src/features/board/BoardView.tsx`, `apps/renderer/src/features/board/TaskDetail.tsx` |
+| 1-5 | Task Progress | 済 | `apps/renderer/src/features/board/TaskDetail.tsx`, `apps/renderer/src/pages/ReviewWindow.tsx` |
+| 1-6 | Start UI | 済 | `apps/renderer/src/pages/StartWindow.tsx` |
 | 1-7 | Session Duration | 済 | 既定 50 分。開始画面で 25 / 50 / 90 / 任意 |
-| 1-8 | Session Start | 済 | `shared/session-ops.ts` |
+| 1-8 | Session Start | 済 | `apps/desktop/src/domain/session-ops.ts` |
 | 1-9 | Pause | 済 | ショートカット / HUD / 現在の仕事 |
-| 1-10 | Pause UI | 済 | `src/routes/HudWindow.tsx`。× で閉じても計測は続く |
+| 1-10 | Pause UI | 済 | `apps/renderer/src/pages/HudWindow.tsx`。× で閉じても計測は続く |
 | 1-11 | End | 済 | End 後に Review へ |
-| 1-12 | Timer 満了 Popup | 済 | `src/routes/ExpireWindow.tsx`。End / Extend |
+| 1-12 | Timer 満了 Popup | 済 | `apps/renderer/src/pages/ExpireWindow.tsx`。End / Extend |
 | 1-13 | Next Task 導線 | 済 | 満了 Popup の「次のタスクへ」 |
-| 1-14 | Current Work 画面 | 済 | `src/routes/CurrentWorkWindow.tsx` |
+| 1-14 | Current Work 画面 | 済 | `apps/renderer/src/pages/CurrentWorkWindow.tsx` |
 | 1-15 | Current Work からの操作 | 済 | 切替 / 分解 / 新規作成 / 追加 |
-| 1-16 | Task 切替（Segment） | 済 | `shared/session-ops.ts` の `switchTask` |
+| 1-16 | Task 切替（Segment） | 済 | `apps/desktop/src/domain/session-ops.ts` の `switchTask` |
 | 1-17 | 1 Task = 1 Session 運用 | 済 | どちらも許可。強制なし |
 | 1-18 | Session Event Log | 済 | セッション行を開くと見える |
-| 1-19 | 終了 Review | 済 | `src/routes/ReviewWindow.tsx` |
+| 1-19 | 終了 Review | 済 | `apps/renderer/src/pages/ReviewWindow.tsx` |
 | 1-20 | Review 内容 | 済 | タスク別時間 / 進捗 / 完了 / 生まれたタスクの整理 |
-| 1-21 | Session 永続保存 | 済 | `electron/store.ts` |
-| 1-22 | 過去 Session 編集 | 済 | `src/views/SessionRow.tsx` |
+| 1-21 | Session 永続保存 | 済 | `apps/desktop/src/infra/store.ts` |
+| 1-22 | 過去 Session 編集 | 済 | `apps/renderer/src/features/sessions/SessionRow.tsx` |
 | 1-23 | Session 削除 | 済 | 確認あり |
-| 1-24 | 最低限 Today 表示 | 済 | `src/views/TodayView.tsx` |
-| 1-25 | Welcome 画面 | 済 | `src/views/WelcomeOverlay.tsx` |
+| 1-24 | 最低限 Today 表示 | 済 | `apps/renderer/src/features/today/TodayView.tsx` |
+| 1-25 | Welcome 画面 | 済 | `apps/renderer/src/features/welcome/WelcomeOverlay.tsx` |
 | 1-26 | Welcome の後続拡張 | **未着手** | 自分へのメッセージ・Reminder・名言など |
 
 ## 仕様の Phase 1 に無いが入れたもの
