@@ -144,7 +144,7 @@ core      →  （依存なし）
 | 0 規約と足場 | **完了**（2026-08-21） | feat/rearchitecture | pnpm 化・規約移植・dayKey バグ修正。詳細は [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1 |
 | 1 core + contracts | **完了**（2026-08-21） | feat/rearchitecture | packages/core + packages/contracts（zod 33 コマンド）。IPC 両端が契約型付き・any 0 件・e2e 21 チェック |
 | 2 desktop オニオン化 | **完了**（2026-08-21） | feat/rearchitecture | domain/app/infra/presentation の 4 層。全 33 ユースケースが Electron 起動なしでテスト可能に |
-| 3 renderer 分割 | **前半完了**（2026-08-21） | feat/rearchitecture | S4 完了（構造移動・部品分割・重複統合・テスト）。後半 S5（CSS 分割・境界 lint・スクショ全比較）が残り |
+| 3 renderer 分割 | **完了**（2026-08-21） | feat/rearchitecture | S4+S5 完了。CSS 14 分割（byte 一致検証）・renderer→contracts/core の境界を eslint で機械強制・11 カットのピクセル比較で見た目一致を実証 |
 | 4 Storybook | 未着手 | — | |
 | 5 配布と仕上げ | 未着手 | — | |
 
