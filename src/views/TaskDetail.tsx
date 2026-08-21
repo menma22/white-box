@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { call } from '../bridge'
+import { invoke } from '../bridge'
 import { useApp, useData } from '../store'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '../lib/selectors'
 import { Modal, ProgressBar, Segmented, useEscape } from '../ui/primitives'
@@ -30,11 +30,11 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const touched = lastTouchedAt(state, task.id)
   const path = ancestorTitles(state, task)
 
-  const patch = (p: Record<string, unknown>) => void call('task:update', { id: task.id, patch: p })
+  const patch = (p: Record<string, unknown>) => void invoke('task:update', { id: task.id, patch: p })
 
   const taskIdForDelete = task.id
   async function askDelete() {
-    setHasTime(await call<boolean>('task:hasTime', { id: taskIdForDelete }))
+    setHasTime(await invoke('task:hasTime', { id: taskIdForDelete }))
     setConfirmDelete(true)
   }
 
@@ -144,7 +144,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
               <button
                 type="button"
                 className="detail-sub-check"
-                onClick={() => void call('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } })}
+                onClick={() => void invoke('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } })}
               >
                 {c.status === 'done' ? '✓' : ''}
               </button>
@@ -161,7 +161,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             onChange={(e) => setSub(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' || !sub.trim()) return
-              void call('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })
+              void invoke('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })
               setSub('')
             }}
           />
@@ -172,7 +172,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
         <button
           type="button"
           className="btn btn-primary btn-md"
-          onClick={() => void call('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })}
+          onClick={() => void invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })}
           disabled={Boolean(state.live)}
           title={state.live ? 'すでにセッションが動いている' : ''}
         >
@@ -199,7 +199,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             type="button"
             className="btn btn-danger btn-md"
             onClick={() => {
-              void call('task:delete', { id: task.id })
+              void invoke('task:delete', { id: task.id })
               setConfirmDelete(false)
               onClose()
             }}

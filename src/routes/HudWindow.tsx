@@ -1,4 +1,4 @@
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { Ring } from '../ui/primitives'
@@ -54,11 +54,11 @@ export function HudWindow() {
           <button
             type="button"
             className="hud-btn disp is-primary"
-            onClick={() => void call(paused ? 'session:resume' : 'session:pause')}
+            onClick={() => void invoke(paused ? 'session:resume' : 'session:pause')}
           >
             {paused ? '再開' : '一時停止'}
           </button>
-          <button type="button" className="hud-btn disp" onClick={() => void call('session:end')}>
+          <button type="button" className="hud-btn disp" onClick={() => void invoke('session:end')}>
             終了
           </button>
           <button

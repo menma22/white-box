@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Session } from '@white-box/core/types'
-import { call } from '../bridge'
+import { invoke } from '../bridge'
 import { useData } from '../store'
 import { candidateTasks, projectById, projectColor, taskById } from '../lib/selectors'
 import { Modal } from '../ui/primitives'
@@ -97,7 +97,7 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
             type="button"
             className="btn btn-danger btn-md"
             onClick={() => {
-              void call('session:delete', { id: session.id })
+              void invoke('session:delete', { id: session.id })
               setConfirming(false)
             }}
           >
@@ -125,7 +125,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
   const multi = new Set(session.segments.map((s) => s.taskId)).size > 1
 
   async function save() {
-    await call('session:update', {
+    await invoke('session:update', {
       id: session.id,
       patch: {
         startedAt: new Date(startedAt).getTime(),

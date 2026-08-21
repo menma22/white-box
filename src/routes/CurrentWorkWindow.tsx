@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '../lib/selectors'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '../ui/primitives'
@@ -24,7 +24,7 @@ export function CurrentWorkWindow() {
     const title = draft.trim()
     if (!title) return
     setDraft('')
-    await call('task:create', {
+    await invoke('task:create', {
       title,
       status: draftColumn,
       projectId: current?.projectId ?? null,
@@ -36,7 +36,7 @@ export function CurrentWorkWindow() {
     const title = splitTitle.trim()
     if (!title || !current) return
     setSplitTitle('')
-    await call('task:create', {
+    await invoke('task:create', {
       title,
       status: 'todo',
       parentId: current.id,
@@ -76,11 +76,11 @@ export function CurrentWorkWindow() {
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
-                  onClick={() => void call(tick.state === 'paused' ? 'session:resume' : 'session:pause')}
+                  onClick={() => void invoke(tick.state === 'paused' ? 'session:resume' : 'session:pause')}
                 >
                   {tick.state === 'paused' ? '再開' : '一時停止'}
                 </button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => void call('session:end')}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('session:end')}>
                   セッション終了
                 </button>
               </div>
@@ -121,7 +121,7 @@ export function CurrentWorkWindow() {
                   className="current-sub-check"
                   title={t.status === 'done' ? 'Todo に戻す' : '完了にする'}
                   onClick={() =>
-                    void call('task:update', {
+                    void invoke('task:update', {
                       id: t.id,
                       patch: { status: t.status === 'done' ? 'todo' : 'done' },
                     })
@@ -131,7 +131,7 @@ export function CurrentWorkWindow() {
                 </button>
                 <span className="current-sub-title">{t.title}</span>
                 {tick && (
-                  <button type="button" className="current-switch disp" onClick={() => void call('session:switchTask', { taskId: t.id })}>
+                  <button type="button" className="current-switch disp" onClick={() => void invoke('session:switchTask', { taskId: t.id })}>
                     切り替える
                   </button>
                 )}
@@ -180,7 +180,7 @@ export function CurrentWorkWindow() {
                       <button
                         type="button"
                         className="current-switch disp"
-                        onClick={() => void call('session:switchTask', { taskId: t.id })}
+                        onClick={() => void invoke('session:switchTask', { taskId: t.id })}
                       >
                         切り替える
                       </button>
@@ -188,7 +188,7 @@ export function CurrentWorkWindow() {
                       <button
                         type="button"
                         className="current-switch disp"
-                        onClick={() => void call('session:start', { taskId: t.id, minutes: state.settings.defaultSessionMinutes })}
+                        onClick={() => void invoke('session:start', { taskId: t.id, minutes: state.settings.defaultSessionMinutes })}
                       >
                         開始する
                       </button>

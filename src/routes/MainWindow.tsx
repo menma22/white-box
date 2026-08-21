@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById, todayKey } from '../lib/selectors'
 import { Kbd } from '../ui/primitives'
@@ -137,10 +137,10 @@ function RecoveryBanner() {
         </span>
       </div>
       <div className="recovery-actions">
-        <button type="button" className="btn btn-solid btn-sm" onClick={() => void call('recovery:close')}>
+        <button type="button" className="btn btn-solid btn-sm" onClick={() => void invoke('recovery:close')}>
           その時刻で終了する
         </button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void call('recovery:resume')}>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('recovery:resume')}>
           続きから再開する
         </button>
       </div>

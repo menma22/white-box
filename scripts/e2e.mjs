@@ -167,6 +167,12 @@ try {
   const hud = await connect(hudTarget.webSocketDebuggerUrl)
   await waitReady(hud)
 
+  // 契約（zod）の検証が生きていることを、本物の IPC 越しに確かめる
+  const rejected = await hud.evaluate(call('task:create', { title: 123 }))
+  check('壊れた引数は契約で拒否される', rejected.ok === false && String(rejected.error).length > 0)
+  const unknown = await hud.evaluate(call('task:steal', {}))
+  check('未知のコマンドは拒否される', unknown.ok === false)
+
   const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
   check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
 

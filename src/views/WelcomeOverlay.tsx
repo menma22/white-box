@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, stalledTasks, todayKey } from '../lib/selectors'
 import { Chip, useEscape } from '../ui/primitives'
@@ -15,7 +15,7 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
   useEscape(true, dismiss)
 
   function dismiss() {
-    void call('welcome:dismiss')
+    void invoke('welcome:dismiss')
     onClose()
   }
 
@@ -73,7 +73,7 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
                       className="btn btn-primary btn-sm"
                       onClick={() => {
                         dismiss()
-                        void call('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })
+                        void invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })
                       }}
                     >
                       今やる
@@ -81,21 +81,21 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      onClick={() => void call('task:update', { id: task.id, patch: { priority: 'normal' } })}
+                      onClick={() => void invoke('task:update', { id: task.id, patch: { priority: 'normal' } })}
                     >
                       重要をやめる
                     </button>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      onClick={() => void call('task:move', { id: task.id, status: 'inbox', index: 0 })}
+                      onClick={() => void invoke('task:move', { id: task.id, status: 'inbox', index: 0 })}
                     >
                       Inbox へ戻す
                     </button>
                     <button
                       type="button"
                       className="btn btn-quiet btn-sm"
-                      onClick={() => void call('task:update', { id: task.id, patch: { status: 'done' } })}
+                      onClick={() => void invoke('task:update', { id: task.id, patch: { status: 'done' } })}
                       title="やらないと決めるのも、ひとつの判断"
                     >
                       もう追わない
@@ -139,7 +139,7 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
             placeholder="ひとことだけ、自分に。"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            onBlur={() => note !== (state.dayNotes[key] ?? '') && void call('day:note', { key, text: note })}
+            onBlur={() => note !== (state.dayNotes[key] ?? '') && void invoke('day:note', { key, text: note })}
           />
         </section>
 

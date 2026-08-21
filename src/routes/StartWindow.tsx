@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { candidateTasks, matchTask, projectById, projectColor, STATUS_LABEL } from '../lib/selectors'
 import { Chip, Kbd, ProgressBar, useEscape } from '../ui/primitives'
@@ -35,7 +35,7 @@ export function StartWindow() {
 
   async function start() {
     if (isCreateRow) {
-      await call('session:start', {
+      await invoke('session:start', {
         newTask: { title: query.trim(), projectId: projectId || null },
         minutes,
       })
@@ -43,7 +43,7 @@ export function StartWindow() {
     }
     const task = matches[cursor]
     if (!task) return
-    await call('session:start', { taskId: task.id, minutes })
+    await invoke('session:start', { taskId: task.id, minutes })
   }
 
   function onKeyDown(e: React.KeyboardEvent) {

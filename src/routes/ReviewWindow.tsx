@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { call, cmd } from '../bridge'
+import { invoke, cmd } from '../bridge'
 import { useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { BigDuration, Chip, Empty, TitleBar, useEscape } from '../ui/primitives'
 import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
+import type { TaskStatus } from '@white-box/core/types'
 
 interface Draft {
   taskId: string
@@ -35,7 +36,7 @@ export function ReviewWindow() {
   const [note, setNote] = useState('')
   const [showLog, setShowLog] = useState(false)
 
-  useEscape(true, () => void call('session:skipReview'))
+  useEscape(true, () => void invoke('session:skipReview'))
 
   if (!session) {
     return (
@@ -55,7 +56,7 @@ export function ReviewWindow() {
   }
 
   async function save() {
-    await call('session:review', { sessionId: session!.id, changes: drafts, note })
+    await invoke('session:review', { sessionId: session!.id, changes: drafts, note })
   }
 
   return (
@@ -63,7 +64,7 @@ export function ReviewWindow() {
       <TitleBar
         title="セッションの記録"
         subtitle={`${formatClock(session.startedAt)} – ${formatClock(end)}`}
-        onClose={() => void call('session:skipReview')}
+        onClose={() => void invoke('session:skipReview')}
       />
 
       <div className="review-body">
@@ -134,7 +135,7 @@ export function ReviewWindow() {
                 <select
                   className="input review-created-select"
                   value={t.status}
-                  onChange={(e) => void call('task:update', { id: t.id, patch: { status: e.target.value } })}
+                  onChange={(e) => void invoke('task:update', { id: t.id, patch: { status: e.target.value as TaskStatus } })}
                 >
                   <option value="inbox">Inbox に置く</option>
                   <option value="todo">Todo にする</option>
@@ -177,7 +178,7 @@ export function ReviewWindow() {
       </div>
 
       <footer className="review-foot">
-        <button type="button" className="btn btn-quiet btn-md" onClick={() => void call('session:skipReview')}>
+        <button type="button" className="btn btn-quiet btn-md" onClick={() => void invoke('session:skipReview')}>
           あとでにする
         </button>
         <div className="review-foot-right">

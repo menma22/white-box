@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { AppState, LiveTick } from '@white-box/core/types'
-import { call, onState, onTick } from './bridge'
+import { invoke, onState, onTick } from './bridge'
 
 interface UiState {
   state: AppState | null
@@ -13,7 +13,7 @@ interface UiState {
 export const useApp = create<UiState>(() => ({ state: null, tick: null, now: Date.now(), ready: false }))
 
 export async function initStore(): Promise<void> {
-  const state = await call<AppState>('state:get')
+  const state = await invoke('state:get')
   useApp.setState({ state, tick: state.live, ready: true })
 
   onState((next) => useApp.setState({ state: next, tick: next.live }))

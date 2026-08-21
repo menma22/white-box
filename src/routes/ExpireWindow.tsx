@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { call } from '../bridge'
+import { invoke } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { Ring } from '../ui/primitives'
@@ -37,13 +37,13 @@ export function ExpireWindow() {
       {overMs > 0 && <p className="expire-over num">超過 +{formatDuration(overMs, 'compact')}</p>}
 
       <div className="expire-actions no-drag">
-        <button type="button" className="btn btn-primary btn-lg" onClick={() => void call('session:end')} autoFocus>
+        <button type="button" className="btn btn-primary btn-lg" onClick={() => void invoke('session:end')} autoFocus>
           終了する
         </button>
         <button
           type="button"
           className="btn btn-solid btn-lg"
-          onClick={() => void call('session:extend', { minutes: extendMinutes })}
+          onClick={() => void invoke('session:extend', { minutes: extendMinutes })}
         >
           +{extendMinutes}分 続ける
         </button>
@@ -61,7 +61,7 @@ export function ExpireWindow() {
           </button>
         ))}
         <span className="expire-sep" />
-        <button type="button" className="expire-next disp" onClick={() => void call('session:end', { thenStart: true })}>
+        <button type="button" className="expire-next disp" onClick={() => void invoke('session:end', { thenStart: true })}>
           次のタスクへ →
         </button>
       </div>

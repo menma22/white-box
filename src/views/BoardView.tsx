@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { call } from '../bridge'
+import { invoke } from '../bridge'
 import { useApp, useData } from '../store'
 import {
   columnRoots,
@@ -37,7 +37,7 @@ export function BoardView() {
     if (!name) return
     setNewProject('')
     setAddingProject(false)
-    await call('project:create', { name })
+    await invoke('project:create', { name })
   }
 
   return (
@@ -98,7 +98,7 @@ export function BoardView() {
               onDrop={(e) => {
                 e.preventDefault()
                 const id = dragId ?? e.dataTransfer.getData('text/task')
-                if (id) void call('task:move', { id, status, index: dropAt?.index ?? 999 })
+                if (id) void invoke('task:move', { id, status, index: dropAt?.index ?? 999 })
                 setDropAt(null)
                 setDragId(null)
               }}
@@ -137,7 +137,7 @@ function QuickAdd({ status, projectId }: { status: TaskStatus; projectId: string
     const title = value.trim()
     if (!title) return
     setValue('')
-    await call('task:create', { title, status, projectId })
+    await invoke('task:create', { title, status, projectId })
   }
   return (
     <input

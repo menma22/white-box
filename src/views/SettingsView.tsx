@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { call, isBrowserPreview } from '../bridge'
+import { invoke, isBrowserPreview } from '../bridge'
 import { useData } from '../store'
 import { projectColor } from '../lib/selectors'
 import { Modal } from '../ui/primitives'
@@ -12,7 +12,7 @@ export function SettingsView() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
 
-  const patch = (p: Record<string, unknown>) => void call('settings:update', { patch: p })
+  const patch = (p: Record<string, unknown>) => void invoke('settings:update', { patch: p })
 
   return (
     <div className="view settings">
@@ -140,7 +140,7 @@ export function SettingsView() {
                   autoFocus
                   onChange={(e) => setRenameValue(e.target.value)}
                   onBlur={() => {
-                    if (renameValue.trim()) void call('project:update', { id: p.id, patch: { name: renameValue.trim() } })
+                    if (renameValue.trim()) void invoke('project:update', { id: p.id, patch: { name: renameValue.trim() } })
                     setRenaming(null)
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -164,7 +164,7 @@ export function SettingsView() {
                 max={359}
                 value={p.hue}
                 style={{ ['--fill' as string]: '0%' }}
-                onChange={(e) => void call('project:update', { id: p.id, patch: { hue: Number(e.target.value) } })}
+                onChange={(e) => void invoke('project:update', { id: p.id, patch: { hue: Number(e.target.value) } })}
                 title="色"
               />
               <span className="num set-project-count">{state.tasks.filter((t) => t.projectId === p.id).length}件</span>
@@ -187,16 +187,16 @@ export function SettingsView() {
             className="btn btn-solid btn-md"
             disabled={isBrowserPreview}
             onClick={async () => {
-              const p = await call<string | null>('data:export')
+              const p = await invoke('data:export')
               if (p) setSaved(p)
             }}
           >
             書き出す
           </button>
-          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void call('data:import')}>
+          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import')}>
             読み込む
           </button>
-          <button type="button" className="btn btn-quiet btn-md" disabled={isBrowserPreview} onClick={() => void call('data:reveal')}>
+          <button type="button" className="btn btn-quiet btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:reveal')}>
             保存先を開く
           </button>
         </div>
@@ -214,7 +214,7 @@ export function SettingsView() {
             type="button"
             className="btn btn-danger btn-md"
             onClick={() => {
-              void call('project:delete', { id: deleting })
+              if (deleting) void invoke('project:delete', { id: deleting })
               setDeleting(null)
             }}
           >
