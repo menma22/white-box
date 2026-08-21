@@ -148,7 +148,7 @@ async function main() {
       frame: false,
       backgroundColor: '#F6F2EA',
       webPreferences: {
-        preload: path.join(ROOT, 'electron', 'preload.cjs'),
+        preload: path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
         contextIsolation: true,
         sandbox: false,
       },

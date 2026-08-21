@@ -10,7 +10,7 @@ import type { WindowKind } from '@white-box/core/types'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const APP_ROOT = path.join(HERE, '..', '..')
-const PRELOAD = path.join(APP_ROOT, 'electron', 'preload.cjs')
+const PRELOAD = path.join(APP_ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs')
 const ICON = path.join(APP_ROOT, 'assets', 'icon.png')
 const DEV_URL = process.env['VITE_DEV_SERVER_URL']
 

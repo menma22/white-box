@@ -36,7 +36,11 @@ for (const dir of ['dist', 'dist-electron', 'assets']) {
   copyTree(path.join(ROOT, dir), path.join(APP, dir))
 }
 fs.mkdirSync(path.join(APP, 'electron'), { recursive: true })
-fs.copyFileSync(path.join(ROOT, 'electron', 'preload.cjs'), path.join(APP, 'electron', 'preload.cjs'))
+fs.mkdirSync(path.join(APP, 'apps', 'desktop', 'src', 'presentation'), { recursive: true })
+fs.copyFileSync(
+  path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
+  path.join(APP, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
+)
 
 // 実行に要らないものは持ち込まない（開発用の依存やスクリプト）
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8'))

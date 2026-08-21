@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from '@white-box/core/types'
 import { activeTaskId, dayKey, focusByTask, focusMs, isPaused, MINUTE, pausedMs, remainingMs, segmentFocusMs } from '@white-box/core/engine'
-import { closeAtLastKnown, createSession, endSession, extendSession, pauseSession, resumeSession, switchTask } from '@shared/session-ops'
+import { closeAtLastKnown, createSession, endSession, extendSession, pauseSession, resumeSession, switchTask } from '../apps/desktop/src/domain/session-ops.js'
 
 const T0 = new Date(2026, 7, 20, 10, 0, 0).getTime()
 const min = (n: number) => n * MINUTE

@@ -6,13 +6,13 @@
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, powerMonitor, shell, Tray } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Store } from './store.js'
-import { APP_ROOT, broadcast, closeWindow, getWindow, openWindow, toggleWindow } from './windows.js'
-import * as mut from './mutations.js'
+import { Store } from '../infra/store.js'
+import { APP_ROOT, broadcast, closeWindow, getWindow, openWindow, toggleWindow } from '../infra/windows.js'
+import * as mut from '../domain/mutations.js'
 import { isCommand, parseArgs, type ArgsOf, type CommandName, type ResultOf } from '@white-box/contracts'
 import type { AppState, Database, ID, LiveTick, Session, WindowKind } from '@white-box/core/types'
 import { activeTaskId, dayKey, focusMs, formatDuration, isPaused, MINUTE, remainingMs } from '@white-box/core/engine'
-import * as ops from '../shared/session-ops.js'
+import * as ops from '../domain/session-ops.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000
 /** これより長く記録が途切れていたら、PC が落ちていたとみなす。 */

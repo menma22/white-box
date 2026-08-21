@@ -7,10 +7,10 @@
     "strict": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
-    "outDir": "../dist-electron",
-    "rootDir": "..",
+    "outDir": "../../dist-electron",
+    "rootDir": "src",
     "types": ["node", "electron"],
     "sourceMap": true
   },
-  "include": ["../electron/**/*.ts", "../shared/**/*.ts"]
+  "include": ["src"]
 }
