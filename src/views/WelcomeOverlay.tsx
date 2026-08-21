@@ -3,7 +3,7 @@ import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, stalledTasks, todayKey } from '../lib/selectors'
 import { Chip, useEscape } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
+import { dayKey, formatDuration, HOUR } from '@shared/engine'
 import { dayTotalMs } from '../lib/selectors'
 
 export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; onGoBoard: () => void }) {
@@ -29,8 +29,8 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
     .sort((a, b) => (a.priority === 'high' ? -1 : 1) - (b.priority === 'high' ? -1 : 1) || a.order - b.order)
     .slice(0, 6)
 
-  const yesterday = new Date(now - 86_400_000)
-  const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+  // 「昨日」は一日の境目（dayStartHour）を考慮して数える。手組みのカレンダー日付だと深夜帯に今日の集計を昨日として出す
+  const yKey = dayKey(now - 24 * HOUR, state.settings.dayStartHour)
   const yTotal = dayTotalMs(state, yKey, now)
 
   return (
