@@ -14,28 +14,10 @@ importers:
       '@white-box/core':
         specifier: workspace:*
         version: link:packages/core
-      react:
-        specifier: ^19.0.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.8(react@19.2.8)
-      zustand:
-        specifier: ^5.0.2
-        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
-      '@types/react':
-        specifier: ^19.0.2
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.0.2
-        version: 19.2.4(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(@types/node@22.20.1))
       concurrently:
         specifier: ^9.1.0
         version: 9.2.4
@@ -60,6 +42,40 @@ importers:
       wait-on:
         specifier: ^8.0.1
         version: 8.0.5
+
+  apps/renderer:
+    dependencies:
+      '@white-box/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@white-box/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+      zustand:
+        specifier: ^5.0.2
+        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.2
+        version: 19.2.4(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(vite@6.4.3(@types/node@22.20.1))
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.5
+        version: 6.4.3(@types/node@22.20.1)
 
   packages/contracts:
     dependencies:
