@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@white-box/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@white-box/core':
         specifier: workspace:*
         version: link:packages/core
@@ -57,6 +60,19 @@ importers:
       wait-on:
         specifier: ^8.0.1
         version: 8.0.5
+
+  packages/contracts:
+    dependencies:
+      '@white-box/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^4.1.12
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/core:
     devDependencies:
@@ -2355,6 +2371,9 @@ packages:
   zip-stream@4.1.1:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
+
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zustand@5.0.15:
     resolution: {integrity: sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==}
@@ -4748,6 +4767,8 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
+
+  zod@4.4.3: {}
 
   zustand@5.0.15(@types/react@19.2.18)(react@19.2.8):
     optionalDependencies:
