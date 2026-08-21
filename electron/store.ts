@@ -7,7 +7,7 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Database, Settings } from '../shared/types.js'
+import type { Database, Settings } from '@white-box/core/types'
 
 const DB_VERSION = 1
 

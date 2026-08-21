@@ -3,7 +3,7 @@ import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '../lib/selectors'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
+import { formatDuration } from '@white-box/core/engine'
 
 export function CurrentWorkWindow() {
   const state = useData()

@@ -2,7 +2,7 @@
  * ブラウザで見た目を確認するための固定データ。アプリの動作には一切使わない。
  * 振る舞い（コマンドの処理）をここに足さないこと。
  */
-import type { AppState, Project, Session, Task } from '@shared/types'
+import type { AppState, Project, Session, Task } from '@white-box/core/types'
 
 const MIN = 60_000
 const H = 3_600_000

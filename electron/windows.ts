@@ -6,7 +6,7 @@
 import { BrowserWindow, screen, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { WindowKind } from '../shared/types.js'
+import type { WindowKind } from '@white-box/core/types'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const APP_ROOT = path.join(HERE, '..', '..')

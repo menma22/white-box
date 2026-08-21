@@ -3,7 +3,7 @@ import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, stalledTasks, todayKey } from '../lib/selectors'
 import { Chip, useEscape } from '../ui/primitives'
-import { dayKey, formatDuration, HOUR } from '@shared/engine'
+import { dayKey, formatDuration, HOUR } from '@white-box/core/engine'
 import { dayTotalMs } from '../lib/selectors'
 
 export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; onGoBoard: () => void }) {

@@ -1,7 +1,7 @@
-import type { Session } from '@shared/types'
+import type { Session } from '@white-box/core/types'
 import { useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
-import { formatClock, formatDuration, HOUR } from '@shared/engine'
+import { formatClock, formatDuration, HOUR } from '@white-box/core/engine'
 
 /** 1 日を 1 本の帯にする。実作業＝色の付いた区間、一時停止＝抜けた区間。 */
 export function DayRibbon({ sessions, now }: { sessions: Session[]; now: number }) {

@@ -9,8 +9,8 @@ import path from 'node:path'
 import { Store } from './store.js'
 import { APP_ROOT, broadcast, closeWindow, getWindow, openWindow, toggleWindow } from './windows.js'
 import * as mut from './mutations.js'
-import type { AppState, Database, ID, LiveTick, Session, WindowKind } from '../shared/types.js'
-import { activeTaskId, dayKey, focusMs, formatDuration, isPaused, MINUTE, remainingMs } from '../shared/engine.js'
+import type { AppState, Database, ID, LiveTick, Session, WindowKind } from '@white-box/core/types'
+import { activeTaskId, dayKey, focusMs, formatDuration, isPaused, MINUTE, remainingMs } from '@white-box/core/engine'
 import * as ops from '../shared/session-ops.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000

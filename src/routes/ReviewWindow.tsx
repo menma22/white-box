@@ -3,7 +3,7 @@ import { call, cmd } from '../bridge'
 import { useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { BigDuration, Chip, Empty, TitleBar, useEscape } from '../ui/primitives'
-import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@shared/engine'
+import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
 
 interface Draft {
   taskId: string

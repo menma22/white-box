@@ -8,7 +8,7 @@ import { TodayView } from '../views/TodayView'
 import { HistoryView } from '../views/HistoryView'
 import { SettingsView } from '../views/SettingsView'
 import { WelcomeOverlay } from '../views/WelcomeOverlay'
-import { formatDuration } from '@shared/engine'
+import { formatDuration } from '@white-box/core/engine'
 
 type Tab = 'today' | 'board' | 'history' | 'settings'
 

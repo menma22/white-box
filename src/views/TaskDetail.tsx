@@ -3,8 +3,8 @@ import { call } from '../bridge'
 import { useApp, useData } from '../store'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '../lib/selectors'
 import { Modal, ProgressBar, Segmented, useEscape } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
-import type { Priority, TaskStatus } from '@shared/types'
+import { formatDuration } from '@white-box/core/engine'
+import type { Priority, TaskStatus } from '@white-box/core/types'
 
 export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const state = useData()

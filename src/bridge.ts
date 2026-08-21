@@ -1,4 +1,4 @@
-import type { AppState, LiveTick, WindowKind } from '@shared/types'
+import type { AppState, LiveTick, WindowKind } from '@white-box/core/types'
 import { devFixture } from './dev/fixture'
 
 interface Bridge {

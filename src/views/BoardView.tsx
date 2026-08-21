@@ -11,9 +11,9 @@ import {
   STATUS_NOTE,
   STATUS_ORDER,
 } from '../lib/selectors'
-import type { Task, TaskStatus } from '@shared/types'
+import type { Task, TaskStatus } from '@white-box/core/types'
 import { Chip, ProgressBar } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
+import { formatDuration } from '@white-box/core/engine'
 import { TaskDetail } from './TaskDetail'
 
 export function BoardView() {

@@ -3,7 +3,7 @@ import { call } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { Ring } from '../ui/primitives'
-import { formatDuration, MINUTE } from '@shared/engine'
+import { formatDuration, MINUTE } from '@white-box/core/engine'
 
 export function ExpireWindow() {
   const state = useData()

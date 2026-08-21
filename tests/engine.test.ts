@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Session } from '@shared/types'
-import { activeTaskId, dayKey, focusByTask, focusMs, isPaused, MINUTE, pausedMs, remainingMs, segmentFocusMs } from '@shared/engine'
+import type { Session } from '@white-box/core/types'
+import { activeTaskId, dayKey, focusByTask, focusMs, isPaused, MINUTE, pausedMs, remainingMs, segmentFocusMs } from '@white-box/core/engine'
 import { closeAtLastKnown, createSession, endSession, extendSession, pauseSession, resumeSession, switchTask } from '@shared/session-ops'
 
 const T0 = new Date(2026, 7, 20, 10, 0, 0).getTime()

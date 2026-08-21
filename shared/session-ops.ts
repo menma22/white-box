@@ -3,8 +3,8 @@
  *
  * 終了済み（endedAt != null）のセッションは遷移させない — 記録を後から動かさないため。
  */
-import type { ID, Session, SessionEvent, SessionEventType, PauseInterval } from './types.js'
-import { activeSegment, focusMs, isPaused, MINUTE } from './engine.js'
+import type { ID, Session, SessionEvent, SessionEventType, PauseInterval } from '@white-box/core/types'
+import { activeSegment, focusMs, isPaused, MINUTE } from '@white-box/core/engine'
 
 export function newId(prefix: string): string {
   const rand = Math.random().toString(36).slice(2, 8)

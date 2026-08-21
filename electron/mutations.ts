@@ -3,7 +3,7 @@
  *
  * タスクを消してもセッションの記録は消さない（過去を書き換えないため）。
  */
-import type { Database, ID, Priority, Project, Task, TaskStatus } from '../shared/types.js'
+import type { Database, ID, Priority, Project, Task, TaskStatus } from '@white-box/core/types'
 import { newId } from '../shared/session-ops.js'
 
 export function createProject(db: Database, input: { name: string; hue?: number }): Project {

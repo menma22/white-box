@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useApp, useData } from '../store'
 import { dayKeysWithSessions, dayTotalMs, sessionsForDay, todayKey } from '../lib/selectors'
 import { BigDuration, Empty } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
+import { formatDuration } from '@white-box/core/engine'
 import { SessionRow } from './SessionRow'
 
 export function HistoryView() {

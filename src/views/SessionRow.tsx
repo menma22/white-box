@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import type { Session } from '@shared/types'
+import type { Session } from '@white-box/core/types'
 import { call } from '../bridge'
 import { useData } from '../store'
 import { candidateTasks, projectById, projectColor, taskById } from '../lib/selectors'
 import { Modal } from '../ui/primitives'
-import { focusByTask, focusMs, formatClock, formatDuration, MINUTE, pausedMs } from '@shared/engine'
+import { focusByTask, focusMs, formatClock, formatDuration, MINUTE, pausedMs } from '@white-box/core/engine'
 
 export function SessionRow({ session, now }: { session: Session; now: number }) {
   const state = useData()

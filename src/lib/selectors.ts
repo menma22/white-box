@@ -1,5 +1,5 @@
-import type { AppState, ID, Project, Session, Task, TaskStatus } from '@shared/types'
-import { dayKey, focusByTaskAcross, focusMs, sessionsOfDay } from '@shared/engine'
+import type { AppState, ID, Project, Session, Task, TaskStatus } from '@white-box/core/types'
+import { dayKey, focusByTaskAcross, focusMs, sessionsOfDay } from '@white-box/core/engine'
 
 export const STATUS_ORDER: TaskStatus[] = ['inbox', 'todo', 'doing', 'done']
 

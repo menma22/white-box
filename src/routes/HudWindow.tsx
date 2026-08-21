@@ -2,7 +2,7 @@ import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
 import { Ring } from '../ui/primitives'
-import { formatDuration } from '@shared/engine'
+import { formatDuration } from '@white-box/core/engine'
 
 export function HudWindow() {
   const state = useData()

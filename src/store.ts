@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppState, LiveTick } from '@shared/types'
+import type { AppState, LiveTick } from '@white-box/core/types'
 import { call, onState, onTick } from './bridge'
 
 interface UiState {
