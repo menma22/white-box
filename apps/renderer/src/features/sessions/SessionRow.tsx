@@ -3,7 +3,7 @@ import type { Session } from '@white-box/core/types'
 import { invoke } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { candidateTasks, projectById, projectColor, taskById } from '@/lib/selectors'
-import { Modal } from '@/components/ui/primitives'
+import { Modal } from '@/components/ui'
 import { focusByTask, focusMs, formatClock, formatDuration, MINUTE, pausedMs } from '@white-box/core/engine'
 
 export function SessionRow({ session, now }: { session: Session; now: number }) {

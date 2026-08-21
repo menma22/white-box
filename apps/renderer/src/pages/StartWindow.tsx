@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { candidateTasks, matchTask, projectById, projectColor, STATUS_LABEL } from '@/lib/selectors'
-import { Chip, Kbd, ProgressBar, useEscape } from '@/components/ui/primitives'
+import { Chip, Kbd, ProgressBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 
 const DURATIONS = [25, 50, 90]

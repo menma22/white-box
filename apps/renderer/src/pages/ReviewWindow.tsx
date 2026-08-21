@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById } from '@/lib/selectors'
-import { BigDuration, Chip, Empty, TitleBar, useEscape } from '@/components/ui/primitives'
+import { BigDuration, Chip, Empty, TitleBar, useEscape } from '@/components/ui'
 import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
 import type { TaskStatus } from '@white-box/core/types'
 

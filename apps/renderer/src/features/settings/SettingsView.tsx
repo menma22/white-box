@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { invoke, isBrowserPreview } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { projectColor } from '@/lib/selectors'
-import { Modal } from '@/components/ui/primitives'
+import { Modal } from '@/components/ui'
 
 export function SettingsView() {
   const state = useData()

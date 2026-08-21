@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById } from '@/lib/selectors'
-import { Ring } from '@/components/ui/primitives'
+import { Ring } from '@/components/ui'
 import { formatDuration, MINUTE } from '@white-box/core/engine'
 
 export function ExpireWindow() {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '@/lib/selectors'
-import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui/primitives'
+import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { Priority, TaskStatus } from '@white-box/core/types'
 

@@ -137,15 +137,17 @@ function connect(url) {
 
 const call = (name, args) => 'window.whitebox.call(' + JSON.stringify(name) + ', ' + JSON.stringify(args || {}) + ')'
 
-// 読み込み途中に evaluate すると "Execution context was destroyed" で落ちるので、preload の窓口が現れるまで待つ
+// window.whitebox の存在だけ見て進むと、初期 about:blank の暫定コンテキストに接続してしまい
+// 本物のページの commit で "Execution context was destroyed" になる（preload は暫定側にも付く）
 async function waitReady(client) {
+  const ready = 'typeof window.whitebox === "object" && document.readyState === "complete" && location.hash.length > 1'
   for (let i = 0; i < 25; i++) {
     try {
-      if (await client.evaluate('typeof window.whitebox === "object"')) return
+      if (await client.evaluate(ready)) return
     } catch {}
     await wait(400)
   }
-  throw new Error('window.whitebox が現れない')
+  throw new Error('ページの読み込みが完了しない')
 }
 
 // ── 実行 ───────────────────────────────────────────────────────────

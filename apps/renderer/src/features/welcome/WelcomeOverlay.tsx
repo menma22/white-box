@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, stalledTasks, todayKey } from '@/lib/selectors'
-import { Chip, useEscape } from '@/components/ui/primitives'
+import { Chip, useEscape } from '@/components/ui'
 import { dayKey, formatDuration, HOUR } from '@white-box/core/engine'
 import { dayTotalMs } from '@/lib/selectors'
 

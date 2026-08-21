@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useApp, useData } from '@/stores/app'
 import { sessionsForDay, todayKey } from '@/lib/selectors'
-import { BigDuration, Empty } from '@/components/ui/primitives'
+import { BigDuration, Empty } from '@/components/ui'
 import { focusMs, formatDuration, pausedMs } from '@white-box/core/engine'
 import { SessionRow } from '@/features/sessions/SessionRow'
 import { DayRibbon } from './DayRibbon'

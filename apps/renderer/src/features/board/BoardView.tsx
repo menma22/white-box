@@ -12,7 +12,7 @@ import {
   STATUS_ORDER,
 } from '@/lib/selectors'
 import type { Task, TaskStatus } from '@white-box/core/types'
-import { Chip, ProgressBar } from '@/components/ui/primitives'
+import { Chip, ProgressBar } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import { TaskDetail } from './TaskDetail'
 

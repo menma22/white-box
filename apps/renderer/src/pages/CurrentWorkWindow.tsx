@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '@/lib/selectors'
-import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui/primitives'
+import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 
 export function CurrentWorkWindow() {
