@@ -146,7 +146,7 @@ core      →  （依存なし）
 | 2 desktop オニオン化 | **完了**（2026-08-21） | feat/rearchitecture | domain/app/infra/presentation の 4 層。全 33 ユースケースが Electron 起動なしでテスト可能に |
 | 3 renderer 分割 | **完了**（2026-08-21） | feat/rearchitecture | S4+S5 完了。CSS 14 分割（byte 一致検証）・renderer→contracts/core の境界を eslint で機械強制・11 カットのピクセル比較で見た目一致を実証 |
 | 4 Storybook | **完了**（2026-08-21） | feat/rearchitecture | Storybook 10.5.10。UI 11 部品 + 主要 3 画面の story。実装は ai-org-os（org_spawn）の独立ワーカー T1、検証と統合はオーケストレーター |
-| 5 配布と仕上げ | 未着手 | — | |
+| 5 配布と仕上げ | **完了**（2026-08-22） | feat/rearchitecture | pack.mjs を pnpm workspace 対応（U2 解消: 配布物へ core/contracts/zod の実体を同梱）。実 exe の e2e 21/21。docs 全面同期。実装は org_spawn ワーカー T2、検証と統合はオーケストレーター。**再編は全 Phase 完了** |
 
 ## セッション引き継ぎの決まり
 
