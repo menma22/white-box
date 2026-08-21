@@ -137,6 +137,17 @@ function connect(url) {
 
 const call = (name, args) => 'window.whitebox.call(' + JSON.stringify(name) + ', ' + JSON.stringify(args || {}) + ')'
 
+// 読み込み途中に evaluate すると "Execution context was destroyed" で落ちるので、preload の窓口が現れるまで待つ
+async function waitReady(client) {
+  for (let i = 0; i < 25; i++) {
+    try {
+      if (await client.evaluate('typeof window.whitebox === "object"')) return
+    } catch {}
+    await wait(400)
+  }
+  throw new Error('window.whitebox が現れない')
+}
+
 // ── 実行 ───────────────────────────────────────────────────────────
 // WHITEBOX_EXE を指せば、組み上げた release の exe をそのまま確かめられる
 const packaged = process.env.WHITEBOX_EXE
@@ -154,6 +165,7 @@ let exitCode = 1
 try {
   const hudTarget = await findTarget('#hud')
   const hud = await connect(hudTarget.webSocketDebuggerUrl)
+  await waitReady(hud)
 
   const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
   check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
@@ -185,6 +197,7 @@ try {
 
   const reviewTarget = await findTarget('#review')
   const review = await connect(reviewTarget.webSocketDebuggerUrl)
+  await waitReady(review)
   const afterEnd = await review.evaluate('window.whitebox.call("state:get")')
   check('終了後に live が消える', afterEnd.data.live === null)
   check('レビュー対象が指定される', Boolean(afterEnd.data.pendingReview))

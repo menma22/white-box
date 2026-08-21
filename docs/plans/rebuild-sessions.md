@@ -25,7 +25,7 @@
 
 | # | 問題 | 採用 | 理由と捨てた候補 | 再検討条件 |
 |---|---|---|---|---|
-| D-01 | pnpm のビルドスクリプト許可 | `pnpm.onlyBuiltDependencies: ["electron"]` を package.json に明示 | pnpm は既定で postinstall を止める。electron はバイナリ取得に必須。全許可は不要物まで走る | 依存追加でビルドが必要になったとき |
+| D-01 | pnpm のビルドスクリプト許可 | `allowBuilds: {electron: true, esbuild: true}` を pnpm-workspace.yaml に明示（※S1 実測: pnpm 11 は旧設定名 onlyBuiltDependencies を無視する。electron はバイナリ取得、esbuild は vite が使う実行バイナリの取得に必須） | pnpm は既定で postinstall を止める。全許可は不要物まで走る | 依存追加でビルドが必要になったとき |
 | D-02 | データ型の正とスキーマの関係 | 型の正は `packages/core` の interface。contracts の zod は `z.ZodType<T>` 注釈で結ぶ | スキーマと型のドリフトをコンパイラが検出できる。zod から型を生やす逆方向は core の独立性（依存ゼロ）を壊す | — |
 | D-03 | IPC チャネル | 既存 `whitebox:cmd` / `state` / `tick` を維持。コマンド名も 33 個そのまま | preload（壊れやすい CJS 境界）を触らない。e2e が回帰網としてそのまま効く | 契約の破壊的変更が必要になったとき |
 | D-04 | workspace パッケージのビルド | packages/* は各自 tsc で dist を吐き、exports で公開。アプリは dist を参照 | Electron メインは node16 解決の実行時 require があるため TS ソース直参照は不可。Vite 側も同じ経路に揃えて二重解決を避ける | ビルド待ちが開発の摩擦になったとき（watch 併用で緩和） |
