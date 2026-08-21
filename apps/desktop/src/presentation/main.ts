@@ -8,7 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Store } from '../infra/store.js'
 import { APP_ROOT, broadcast, closeWindow, getWindow, openWindow, toggleWindow } from '../infra/windows.js'
-import * as mut from '../domain/mutations.js'
+import * as taskOps from '../domain/task-ops.js'
 import { isCommand, parseArgs, type ArgsOf, type CommandName, type ResultOf } from '@white-box/contracts'
 import type { AppState, Database, ID, LiveTick, Session, WindowKind } from '@white-box/core/types'
 import { activeTaskId, dayKey, focusMs, formatDuration, isPaused, MINUTE, remainingMs } from '@white-box/core/engine'
@@ -176,45 +176,49 @@ const handlers: Handlers = {
 
   // ── Project
   'project:create': (a) => {
-    const p = mut.createProject(db(), { name: a.name })
+    const r = taskOps.createProject(db(), { name: a.name })
+    db().projects = r.projects
     push()
-    return p
+    return r.project
   },
   'project:update': (a) => {
-    mut.updateProject(db(), a.id, a.patch)
+    db().projects = taskOps.updateProject(db(), a.id, a.patch)
     push()
     return null
   },
   'project:delete': (a) => {
-    mut.deleteProject(db(), a.id)
+    const r = taskOps.deleteProject(db(), a.id)
+    db().projects = r.projects
+    db().tasks = r.tasks
     push()
     return null
   },
 
   // ── Task
   'task:create': (a) => {
-    const t = mut.createTask(db(), a)
+    const r = taskOps.createTask(db(), a)
+    db().tasks = r.tasks
     const s = liveSession()
-    if (s && a.fromSession) replaceSession(ops.noteTaskCreated(s, t.title, t.id, Date.now()))
+    if (s && a.fromSession) replaceSession(ops.noteTaskCreated(s, r.task.title, r.task.id, Date.now()))
     push()
-    return t
+    return r.task
   },
   'task:update': (a) => {
-    mut.updateTask(db(), a.id, a.patch)
+    db().tasks = taskOps.updateTask(db(), a.id, a.patch)
     push()
     return null
   },
   'task:move': (a) => {
-    mut.moveTask(db(), a.id, a.status, a.index)
+    db().tasks = taskOps.moveTask(db(), a.id, a.status, a.index)
     push()
     return null
   },
   'task:delete': (a) => {
-    mut.deleteTask(db(), a.id)
+    db().tasks = taskOps.deleteTask(db(), a.id)
     push()
     return null
   },
-  'task:hasTime': (a) => mut.hasRecordedTime(db(), a.id),
+  'task:hasTime': (a) => taskOps.hasRecordedTime(db(), a.id),
 
   // ── Session
   'session:start': (a) => {
@@ -222,18 +226,19 @@ const handlers: Handlers = {
     const now = Date.now()
     let taskId = a.taskId
     if (!taskId && a.newTask) {
-      const t = mut.createTask(db(), {
+      const r = taskOps.createTask(db(), {
         title: a.newTask.title,
         projectId: a.newTask.projectId ?? null,
         status: 'doing',
       })
-      taskId = t.id
+      db().tasks = r.tasks
+      taskId = r.task.id
     }
     if (!taskId) return null
     const minutes = a.minutes || db().settings.defaultSessionMinutes
     const session = ops.createSession({ taskId, taskTitle: taskTitle(taskId), plannedMs: minutes * MINUTE, now })
     db().sessions.push(session)
-    mut.updateTask(db(), taskId, { status: 'doing' })
+    db().tasks = taskOps.updateTask(db(), taskId, { status: 'doing' })
     push()
     openWindow('hud', false)
     startTicker()
@@ -278,10 +283,10 @@ const handlers: Handlers = {
     const now = Date.now()
     const prev = activeTaskId(s)
     replaceSession(ops.switchTask(s, a.taskId, taskTitle(a.taskId), now))
-    mut.updateTask(db(), a.taskId, { status: 'doing' })
+    db().tasks = taskOps.updateTask(db(), a.taskId, { status: 'doing' })
     if (prev && prev !== a.taskId) {
       const prevTask = db().tasks.find((t) => t.id === prev)
-      if (prevTask && prevTask.status === 'doing') mut.updateTask(db(), prev, { status: 'todo' })
+      if (prevTask && prevTask.status === 'doing') db().tasks = taskOps.updateTask(db(), prev, { status: 'todo' })
     }
     push()
     return null
@@ -305,7 +310,7 @@ const handlers: Handlers = {
     updated.note = a.note ?? ''
     replaceSession(updated)
     for (const c of a.changes) {
-      mut.updateTask(db(), c.taskId, {
+      db().tasks = taskOps.updateTask(db(), c.taskId, {
         progress: c.to,
         ...(c.markedDone ? { status: 'done' as const } : {}),
       })
