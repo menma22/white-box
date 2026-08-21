@@ -80,7 +80,7 @@ core      →  （依存なし）
 
 - npm → pnpm へ切替、workspace の骨組み（`pnpm-workspace.yaml`）を置く。**ファイル移動はまだしない**
 - Quri から `GIT_WORKFLOW.md` を移植・適合。`docs/stories/`・`tasks/` の運用開始（この計画自体の handover もここに置く）
-- 先行バグ修正: [WelcomeOverlay.tsx:33](../src/views/WelcomeOverlay.tsx:33) の「昨日」キー手組み（`dayStartHour` 無視）を `shared/engine.ts` の `dayKey()` に置換
+- 先行バグ修正: [WelcomeOverlay.tsx:33](../apps/renderer/src/features/welcome/WelcomeOverlay.tsx:33)（S7 時点のパス）の「昨日」キー手組み（`dayStartHour` 無視）を `shared/engine.ts`（S7 時点: `packages/core/src/engine.ts`）の `dayKey()` に置換
 - **完了条件**: pnpm で typecheck / test / e2e が全緑。バグ修正のテストが 1 件増えている
 
 ### Phase 1 — packages/core と packages/contracts（契約ファースト）
@@ -95,7 +95,7 @@ core      →  （依存なし）
 
 ### Phase 2 — バックエンドのオニオン化（apps/desktop）
 
-**目的**: [electron/main.ts](../electron/main.ts) の 33 ケース switch（270 行）を層に分解し、全ユースケースを Electron 起動なしでテスト可能にする。
+**目的**: `electron/main.ts`（S7 時点: [apps/desktop/src/presentation/main.ts](../apps/desktop/src/presentation/main.ts)）の switch を層に分解し、全ユースケースを Electron 起動なしでテスト可能にする。
 
 - `apps/desktop` 新設。electron/ の中身を分解:
   - **domain**: `session-ops` + `mutations` を `task-ops` として純関数化（Database を受けて新しい値を返す形へ統一——現状は Session だけ純関数で Task/Project は破壊的変更、という割れを解消）
