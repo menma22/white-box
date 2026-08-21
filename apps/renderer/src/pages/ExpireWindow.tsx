@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
-import { projectById, projectColor, taskById } from '@/lib/selectors'
+import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Ring } from '@/components/ui'
 import { formatDuration, MINUTE } from '@white-box/core/engine'
 
@@ -32,7 +32,7 @@ export function ExpireWindow() {
       <h2 className="expire-title">予定の{Math.round(tick.plannedMs / MINUTE)}分が経った</h2>
       <p className="expire-task">
         {project && <i className="expire-dot" style={{ background: projectColor(project) }} />}
-        {task?.title ?? '（削除されたタスク）'}
+        {taskTitle(state, tick.activeTaskId)}
       </p>
       {overMs > 0 && <p className="expire-over num">超過 +{formatDuration(overMs, 'compact')}</p>}
 

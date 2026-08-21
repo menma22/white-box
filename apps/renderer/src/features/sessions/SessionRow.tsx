@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Session } from '@white-box/core/types'
 import { invoke } from '@/lib/bridge'
 import { useData } from '@/stores/app'
-import { candidateTasks, projectById, projectColor, taskById } from '@/lib/selectors'
+import { candidateTasks, projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Modal } from '@/components/ui'
 import { focusByTask, focusMs, formatClock, formatDuration, MINUTE, pausedMs } from '@white-box/core/engine'
 
@@ -33,7 +33,7 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
               return (
                 <span key={id} className="srow-task">
                   <i className="srow-dot" style={{ background: projectColor(project) }} />
-                  {task?.title ?? '（削除されたタスク）'}
+                  {taskTitle(state, id)}
                   {taskIds.length > 1 && <b className="num">{formatDuration(perTask.get(id) ?? 0, 'compact')}</b>}
                 </span>
               )

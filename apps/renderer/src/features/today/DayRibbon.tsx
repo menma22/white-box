@@ -1,6 +1,6 @@
 import type { Session } from '@white-box/core/types'
 import { useData } from '@/stores/app'
-import { projectById, projectColor, taskById } from '@/lib/selectors'
+import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { formatClock, formatDuration, HOUR } from '@white-box/core/engine'
 
 /** 1 日を 1 本の帯にする。実作業＝色の付いた区間、一時停止＝抜けた区間。 */
@@ -44,7 +44,7 @@ export function DayRibbon({ sessions, now }: { sessions: Session[]; now: number 
                     key={seg.id}
                     className="ribbon-seg"
                     style={{ left: `${left}%`, width: `${Math.max(0.5, width)}%`, background: projectColor(project) }}
-                    title={`${task?.title ?? '（削除されたタスク）'}｜${formatClock(seg.startedAt)}–${formatClock(segEnd)}`}
+                    title={`${taskTitle(state, seg.taskId)}｜${formatClock(seg.startedAt)}–${formatClock(segEnd)}`}
                   />
                 )
               })}

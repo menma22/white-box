@@ -1,8 +1,9 @@
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
-import { projectById, projectColor, taskById } from '@/lib/selectors'
+import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Ring } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
+import { remainingLabel } from '@/lib/format'
 
 export function HudWindow() {
   const state = useData()
@@ -32,14 +33,14 @@ export function HudWindow() {
       <CloseButton />
       <Ring elapsedMs={tick.elapsedMs} plannedMs={tick.plannedMs} size={82} thickness={5} paused={paused}>
         <span className={`hud-time num ${over ? 'is-over' : ''} ${paused ? 'is-paused' : ''}`}>
-          {over ? `+${formatDuration(-tick.remainingMs, 'hms')}` : formatDuration(tick.remainingMs, 'hms')}
+          {remainingLabel(tick.remainingMs)}
         </span>
         <span className="hud-time-label label">{paused ? '停止中' : over ? '超過' : '残り'}</span>
       </Ring>
 
       <div className="hud-body">
         <div className="hud-task" title={task?.title ?? ''}>
-          {task?.title ?? '（削除されたタスク）'}
+          {taskTitle(state, tick.activeTaskId)}
         </div>
         <div className="hud-meta">
           {project && (

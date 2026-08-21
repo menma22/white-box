@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useData } from '@/stores/app'
-import { projectById, projectColor, taskById } from '@/lib/selectors'
+import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { BigDuration, Chip, Empty, TitleBar, useEscape } from '@/components/ui'
 import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
 import type { TaskStatus } from '@white-box/core/types'
@@ -89,7 +89,7 @@ export function ReviewWindow() {
               <header className="review-task-head">
                 <div className="review-task-title">
                   {project && <Chip color={projectColor(project)}>{project.name}</Chip>}
-                  <span>{task?.title ?? '（削除されたタスク）'}</span>
+                  <span>{taskTitle(state, draft.taskId)}</span>
                 </div>
                 <span className="num review-task-spent">{formatDuration(spent, 'compact')}</span>
               </header>

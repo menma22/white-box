@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { invoke, isBrowserPreview } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { projectColor } from '@/lib/selectors'
+import { shortcutLabel } from '@/lib/format'
 import { Modal } from '@/components/ui'
 
 export function SettingsView() {
@@ -288,7 +289,7 @@ function ShortcutRow({
         onKeyDown={onKeyDown}
         onBlur={() => setCapturing(false)}
       >
-        {capturing ? '押して…' : value.replace(/Control/g, 'Ctrl').replace(/\+/g, ' + ')}
+        {capturing ? '押して…' : shortcutLabel(value)}
       </button>
     </Row>
   )

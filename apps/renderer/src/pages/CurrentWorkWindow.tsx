@@ -4,6 +4,7 @@ import { useApp, useData } from '@/stores/app'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '@/lib/selectors'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
+import { remainingLabel } from '@/lib/format'
 
 export function CurrentWorkWindow() {
   const state = useData()
@@ -54,7 +55,7 @@ export function CurrentWorkWindow() {
           <section className="current-focus">
             <Ring elapsedMs={tick.elapsedMs} plannedMs={tick.plannedMs} size={96} thickness={5} paused={tick.state === 'paused'}>
               <span className="num current-ring-time">
-                {tick.remainingMs < 0 ? `+${formatDuration(-tick.remainingMs, 'hms')}` : formatDuration(tick.remainingMs, 'hms')}
+                {remainingLabel(tick.remainingMs)}
               </span>
               <span className="label">{tick.state === 'paused' ? '停止中' : '残り'}</span>
             </Ring>

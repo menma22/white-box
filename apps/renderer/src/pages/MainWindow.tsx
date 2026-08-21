@@ -8,7 +8,7 @@ import { TodayView } from '@/features/today/TodayView'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
-import { formatDuration } from '@white-box/core/engine'
+import { remainingLabel, shortcutLabel } from '@/lib/format'
 
 type Tab = 'today' | 'board' | 'history' | 'settings'
 
@@ -67,7 +67,7 @@ export function MainWindow() {
                 <span className="rail-live-dot" />
                 <span className="label">{tick.state === 'paused' ? '一時停止' : '実行中'}</span>
                 <span className="num rail-live-time">
-                  {tick.remainingMs < 0 ? `+${formatDuration(-tick.remainingMs, 'hms')}` : formatDuration(tick.remainingMs, 'hms')}
+                  {remainingLabel(tick.remainingMs)}
                 </span>
               </span>
               <span className="rail-live-task">{liveTask.title}</span>
@@ -82,7 +82,7 @@ export function MainWindow() {
             <button type="button" className="rail-start" onClick={() => void cmd.openWindow('start')}>
               <span className="rail-start-label disp">セッションを開始</span>
               <span className="rail-start-key">
-                <Kbd>{state.settings.shortcuts.startPause.replace(/Control/g, 'Ctrl').replace(/\+/g, ' + ')}</Kbd>
+                <Kbd>{shortcutLabel(state.settings.shortcuts.startPause)}</Kbd>
               </span>
             </button>
           )}
@@ -102,7 +102,7 @@ export function MainWindow() {
           <div className="rail-foot">
             <button type="button" className="rail-link" onClick={() => void cmd.openWindow('current')}>
               現在の仕事
-              <Kbd>{state.settings.shortcuts.currentWork.replace(/Control/g, 'Ctrl').replace(/\+/g, ' + ')}</Kbd>
+              <Kbd>{shortcutLabel(state.settings.shortcuts.currentWork)}</Kbd>
             </button>
           </div>
         </nav>
