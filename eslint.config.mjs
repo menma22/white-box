@@ -32,4 +32,34 @@ export default [
       ],
     },
   },
+  {
+    // T1: stories 限定で storybook 系 import を追加許可する。renderer 本体（上のブロック）の境界は変えない。
+    files: ['apps/renderer/src/stories/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tseslint.parser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex:
+                '^(?!react($|/)|react-dom($|/)|zustand$|@white-box/core($|/)|@white-box/contracts($|/)|storybook($|/)|@storybook/|@/|\\.{1,2}/)',
+              message:
+                'renderer が import できるのは react / react-dom / zustand / @white-box/core / @white-box/contracts / storybook 系 / @/（自 src）/ 相対 だけ（docs/decisions.md 013 + T1 stories 例外）。',
+            },
+            {
+              regex: '(^|/)desktop(/|$)|^(\\.\\./){3}',
+              message:
+                'renderer から src の外（apps/desktop 等）へ届く import は禁止。バックエンドとは @white-box/contracts 経由で話す（docs/decisions.md 013）。',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]
