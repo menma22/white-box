@@ -1,0 +1,240 @@
+/* ══ 今日 ══════════════════════════════════════════ */
+
+.today-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.today-total-value {
+  font-size: 46px;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--accent-deep);
+  letter-spacing: -0.03em;
+}
+
+.today-strip {
+  display: flex;
+  gap: 46px;
+  padding: 0 0 30px;
+}
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.metric-value {
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.today-list {
+  margin-top: 34px;
+}
+.today-list-label {
+  margin-bottom: 12px;
+  display: block;
+}
+.today-foot-note {
+  margin-top: 34px;
+  padding: 16px 20px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+/* ── 一日の帯 ── */
+.ribbon {
+  margin: 8px 0 10px;
+  padding: 18px 20px 8px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+.ribbon-rail {
+  position: relative;
+  height: 52px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.ribbon-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(213, 200, 180, 0.6);
+}
+.ribbon-band {
+  position: absolute;
+  top: 10px;
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
+}
+.ribbon-band.is-live {
+  box-shadow: 0 0 0 2px var(--accent-line);
+}
+.ribbon-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  opacity: 0.9;
+}
+.ribbon-pause {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(250, 246, 238, 0.95) 0 3px,
+    rgba(233, 225, 211, 0.95) 3px 6px
+  );
+}
+.ribbon-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 99px;
+}
+.ribbon-axis {
+  position: relative;
+  height: 18px;
+  margin-top: 5px;
+}
+.ribbon-hour {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-4);
+}
+
+/* ── セッション行 ── */
+.srow {
+  border-radius: var(--r-md);
+  transition: background 0.16s var(--ease);
+  margin-bottom: 2px;
+}
+.srow:hover {
+  background: var(--surface);
+}
+.srow-main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 16px;
+  text-align: left;
+}
+.srow-time {
+  flex: none;
+  width: 112px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.srow-time i {
+  color: var(--text-4);
+  font-style: normal;
+  padding: 0 4px;
+}
+.srow-tasks {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.srow-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.srow-task b {
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.srow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  flex: none;
+}
+.srow-delta {
+  font-size: 11.5px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+}
+.srow-note {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+.srow-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+.srow-pause {
+  font-size: 11.5px;
+  color: var(--text-4);
+}
+.srow-edited {
+  font-size: 10px;
+  color: var(--amber);
+  background: var(--amber-dim);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.srow-focus {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 54px;
+  text-align: right;
+}
+.srow.is-live .srow-focus {
+  color: var(--accent);
+}
+.srow-detail {
+  padding: 0 16px 18px 148px;
+  animation: rise 0.18s var(--ease-out);
+}
+.srow-log {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.srow-log li {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.srow-log-time {
+  color: var(--text-4);
+}
+.srow-actions {
+  display: flex;
+  gap: 9px;
+}
+

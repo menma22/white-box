@@ -1,0 +1,120 @@
+/* ══ HUD ═══════════════════════════════════════════ */
+
+.hud {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--panel);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+}
+.hud-close {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  color: var(--text-4);
+  z-index: 2;
+}
+.hud-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.hud-time {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent-deep);
+  line-height: 1.1;
+}
+.hud-time.is-over {
+  color: var(--amber);
+}
+.hud-time.is-paused {
+  color: var(--text-3);
+}
+.hud-time-label {
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+}
+.hud-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hud-task {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hud-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hud-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.hud-project i {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+}
+.hud-elapsed {
+  font-size: 10.5px;
+  color: var(--text-4);
+}
+.hud-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+.hud-btn {
+  height: 27px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease), border-color 0.16s var(--ease);
+}
+.hud-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.hud-btn.is-primary {
+  border-color: transparent;
+  background: var(--accent-deep);
+  color: #fbf8f2;
+}
+.hud-btn.is-primary:hover {
+  background: var(--accent);
+  color: #fbf8f2;
+}
+.hud-btn-icon {
+  padding: 0 10px;
+}
+.hud-idle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
