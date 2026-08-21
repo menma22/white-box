@@ -142,4 +142,5 @@
 | S3 | **完了**（2026-08-21。T13〜T19 全達成。app 層は electron import 0 件・main.ts 138 行（目安 120 を 18 行超過、全行が配線）・ユースケーステスト 8 件で全 33 コマンドを Electron なしで検証） |
 | S4 | **完了**（2026-08-21。T20〜T24 全達成。renderer は @white-box/renderer パッケージ（pages/features/components/stores/lib）。重複 3 パターンを定義 1 箇所へ統合・selectors テスト 10 件・e2e の起動競合を根治（waitReady が暫定ドキュメントを掴む問題）。基準スクショ 11 枚は shots-baseline/ に確保済み） |
 | S5 | **完了**（2026-08-21。T25〜T28 全達成。CSS 14 分割は連結 byte 一致で検証・境界 lint は違反実証つき・11 カットのピクセル比較は 8 枚完全一致 + 3 枚は時計由来の差分のみ。実装は子セッション（ワーカー）2 体に分担し、検証とコミットはオーケストレーターが実施） |
-| S6〜S7 | 未着手（次は S6: Storybook） |
+| S6 | **完了**（2026-08-21。T29〜T31 全達成。**ai-org-os の org_spawn で起動した独立ワーカーセッション T1 が実装**（Storybook 10.5.10、UI 11 部品 + 画面 3 種の story、AppStateSeed パターン）。オーケストレーターが復路検証（全ゲート独立再実行 + 実描画 2 画面確認）→ org_accept → merge 統合。Capsule が追跡ファイル CLAUDE.local.md を上書きする機構課題を発見し統合時に復元） |
+| S7 | 未着手（残り: 配布と仕上げ） |
