@@ -143,7 +143,7 @@ core      →  （依存なし）
 | 計画 | **この文書** | — | 2026-08-21 起草 |
 | 0 規約と足場 | **完了**（2026-08-21） | feat/rearchitecture | pnpm 化・規約移植・dayKey バグ修正。詳細は [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1 |
 | 1 core + contracts | **完了**（2026-08-21） | feat/rearchitecture | packages/core + packages/contracts（zod 33 コマンド）。IPC 両端が契約型付き・any 0 件・e2e 21 チェック |
-| 2 desktop オニオン化 | 未着手 | — | |
+| 2 desktop オニオン化 | **完了**（2026-08-21） | feat/rearchitecture | domain/app/infra/presentation の 4 層。全 33 ユースケースが Electron 起動なしでテスト可能に |
 | 3 renderer 分割 | 未着手 | — | |
 | 4 Storybook | 未着手 | — | |
 | 5 配布と仕上げ | 未着手 | — | |
