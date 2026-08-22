@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { LiveTick } from '@white-box/core/types'
 import { ExpireWindow } from '@/pages/ExpireWindow'
 import { devFixture } from '@/dev/fixture'
-import { AppStateSeed } from './AppStateSeed'
+import { seedApp } from './seed'
 
 const MIN = 60_000
 const base = devFixture()
@@ -22,13 +22,7 @@ const justExpiredTick: LiveTick = {
 const meta: Meta<typeof ExpireWindow> = {
   title: 'screen/ExpireWindow',
   component: ExpireWindow,
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={justExpiredTick}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, justExpiredTick),
 }
 export default meta
 
@@ -37,11 +31,5 @@ type Story = StoryObj<typeof ExpireWindow>
 export const JustExpired: Story = {}
 
 export const FarOver: Story = {
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={{ ...justExpiredTick, elapsedMs: 95 * MIN, remainingMs: -45 * MIN }}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, { ...justExpiredTick, elapsedMs: 95 * MIN, remainingMs: -45 * MIN }),
 }

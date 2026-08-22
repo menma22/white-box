@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { LiveTick } from '@white-box/core/types'
 import { HudWindow } from '@/pages/HudWindow'
 import { devFixture } from '@/dev/fixture'
-import { AppStateSeed } from './AppStateSeed'
+import { seedApp } from './seed'
 
 const MIN = 60_000
 const state = devFixture()
@@ -26,41 +26,17 @@ export default meta
 type Story = StoryObj<typeof HudWindow>
 
 export const Idle: Story = {
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={null}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, null),
 }
 
 export const Running: Story = {
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={runningTick}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, runningTick),
 }
 
 export const Paused: Story = {
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={{ ...runningTick, state: 'paused' }}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, { ...runningTick, state: 'paused' }),
 }
 
 export const Over: Story = {
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state} tick={{ ...runningTick, elapsedMs: 62 * MIN, remainingMs: -12 * MIN }}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state, { ...runningTick, elapsedMs: 62 * MIN, remainingMs: -12 * MIN }),
 }

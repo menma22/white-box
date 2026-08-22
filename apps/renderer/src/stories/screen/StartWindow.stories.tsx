@@ -1,20 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StartWindow } from '@/pages/StartWindow'
 import { devFixture } from '@/dev/fixture'
-import { AppStateSeed } from './AppStateSeed'
+import { seedApp } from './seed'
 
 const state = devFixture()
 
 const meta: Meta<typeof StartWindow> = {
   title: 'screen/StartWindow',
   component: StartWindow,
-  decorators: [
-    (Story) => (
-      <AppStateSeed state={state}>
-        <Story />
-      </AppStateSeed>
-    ),
-  ],
+  beforeEach: seedApp(state),
 }
 export default meta
 
