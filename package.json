@@ -6,9 +6,10 @@
   "main": "dist-electron/presentation/main.js",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @white-box/renderer dev",
-    "dev:app": "concurrently -k -n vite,electron -c cyan,magenta \"pnpm dev\" \"pnpm dev:electron\"",
-    "dev:electron": "pnpm build:packages && tsc -p apps/desktop/tsconfig.json && wait-on tcp:127.0.0.1:5273 && cross-env VITE_DEV_SERVER_URL=http://localhost:5273 electron .",
+    "dev": "pnpm build:packages && pnpm --filter @white-box/renderer dev",
+    "dev:app": "pnpm build:packages && concurrently -k -n vite,electron -c cyan,magenta \"pnpm --filter @white-box/renderer dev\" \"pnpm dev:electron:run\"",
+    "dev:electron": "pnpm build:packages && pnpm dev:electron:run",
+    "dev:electron:run": "tsc -p apps/desktop/tsconfig.json && wait-on tcp:127.0.0.1:5273 && cross-env VITE_DEV_SERVER_URL=http://localhost:5273 electron .",
     "build": "pnpm build:packages && tsc -p apps/desktop/tsconfig.json && pnpm --filter @white-box/renderer build",
     "start": "npm run build && electron .",
     "app": "electron .",
