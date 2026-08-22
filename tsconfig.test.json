@@ -1,0 +1,18 @@
+{
+  // テストは各パッケージの tsconfig の include（src だけ）の外にあり、vitest は esbuild で型を剥がすだけなので、
+  // ここで拾わないと 46 件すべてが型検査を受けないまま通る。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "node16",
+    "moduleResolution": "node16",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["apps/*/tests", "packages/*/tests"]
+}

@@ -16,7 +16,8 @@
 ## 壊してはいけないもの
 
 - **セッションの真実はメインプロセスが持つ。** タイマーをレンダラに置かない（ウィンドウを閉じても計測が続く必要がある）。
-- **実作業時間 = 経過 − 一時停止の重なり。** この計算は `packages/core/src/engine.ts` の純関数だけが行い、`tests/engine.test.ts` が守る。
+- **実作業時間 = 経過 − 一時停止の重なり。** この計算は `packages/core/src/engine.ts` の純関数だけが行い、`apps/desktop/tests/session-ops.test.ts` が守る。
+- **テストは各パッケージの `tests/` に置く。** `tsconfig.test.json` がそこだけを型検査するので、外に置くと型検査を素通りする（vitest は型を見ない）。
 - **コマンドの追加・変更は `packages/contracts` が先。** 契約に無いコマンド・合わない引数は受け口（zod）で拒否される。レンダラとメインの両方が契約から型を得るので、契約を変えずに片側だけ変えるとコンパイルが落ちる（それが正しい挙動）。
 - **renderer から `apps/desktop` へは import できない（lint が落とす）。** 境界を緩めない。レンダラが見てよいのは `@white-box/contracts` と `@white-box/core` だけ。
 - **呼び出し元のウィンドウを閉じるコマンドは `closeLater()`（WindowPort）を使う（150ms 待ってから閉じる）。** 先に返事を返さないと呼び出し側の `await` が永久に返らない。`setImmediate` では IPC の返事の送信と競合し、ソース実行では通るのにパッケージ版で止まる。

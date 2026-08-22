@@ -12,7 +12,7 @@
     "build": "pnpm build:packages && tsc -p apps/desktop/tsconfig.json && pnpm --filter @white-box/renderer build",
     "start": "npm run build && electron .",
     "app": "electron .",
-    "typecheck": "pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --noEmit",
+    "typecheck": "pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "lint": "eslint apps/renderer/src",
     "test": "pnpm build:packages && vitest run",
     "storybook": "pnpm --filter @white-box/renderer storybook",
