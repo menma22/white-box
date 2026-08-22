@@ -84,10 +84,12 @@ PC を使い始める
 ## 開発
 
 ```bash
-npm test          # 時間計算の単体テスト
-npm run typecheck # レンダラとメインプロセスの型検査
-npm run icons     # アイコンを作り直す
-npm run pack      # 配布物を組み立てる
+pnpm test          # 時間計算とユースケースの単体テスト
+pnpm typecheck     # レンダラ・メインプロセス・テストの型検査
+pnpm lint          # レンダラの import 境界
+pnpm storybook     # UI 部品と主要画面を状態ごとに見る
+pnpm icons         # アイコンを作り直す
+pnpm pack          # 配布物を組み立てる
 
 node scripts/e2e.mjs              # 実アプリを起動して IPC 経由で通し確認
 node scripts/seed-demo.mjs .demo  # 動作確認用データを書き出す

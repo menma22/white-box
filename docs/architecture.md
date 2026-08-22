@@ -15,7 +15,7 @@ apps/
     src/app/          ユースケース。IPC コマンド 1 つ = 関数 1 つ。Port を注入されて動く
     src/infra/        実装詳細。保存・ウィンドウ・トレイ・ショートカット・1秒ticker
     src/presentation/ IPC ルータ（契約で検証してから app を呼ぶだけ）+ 起動の組み立て + preload
-    tests/            ユースケースの単体テスト（Electron 起動なしで回る）
+    tests/            ユースケースと domain 純関数の単体テスト（Electron 起動なしで回る）
   renderer/     フロントエンド = React（表示と入力だけ）
     src/components/ui/  画面をまたぐ部品（1 ファイル 1 部品）
     src/features/        機能ごとの画面部品（board / today / history / settings / welcome / sessions）
@@ -25,14 +25,17 @@ apps/
     src/styles/            tokens → components → screens/*.css → notion.css の順で読む
     src/dev/               ブラウザ単体プレビュー用の固定データ（fixture.ts）
     src/stories/           Storybook（ui / screen）
+    tests/                 selectors（状態から表示用の値を導く）と format の単体テスト
 packages/
   core/         両側が使う純粋な時間計算と型（依存ゼロ）。@white-box/core
   contracts/    全 IPC コマンドの zod スキーマ（唯一の合意点）。@white-box/contracts
+              （どちらも tests/ を持つ）
 scripts/      アイコン生成・デモデータ・撮影台・通し確認（e2e）・配布物の組み立て（pack）
-tests/        packages/core の時間計算に対する単体テスト
 docs/         この文書群
 assets/       アイコン（PNG / ICO）。scripts/make-icon.mjs が生成する
 ```
+
+テストは必ず所属パッケージの `tests/` に置く。`tsconfig.test.json` が `apps/*/tests` と `packages/*/tests` だけを型検査するので、外に置くと型検査を素通りする（vitest は型を見ずに実行する）。
 
 ### 依存の向き（機械で強制する）
 
@@ -134,7 +137,7 @@ stores/           app.ts。メインから配られた状態を持つだけ。�
 lib/              bridge.ts（window.whitebox の型付き包み）・selectors.ts（状態から表示用の値を導く）・format.ts
 styles/           tokens.css → base/components.css → app.css（screens/*.css を @import）→ notion.css の順で読む
 dev/              fixture.ts。ブラウザで開いたときの見た目確認用の固定データ
-stories/          Storybook。ui/ と screen/ に分かれ、AppStateSeed で状態を渡すだけ
+stories/          Storybook。ui/ と screen/ に分かれ、screen は seed.ts の seedApp() で状態を渡すだけ
 ```
 
 `dev/fixture.ts` と `stories/` には**コマンドの処理を書かない**（本体と二重実装になり、静かにずれる）。story も同じ規律で、結果の状態を渡すだけにする（decisions 015）。

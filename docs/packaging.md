@@ -7,7 +7,7 @@
 ## 手順
 
 ```bash
-npm run pack
+pnpm pack
 powershell -ExecutionPolicy Bypass -File scripts\make-shortcuts.ps1 -Exe "release\White Box\White Box.exe"
 ```
 
@@ -15,9 +15,9 @@ powershell -ExecutionPolicy Bypass -File scripts\make-shortcuts.ps1 -Exe "releas
 - デスクトップとスタートメニューにショートカットが置かれる
 - タスクバーに常駐させるときは、スタートメニューの「White Box」を右クリック →「タスクバーにピン留めする」
 
-アイコンを描き直したら `npm run icons` してから `npm run pack`。
+アイコンを描き直したら `pnpm icons` してから `pnpm pack`。
 
-## npm run pack は何をしているか
+## pnpm pack は何をしているか
 
 `scripts/pack.mjs`。electron-builder を使わず、次の5つだけをやっている。
 
@@ -42,7 +42,7 @@ pnpm の `node_modules/@white-box/*` や `node_modules/.pnpm/*` はジャンク�
 
 ### electron-builder は使わない
 
-配布経路は `npm run pack` だけ。以前あった `npm run dist`（electron-builder の NSIS インストーラ）と `package.json` の `build` 設定は削除した。理由は 2 つある。
+配布経路は `pnpm pack` だけ。以前あった `npm run dist`（electron-builder の NSIS インストーラ）と `package.json` の `build` 設定は削除した。理由は 2 つある。
 
 - **元から通らなかった**: electron-builder は `winCodeSign` の展開時に**シンボリックリンクを作る**。Windows でこれには開発者モードか管理者権限が要り、無い環境では毎回そこで止まる。
 - **pnpm 化で確実に壊れた**: `build.files` は `dist/**`・`dist-electron/**`・`preload.cjs`・`assets/**`・`package.json` しか列挙しておらず、`@white-box/core` / `@white-box/contracts` / `zod` の実体が入らない。`pack.mjs` が前節のとおり手で組み立てているのはこの問題への対処で、electron-builder 側には同じ手当てが無かった。開発者モードを有効にして通したとしても、起動直後に `import` で落ちるインストーラができる。
@@ -70,4 +70,4 @@ pnpm の `node_modules/@white-box/*` や `node_modules/.pnpm/*` はジャンク�
 
 ## Windows 起動時の自動起動
 
-設定から入り切りできる。パッケージした exe を指すので、開発中の `npm start` とは別物として登録される。
+設定から入り切りできる。パッケージした exe を指すので、開発中の `pnpm start` とは別物として登録される。

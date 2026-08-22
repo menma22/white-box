@@ -35,4 +35,4 @@
 pnpm typecheck && pnpm lint && pnpm test && node scripts/e2e.mjs
 ```
 
-見た目を変えたときは、加えて実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）。UI 部品は `pnpm storybook` で状態ごとに確認できる。配布に関わる変更（scripts/・packages/ の依存）をしたら `npm run pack` → `WHITEBOX_EXE` 経路の e2e まで回す（[docs/packaging.md](docs/packaging.md)）。
+見た目を変えたときは、加えて実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）。UI 部品は `pnpm storybook` で状態ごとに確認できる。配布に関わる変更（scripts/・packages/ の依存）をしたら `pnpm pack` → `WHITEBOX_EXE` 経路の e2e まで回す（[docs/packaging.md](docs/packaging.md)）。
