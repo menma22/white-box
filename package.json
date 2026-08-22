@@ -19,7 +19,6 @@
     "storybook": "pnpm --filter @white-box/renderer storybook",
     "icons": "node scripts/make-icon.mjs",
     "pack": "npm run build && node scripts/pack.mjs",
-    "dist": "npm run build && electron-builder --win nsis",
     "build:packages": "pnpm -r --filter \"./packages/*\" run build"
   },
   "devDependencies": {
@@ -40,33 +39,5 @@
     "@white-box/core": "workspace:*"
   },
   "author": "menma22",
-  "build": {
-    "appId": "dev.whitebox.app",
-    "productName": "White Box",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**",
-      "dist-electron/**",
-      "apps/desktop/src/presentation/preload.cjs",
-      "assets/**",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "assets/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "White Box"
-    }
-  },
   "packageManager": "pnpm@11.5.2"
 }

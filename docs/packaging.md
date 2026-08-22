@@ -40,17 +40,20 @@ asar にまとめていないので、`resources/app` の中身をそのまま�
 
 pnpm の `node_modules/@white-box/*` や `node_modules/.pnpm/*` はジャンクション（Windows のディレクトリ reparse point）なので、`fs.realpathSync` で実体のパスを解決してからコピーしている（ジャンクションをそのまま配布物へ持ち出しても、`.pnpm` ストアが無い環境では壊れるため）。
 
-### なぜ electron-builder を主経路にしないのか
+### electron-builder は使わない
 
-`npm run dist`（electron-builder の NSIS インストーラ）は、`winCodeSign` の展開時に**シンボリックリンクを作る**。Windows でこれには開発者モードか管理者権限が要り、無い環境では毎回そこで止まる。
+配布経路は `npm run pack` だけ。以前あった `npm run dist`（electron-builder の NSIS インストーラ）と `package.json` の `build` 設定は削除した。理由は 2 つある。
 
-インストーラとアンインストーラが欲しくなったときだけ、開発者モードを有効にして `npm run dist` を使えばよい。
+- **元から通らなかった**: electron-builder は `winCodeSign` の展開時に**シンボリックリンクを作る**。Windows でこれには開発者モードか管理者権限が要り、無い環境では毎回そこで止まる。
+- **pnpm 化で確実に壊れた**: `build.files` は `dist/**`・`dist-electron/**`・`preload.cjs`・`assets/**`・`package.json` しか列挙しておらず、`@white-box/core` / `@white-box/contracts` / `zod` の実体が入らない。`pack.mjs` が前節のとおり手で組み立てているのはこの問題への対処で、electron-builder 側には同じ手当てが無かった。開発者モードを有効にして通したとしても、起動直後に `import` で落ちるインストーラができる。
+
+インストーラとアンインストーラが要るようになったら、そのときに `pack.mjs` の成果物（`release/White Box/`）を包む形で作り直す。前節の node_modules 組み立てを通ったあとの木を固めるほうが、electron-builder に同じ組み立てを二重に書かせるより安全なため。
 
 ### 詰まりやすいところ
 
 - **`fs.cpSync` は Electron の配布ツリー（数千ファイル）で落ちることがある。** `robocopy` を使っている（戻り値は 0〜7 が成功、8 以上が失敗）
 - **`release/` が消せない（EBUSY）**: 以前起動した `White Box.exe` がまだ動いている。プロセスを終了してから
-- **exe のアイコンが Electron のままになる**: `rcedit` が見つかっていない。`scripts/pack.mjs` の `findRcedit()` は electron-builder のキャッシュから探すので、一度 `npm i` で electron-builder が入っている必要がある
+- **exe のアイコンが Electron のままになる**: `rcedit` が見つかっていない。`scripts/pack.mjs` の `findRcedit()` は `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\*\rcedit-x64.exe` を探すが、このキャッシュは electron-builder を**実行**したときに作られるもので、`npm i` では作られない（`rcedit` は依存パッケージにも入っていない）。キャッシュが無い環境では警告が出てアイコンだけ既定のまま残る——`pack` 自体は成功し、動く exe はできる。アイコンまで要るならこのキャッシュを持つ環境で組むこと
 - **配布した exe だけ起動直後に落ちる（開発ツリーでは動く）**: `packages/core` か `packages/contracts` に新しい実行時依存を足したのに `pack.mjs`（`WORKSPACE_PACKAGES` / `packZod()`）を追従させていない。配布物の起動確認は必ず `WHITEBOX_EXE` 経路の `node scripts/e2e.mjs` で行う（開発ツリーの e2e 成功は配布物の成功を意味しない）
 
 ## ショートカット

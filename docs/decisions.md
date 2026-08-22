@@ -73,7 +73,9 @@
 
 **なぜ**: electron-builder は `winCodeSign` の展開でシンボリックリンクを作り、開発者モードでない Windows では止まる。システム設定を変えずに配布物を作れる方を既定にした。
 
-**採らなかったもの**: NSIS インストーラを既定にすること。アンインストーラや Add/Remove Programs への登録が欲しくなったら `npm run dist` を使う。
+**採らなかったもの**: NSIS インストーラを既定にすること。
+
+**※ 2026-08-23 訂正**: 当初ここには「アンインストーラや Add/Remove Programs への登録が欲しくなったら `npm run dist` を使う」と書いていたが、その逃げ道はもう無い。pnpm monorepo 化で `build.files` が `@white-box/core` / `@white-box/contracts` / `zod` を含まなくなり、`npm run dist` は「開発者モードを有効にすれば通る」どころか、通っても起動直後に `import` で落ちるインストーラを作る状態になった。`pack.mjs` 側だけが手で node_modules を組み立てており、electron-builder 側に同じ手当ては無い。動く顔をした壊れた経路を残さないため、`dist` スクリプトと `package.json` の `build` 設定を削除した。インストーラが要るようになったら、`pack.mjs` の成果物を包む形で作り直す（→ [packaging.md](packaging.md)）。
 
 ---
 
