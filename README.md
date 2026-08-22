@@ -14,8 +14,8 @@ Windows のデスクトップアプリ（Electron + React + TypeScript）。記�
 ## 動かす
 
 ```bash
-npm install
-npm start
+pnpm install
+pnpm run start
 ```
 
 デスクトップとタスクバーに置くところまでは [docs/packaging.md](docs/packaging.md)。
@@ -84,12 +84,12 @@ PC を使い始める
 ## 開発
 
 ```bash
-pnpm test          # 時間計算とユースケースの単体テスト
-pnpm typecheck     # レンダラ・メインプロセス・テストの型検査
-pnpm lint          # レンダラの import 境界
-pnpm storybook     # UI 部品と主要画面を状態ごとに見る
-pnpm icons         # アイコンを作り直す
-pnpm pack          # 配布物を組み立てる
+pnpm run test       # 時間計算とユースケースの単体テスト
+pnpm run typecheck  # レンダラ・メインプロセス・テストの型検査
+pnpm run lint       # レンダラの import 境界
+pnpm run storybook  # UI 部品と主要画面を状態ごとに見る
+pnpm run icons      # アイコンを作り直す
+pnpm run pack       # 配布物を組み立てる
 
 node scripts/e2e.mjs              # 実アプリを起動して IPC 経由で通し確認
 node scripts/seed-demo.mjs .demo  # 動作確認用データを書き出す

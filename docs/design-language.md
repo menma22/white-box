@@ -68,7 +68,7 @@
 
 名前（White Box）の由来と同じ意味を持たせている——中が読める箱。
 
-画像ライブラリを使わず、PNG と ICO を直接組み立てて生成する（`pnpm icons` → `scripts/make-icon.mjs`）。16px でも「暗い枠・明るい面・色の帯」で読める形にしてある。
+画像ライブラリを使わず、PNG と ICO を直接組み立てて生成する（`pnpm run icons` → `scripts/make-icon.mjs`）。16px でも「暗い枠・明るい面・色の帯」で読める形にしてある。
 
 ## 言葉
 

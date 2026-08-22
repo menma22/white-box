@@ -8,18 +8,18 @@
 
 | 目的 | コマンド | 見ているもの |
 | --- | --- | --- |
-| 時間計算 | `pnpm test` | 一時停止の減算・区間ごとの按分・状態遷移・一日の境目 |
-| 型 | `pnpm typecheck` | レンダラ・メインプロセス・テストの 3 つ（`tsconfig.test.json` が全テストを拾う） |
-| 境界 | `pnpm lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
+| 時間計算 | `pnpm run test` | 一時停止の減算・区間ごとの按分・状態遷移・一日の境目 |
+| 型 | `pnpm run typecheck` | レンダラ・メインプロセス・テストの 3 つ（`tsconfig.test.json` が全テストを拾う） |
+| 境界 | `pnpm run lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
-| 配布物 | `pnpm pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
+| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
-| UI 部品 | `pnpm storybook` | 部品と主要画面を状態ごとに並べて見る |
+| UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
 
 変更したら通すのはこの並び。
 
 ```bash
-pnpm typecheck && pnpm lint && pnpm test && node scripts/e2e.mjs
+pnpm run typecheck && pnpm run lint && pnpm run test && node scripts/e2e.mjs
 ```
 
 ## 通し確認が見ているもの

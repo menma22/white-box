@@ -11,14 +11,14 @@
     "dev:electron": "pnpm build:packages && pnpm dev:electron:run",
     "dev:electron:run": "tsc -p apps/desktop/tsconfig.json && wait-on tcp:127.0.0.1:5273 && cross-env VITE_DEV_SERVER_URL=http://localhost:5273 electron .",
     "build": "pnpm build:packages && tsc -p apps/desktop/tsconfig.json && pnpm --filter @white-box/renderer build",
-    "start": "npm run build && electron .",
+    "start": "pnpm build && electron .",
     "app": "electron .",
     "typecheck": "pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "lint": "eslint apps/renderer/src",
     "test": "pnpm build:packages && vitest run",
     "storybook": "pnpm --filter @white-box/renderer storybook",
     "icons": "node scripts/make-icon.mjs",
-    "pack": "npm run build && node scripts/pack.mjs",
+    "pack": "pnpm build && node scripts/pack.mjs",
     "build:packages": "pnpm -r --filter \"./packages/*\" run build"
   },
   "devDependencies": {
