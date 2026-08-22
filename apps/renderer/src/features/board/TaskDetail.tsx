@@ -4,7 +4,7 @@ import { useApp, useData } from '@/stores/app'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '@/lib/selectors'
 import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
-import type { Priority, TaskStatus } from '@white-box/core/types'
+import type { Priority, Task, TaskStatus } from '@white-box/core/types'
 
 export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const state = useData()
@@ -30,7 +30,8 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const touched = lastTouchedAt(state, task.id)
   const path = ancestorTitles(state, task)
 
-  const patch = (p: Record<string, unknown>) => void invoke('task:update', { id: task.id, patch: p })
+  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
+  const patch = (p: Partial<Task>) => void invoke('task:update', { id: task.id, patch: p })
 
   const taskIdForDelete = task.id
   async function askDelete() {

@@ -4,6 +4,7 @@ import { useData } from '@/stores/app'
 import { projectColor } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/format'
 import { Modal } from '@/components/ui'
+import type { Settings } from '@white-box/core/types'
 
 export function SettingsView() {
   const state = useData()
@@ -13,7 +14,8 @@ export function SettingsView() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
 
-  const patch = (p: Record<string, unknown>) => void invoke('settings:update', { patch: p })
+  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
+  const patch = (p: Partial<Settings>) => void invoke('settings:update', { patch: p })
 
   return (
     <div className="view settings">
