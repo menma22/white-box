@@ -92,7 +92,8 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'session:pause': (a) => {
       const s = liveSession(db())
-      if (!s) return null
+      // 既に止まっているなら窓も出し直さない（スリープは lock-screen と suspend を続けて撃つ）
+      if (!s || isPaused(s)) return null
       replaceSession(db(), ops.pauseSession(s, ctx.now(), a.reason ?? 'manual'))
       ctx.publish()
       ctx.windows.open('hud', false)

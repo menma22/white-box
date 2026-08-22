@@ -126,6 +126,25 @@ describe('セッションの一連の流れ（Electron なし）', () => {
     expect(db.sessions).toHaveLength(1)
   })
 
+  it('既に止まっているセッションへの一時停止は、状態にも窓にも触らない', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a' })
+    await dispatch(h, 'session:pause', {})
+    const pausesAfterFirst = JSON.stringify(db.sessions[0]!.pauses)
+    const eventsAfterFirst = db.sessions[0]!.events.length
+    const mark = ctx.calls.length
+
+    // スリープは lock-screen と suspend を続けて撃つので、二度目はここへ来る
+    await dispatch(h, 'session:pause', { reason: 'lock' })
+
+    expect(ctx.calls.slice(mark)).toEqual([])
+    expect(JSON.stringify(db.sessions[0]!.pauses)).toBe(pausesAfterFirst)
+    expect(db.sessions[0]!.events).toHaveLength(eventsAfterFirst)
+  })
+
   it('新規タスクと同時に開始すると doing で作られる', async () => {
     const ctx = fakeCtx()
     const h = createHandlers(ctx)
