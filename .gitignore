@@ -4,6 +4,9 @@ dist-electron/
 .demo/
 .e2e/
 .e2e2/
-shots/
+# 撮影台の出力は残さない。比較の基準になる shots-baseline/ だけを追跡する
+shots*/
+!shots-baseline/
+storybook-static/
 *.log
 release/
