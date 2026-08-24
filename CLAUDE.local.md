@@ -20,6 +20,7 @@
 - **テストは各パッケージの `tests/` に置く。** `tsconfig.test.json` がそこだけを型検査するので、外に置くと型検査を素通りする（vitest は型を見ない）。
 - **スクリプトは `pnpm run <名前>` で呼ぶ（`run` を省かない）。** `pnpm pack` は pnpm 組み込みの tarball 作成が走り、`scripts.pack` は実行されない。エラーにならず `white-box-0.1.0.tgz` ができるだけなので、配布物を作ったつもりで作れていない状態に気づけない。
 - **コマンドの追加・変更は `packages/contracts` が先。** 契約に無いコマンド・合わない引数は受け口（zod）で拒否される。レンダラとメインの両方が契約から型を得るので、契約を変えずに片側だけ変えるとコンパイルが落ちる（それが正しい挙動）。
+- **契約の args スキーマは strict のまま置く（`z.strictObject` / `.strict()`）。** 緩い `z.object` に戻すと、綴り違いのキーを zod が黙って捨て、ハンドラは空の patch を実行する。画面は保存できた顔をして何も変わらない（型検査も lint もテストも通ったまま無反応になる）。
 - **renderer から `apps/desktop` へは import できない（lint が落とす）。** 境界を緩めない。レンダラが見てよいのは `@white-box/contracts` と `@white-box/core` だけ。
 - **呼び出し元のウィンドウを閉じるコマンドは `closeLater()`（WindowPort）を使う（150ms 待ってから閉じる）。** 先に返事を返さないと呼び出し側の `await` が永久に返らない。`setImmediate` では IPC の返事の送信と競合し、ソース実行では通るのにパッケージ版で止まる。
 - **preload は `.cjs` のまま `apps/desktop/src/presentation/` に置く。** package.json が `type: module` なので `.js` にすると読み込みに失敗する。
