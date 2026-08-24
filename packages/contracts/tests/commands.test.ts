@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMMANDS, isCommand, parseArgs } from '../src/commands.js'
+import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '../src/commands.js'
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
@@ -32,6 +32,61 @@ describe('コマンド契約', () => {
     expect(() => parseArgs('task:move', { id: 't', status: 'later', index: 0 })).toThrow() // 存在しない列
     expect(() => parseArgs('window:open', { kind: 'popup' })).toThrow() // 存在しない窓
     expect(() => parseArgs('session:review', { sessionId: 's', changes: [{ taskId: 't' }] })).toThrow() // 変更行の欠落
+  })
+
+  // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
+  const sample: { [N in CommandName]: ArgsOf<N> } = {
+    'state:get': {},
+    'project:create': { name: 'P' },
+    'project:update': { id: 'p1', patch: { name: 'P2' } },
+    'project:delete': { id: 'p1' },
+    'task:create': { title: 'T' },
+    'task:update': { id: 't1', patch: { progress: 10 } },
+    'task:move': { id: 't1', status: 'todo', index: 0 },
+    'task:delete': { id: 't1' },
+    'task:hasTime': { id: 't1' },
+    'session:start': { taskId: 't1', minutes: 50 },
+    'session:pause': {},
+    'session:resume': {},
+    'session:toggle': {},
+    'session:extend': { minutes: 5 },
+    'session:switchTask': { taskId: 't1' },
+    'session:end': {},
+    'session:review': { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 50, markedDone: false }] },
+    'session:skipReview': {},
+    'session:update': { id: 's1', patch: { note: 'n' } },
+    'session:delete': { id: 's1' },
+    'recovery:close': {},
+    'recovery:resume': {},
+    'window:open': { kind: 'main' },
+    'window:close': { kind: 'main' },
+    'window:toggle': { kind: 'main' },
+    'window:minimize': {},
+    'settings:update': { patch: { dayStartHour: 5 } },
+    'day:note': { key: '2026-08-21', text: 'メモ' },
+    'welcome:dismiss': {},
+    'data:export': {},
+    'data:import': {},
+    'data:reveal': {},
+    'app:quit': {},
+  }
+
+  it('身に覚えのないキーは全コマンドで落ちる（黙って捨てない）', () => {
+    for (const name of Object.keys(COMMANDS) as CommandName[]) {
+      expect(parseArgs(name, sample[name]), `${name} の正しい引数が通らない`).toEqual(sample[name])
+      expect(() => parseArgs(name, { ...(sample[name] as object), tilte: 'x' }), `${name} が未知のキーを黙って捨てた`).toThrow()
+    }
+  })
+
+  it('入れ子の patch・newTask・changes の綴り違いも落ちる', () => {
+    expect(() => parseArgs('task:update', { id: 't1', patch: { titel: 'x' } })).toThrow()
+    expect(() => parseArgs('project:update', { id: 'p1', patch: { nmae: 'x' } })).toThrow()
+    expect(() => parseArgs('settings:update', { patch: { dayStartHor: 5 } })).toThrow()
+    expect(() => parseArgs('session:update', { id: 's1', patch: { nte: 'x' } })).toThrow()
+    expect(() => parseArgs('session:start', { newTask: { title: 'X', projectid: null } })).toThrow()
+    expect(() =>
+      parseArgs('session:review', { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 1, markedDone: false, extra: 1 }] }),
+    ).toThrow()
   })
 
   it('未知のコマンド名は契約に居ない', () => {

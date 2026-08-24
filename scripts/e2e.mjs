@@ -175,6 +175,8 @@ try {
   check('壊れた引数は契約で拒否される', rejected.ok === false && String(rejected.error).length > 0)
   const unknown = await hud.evaluate(call('task:steal', {}))
   check('未知のコマンドは拒否される', unknown.ok === false)
+  const misspelled = await hud.evaluate(call('task:update', { id: 't1', patch: { titel: 'x' } }))
+  check('綴り違いのキーは黙って捨てず拒否される', misspelled.ok === false)
 
   const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
   check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
