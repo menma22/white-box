@@ -40,7 +40,6 @@ fs.mkdirSync(APP, { recursive: true })
 for (const dir of ['dist', 'dist-electron', 'assets']) {
   copyTree(path.join(ROOT, dir), path.join(APP, dir))
 }
-fs.mkdirSync(path.join(APP, 'electron'), { recursive: true })
 fs.mkdirSync(path.join(APP, 'apps', 'desktop', 'src', 'presentation'), { recursive: true })
 fs.copyFileSync(
   path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
