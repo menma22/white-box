@@ -154,7 +154,8 @@ async function waitReady(client) {
 // WHITEBOX_EXE を指せば、組み上げた release の exe をそのまま確かめられる
 const packaged = process.env.WHITEBOX_EXE
 const electron = packaged || path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
-const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT]
+// userData を隔離しないと、起動中の White Box の single instance lock に当たって無言で終了する
+const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT, '--user-data-dir=' + path.join(DATA, 'userdata')]
 if (!packaged) args.unshift('.')
 console.log('対象: ' + electron)
 const child = spawn(electron, args, {
