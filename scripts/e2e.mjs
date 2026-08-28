@@ -182,7 +182,11 @@ try {
   check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
 
   await wait(2500)
+  // アプリが刻む一時停止の時刻は、この往復のどこかにある。前後を挟んで控えておき、
+  // 停止時間は固定値ではなくこの範囲で判定する（往復の遅さで落ちないため）
+  const pauseSentAt = Date.now()
   await hud.evaluate(call('session:pause'))
+  const pauseAckAt = Date.now()
   const paused = await hud.evaluate('window.whitebox.call("state:get")')
   check('一時停止すると paused になる', paused.data.live.state === 'paused', paused.data.live.state)
   const elapsedAtPause = paused.data.live.elapsedMs
@@ -194,7 +198,9 @@ try {
     after: stillPaused.data.live.elapsedMs,
   })
 
+  const resumeSentAt = Date.now()
   await hud.evaluate(call('session:resume'))
+  const resumeAckAt = Date.now()
   await wait(1200)
   await hud.evaluate(call('session:switchTask', { taskId: 't2' }))
   const switched = await hud.evaluate('window.whitebox.call("state:get")')
@@ -239,7 +245,15 @@ try {
   check('セッションが 1 本保存されている', saved.sessions.length === 1, saved.sessions.length)
   check('終了時刻が入っている', typeof s.endedAt === 'number' && s.state === 'ended')
   check('一時停止が閉じている', s.pauses.length === 1 && s.pauses[0].endedAt !== null)
-  check('停止時間が約 2.5 秒', Math.abs(pausedTotal - 2500) < 900, pausedTotal)
+  // 固定値との比較にすると、起動直後でディスクが遅い環境では往復が伸びて落ちる（実際に落ちた）。
+  // アプリが刻んだ停止区間は、必ずテスト側が挟んで実測したこの範囲に入る
+  const pausedFloor = resumeSentAt - pauseAckAt
+  const pausedCeil = resumeAckAt - pauseSentAt
+  check('停止時間がテスト側の実測範囲に収まる', pausedTotal >= pausedFloor && pausedTotal <= pausedCeil, {
+    pausedTotal,
+    floor: pausedFloor,
+    ceil: pausedCeil,
+  })
   check('停止ぶんが実作業から引かれている', pausedTotal > 0 && gross - pausedTotal < gross, { gross, pausedTotal })
   check('区間が 2 本、どちらも閉じている', s.segments.length === 2 && s.segments.every((x) => x.endedAt !== null))
   check('イベントが記録されている', s.events.length >= 6, s.events.map((e) => e.type))
