@@ -20,6 +20,8 @@ const runningTick: LiveTick = {
 const meta: Meta<typeof HudWindow> = {
   title: 'screen/HudWindow',
   component: HudWindow,
+  // 画面 story は窓そのもの。既定の padded は body に 16px 足すので、実際の窓より内側が狭くなる
+  parameters: { layout: 'fullscreen' },
 }
 export default meta
 

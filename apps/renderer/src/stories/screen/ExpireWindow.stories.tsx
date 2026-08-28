@@ -22,6 +22,8 @@ const justExpiredTick: LiveTick = {
 const meta: Meta<typeof ExpireWindow> = {
   title: 'screen/ExpireWindow',
   component: ExpireWindow,
+  // 画面 story は窓そのもの。既定の padded は body に 16px 足すので、実際の窓より内側が狭くなる
+  parameters: { layout: 'fullscreen' },
   beforeEach: seedApp(state, justExpiredTick),
 }
 export default meta
