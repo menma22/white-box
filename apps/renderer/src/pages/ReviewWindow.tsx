@@ -4,14 +4,7 @@ import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { BigDuration, Chip, Empty, TitleBar, useEscape } from '@/components/ui'
 import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
-import type { TaskStatus } from '@white-box/core/types'
-
-interface Draft {
-  taskId: string
-  from: number
-  to: number
-  markedDone: boolean
-}
+import type { ProgressChange, TaskStatus } from '@white-box/core/types'
 
 export function ReviewWindow() {
   const state = useData()
@@ -21,7 +14,7 @@ export function ReviewWindow() {
     [state.sessions, pending],
   )
 
-  const initial = useMemo<Draft[]>(() => {
+  const initial = useMemo<ProgressChange[]>(() => {
     if (!session) return []
     const ids = [...new Set(session.segments.map((s) => s.taskId))]
     return ids.map((taskId) => {
@@ -32,7 +25,7 @@ export function ReviewWindow() {
     // セッションが決まった時点の値を初期値にする（以後の再計算で入力を巻き戻さない）
   }, [session?.id])
 
-  const [drafts, setDrafts] = useState<Draft[]>(initial)
+  const [drafts, setDrafts] = useState<ProgressChange[]>(initial)
   const [note, setNote] = useState('')
   const [showLog, setShowLog] = useState(false)
 
@@ -51,7 +44,7 @@ export function ReviewWindow() {
   const perTask = focusByTask(session, end)
   const created = state.tasks.filter((t) => t.createdInSessionId === session.id)
 
-  function patch(taskId: string, next: Partial<Draft>) {
+  function patch(taskId: string, next: Partial<ProgressChange>) {
     setDrafts((ds) => ds.map((d) => (d.taskId === taskId ? { ...d, ...next } : d)))
   }
 
