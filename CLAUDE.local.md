@@ -27,6 +27,7 @@
 - **`packages/core`・`packages/contracts` に実行時依存を足したら `scripts/pack.mjs` の同梱リストを追従する。** 開発ツリーのテストは通り続けるのに配布物だけが起動しなくなる（`WHITEBOX_EXE` 経路の e2e でしか検出できない）。
 - **縦並び（flex column）の箱の中身には `flex: none` を効かせる。** 効いていないと中身が高さ 0 に潰れて文字が消える（開始画面・満了ポップアップ・詳細パネルで実際に起きた）。
 - **タスクを削除してもセッションの記録は消さない。** 記録側は「（削除されたタスク）」と表示する。
+- **除外（`pauses` の `reason:'excluded'`）は観測された停止と別物として扱う。** 重なりの拒否を緩めると同じ時間を二重に引き、実作業が実際より減る。集計・表示でも両者を混ぜない（「一時停止」は申告ぶんを引いた値）。
 - **色は `apps/renderer/src/styles/tokens.css` のトークン経由で使う。** 直接書かない。
 - **`scripts/make-shortcuts.ps1` は ASCII のみ。** 日本語を入れると PowerShell 5.1 が化けてコードごと壊れる。
 - **`apps/renderer/src/dev/fixture.ts`・`scripts/shoot.cjs`・story にコマンドの処理や機構を書かない。** 本体と二重実装になり、静かにずれる。story に渡すのは結果の状態（固定 props）だけ。
@@ -36,5 +37,7 @@
 ```bash
 pnpm run typecheck && pnpm run lint && pnpm run test && node scripts/e2e.mjs
 ```
+
+**e2e の前に `pnpm run build` を挟む（アプリ本体のコードを変えたとき）。** e2e が起動するのは `dist-electron/`・`apps/renderer/dist` の最終ビルドで、typecheck は `--noEmit` なので何もビルドしない。古いビルドのまま e2e が合格し、変更が検証されない（2026-09-01 統合時に実際に起きた）。
 
 見た目を変えたときは、加えて実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）。UI 部品は `pnpm run storybook` で状態ごとに確認できる。配布に関わる変更（scripts/・packages/ の依存）をしたら `pnpm run pack` → `WHITEBOX_EXE` 経路の e2e まで回す（[docs/packaging.md](docs/packaging.md)）。
