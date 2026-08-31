@@ -1,10 +1,21 @@
 import { useState } from 'react'
-import type { Session } from '@white-box/core/types'
+import type { PauseInterval, Session, TimeRange } from '@white-box/core/types'
 import { invoke } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { candidateTasks, projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Modal } from '@/components/ui'
-import { focusByTask, focusMs, formatClock, formatDuration, MINUTE, pausedMs } from '@white-box/core/engine'
+import {
+  declaredExclusions,
+  excludedMs,
+  focusByTask,
+  focusMs,
+  formatClock,
+  formatDuration,
+  livePausedMs,
+  MINUTE,
+  plannedReachedAt,
+  unpausedRanges,
+} from '@white-box/core/engine'
 
 export function SessionRow({ session, now }: { session: Session; now: number }) {
   const state = useData()
@@ -49,9 +60,14 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
           </span>
 
           <span className="srow-right">
-            {pausedMs(session, end) > 0 && (
+            {livePausedMs(session, end) > 0 && (
               <span className="num srow-pause" title="一時停止">
-                {formatDuration(pausedMs(session, end), "compact")} 停止
+                {formatDuration(livePausedMs(session, end), 'compact')} 停止
+              </span>
+            )}
+            {excludedMs(session, end) > 0 && (
+              <span className="num srow-pause" title="後から実作業の外に出した時間">
+                {formatDuration(excludedMs(session, end), 'compact')} 除外
               </span>
             )}
             {session.editedAt && <span className="srow-edited" title="手で修正した記録">修正</span>}
@@ -121,25 +137,57 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
   const [minutes, setMinutes] = useState(Math.round(session.plannedMs / MINUTE))
   const [taskId, setTaskId] = useState(session.segments[0]?.taskId ?? '')
   const [note, setNote] = useState(session.note)
+  const [exclusions, setExclusions] = useState<TimeRange[]>(declaredExclusions(session))
+  const [error, setError] = useState<string | null>(null)
 
   const multi = new Set(session.segments.map((s) => s.taskId)).size > 1
+  const ended = session.endedAt
+
+  /** まだ除外していない範囲の中から、次に外しそうな区間を出す（無ければ足せない）。 */
+  function proposal(): TimeRange | null {
+    if (ended === null) return null
+    const taken: PauseInterval[] = [
+      ...session.pauses.filter((p) => p.reason !== 'excluded'),
+      ...exclusions.map((r) => ({ ...r, reason: 'excluded' as const })),
+    ]
+    const free = unpausedRanges(taken, session.startedAt, ended, ended)
+    if (free.length === 0) return null
+    const overFrom = plannedReachedAt(session, ended)
+    if (overFrom !== null) {
+      const over = free.find((r) => r.endedAt > overFrom)
+      if (over) return { startedAt: Math.max(over.startedAt, overFrom), endedAt: over.endedAt }
+    }
+    const last = free[free.length - 1]
+    if (!last) return null
+    return { startedAt: Math.max(last.startedAt, last.endedAt - 10 * MINUTE), endedAt: last.endedAt }
+  }
+
+  function patchExclusion(index: number, next: Partial<TimeRange>) {
+    setExclusions((rs) => rs.map((r, i) => (i === index ? { ...r, ...next } : r)))
+  }
 
   async function save() {
-    await invoke('session:update', {
-      id: session.id,
-      patch: {
-        startedAt: new Date(startedAt).getTime(),
-        ...(endedAt ? { endedAt: new Date(endedAt).getTime() } : {}),
-        plannedMs: minutes * MINUTE,
-        note,
-      },
-      ...(taskId && taskId !== session.segments[0]?.taskId ? { segmentTaskId: taskId } : {}),
-    })
-    onClose()
+    try {
+      await invoke('session:update', {
+        id: session.id,
+        patch: {
+          startedAt: new Date(startedAt).getTime(),
+          ...(endedAt ? { endedAt: new Date(endedAt).getTime() } : {}),
+          plannedMs: minutes * MINUTE,
+          note,
+          // 除外は終了済みのセッションだけのもの。実行中に送ると受け口が拒否する
+          ...(ended !== null ? { exclusions } : {}),
+        },
+        ...(taskId && taskId !== session.segments[0]?.taskId ? { segmentTaskId: taskId } : {}),
+      })
+      onClose()
+    } catch (e) {
+      setError(String(e).replace(/^(Error:\s*)+/, ''))
+    }
   }
 
   return (
-    <Modal open onClose={onClose} width={480}>
+    <Modal open onClose={onClose} width={560}>
       <h3>記録を修正する</h3>
       <p className="modal-text">直した記録には「修正」の印が残る。</p>
 
@@ -171,10 +219,66 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
         </label>
       </div>
 
+      {ended !== null && (
+        <section className="editor-ex">
+          <div className="label">作業していなかった時間（除外）</div>
+          {exclusions.length === 0 ? (
+            <p className="field-hint">止め忘れや、満了に気づかず離席していた区間をここで実作業から外す。</p>
+          ) : (
+            exclusions.map((range, i) => (
+              <div key={i} className="editor-ex-row">
+                <input
+                  className="input num"
+                  type="datetime-local"
+                  value={toLocalInput(range.startedAt)}
+                  onChange={(e) => {
+                    const t = new Date(e.target.value).getTime()
+                    if (Number.isFinite(t)) patchExclusion(i, { startedAt: t })
+                  }}
+                />
+                <span className="editor-ex-sep">–</span>
+                <input
+                  className="input num"
+                  type="datetime-local"
+                  value={toLocalInput(range.endedAt)}
+                  onChange={(e) => {
+                    const t = new Date(e.target.value).getTime()
+                    if (Number.isFinite(t)) patchExclusion(i, { endedAt: t })
+                  }}
+                />
+                <span className="num editor-ex-len">
+                  {formatDuration(Math.max(0, range.endedAt - range.startedAt), 'compact')}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setExclusions((rs) => rs.filter((_, j) => j !== i))}
+                >
+                  取り消す
+                </button>
+              </div>
+            ))
+          )}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm editor-ex-add"
+            disabled={proposal() === null}
+            onClick={() => {
+              const next = proposal()
+              if (next) setExclusions((rs) => [...rs, next])
+            }}
+          >
+            ＋ 除外を足す
+          </button>
+        </section>
+      )}
+
       <label className="field editor-note">
         <span className="label">ひとこと</span>
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
+
+      {error && <p className="editor-ex-error">{error}</p>}
 
       <div className="modal-actions">
         <button type="button" className="btn btn-ghost btn-md" onClick={onClose}>

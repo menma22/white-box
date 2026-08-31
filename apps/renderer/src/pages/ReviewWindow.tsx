@@ -3,7 +3,17 @@ import { invoke, cmd } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { BigDuration, Chip, Empty, TitleBar, useEscape } from '@/components/ui'
-import { focusByTask, focusMs, formatClock, formatDuration, pausedMs } from '@white-box/core/engine'
+import {
+  declaredExclusions,
+  excludedMs,
+  focusByTask,
+  focusMs,
+  formatClock,
+  formatDuration,
+  livePausedMs,
+  overrunRanges,
+  totalRangeMs,
+} from '@white-box/core/engine'
 import type { ProgressChange, TaskStatus } from '@white-box/core/types'
 
 export function ReviewWindow() {
@@ -43,6 +53,16 @@ export function ReviewWindow() {
   const end = session.endedAt ?? Date.now()
   const perTask = focusByTask(session, end)
   const created = state.tasks.filter((t) => t.createdInSessionId === session.id)
+  const excluded = excludedMs(session, end)
+  const overrun = overrunRanges(session, end)
+  const overrunMs = totalRangeMs(overrun)
+
+  async function excludeOverrun() {
+    await invoke('session:update', {
+      id: session!.id,
+      patch: { exclusions: [...declaredExclusions(session!), ...overrun] },
+    })
+  }
 
   function patch(taskId: string, next: Partial<ProgressChange>) {
     setDrafts((ds) => ds.map((d) => (d.taskId === taskId ? { ...d, ...next } : d)))
@@ -63,10 +83,24 @@ export function ReviewWindow() {
       <div className="review-body">
         <section className="review-summary">
           <Stat label="実作業" node={<BigDuration ms={focusMs(session, end)} size={38} />} />
-          <Stat label="一時停止" value={formatDuration(pausedMs(session, end), 'compact')} />
+          <Stat label="一時停止" value={formatDuration(livePausedMs(session, end), 'compact')} />
+          {excluded > 0 && <Stat label="除外" value={formatDuration(excluded, 'compact')} />}
           <Stat label="予定" value={formatDuration(session.plannedMs, 'compact')} />
           <Stat label="タスク" value={`${drafts.length}`} />
         </section>
+
+        {overrunMs > 0 && (
+          <section className="review-overrun">
+            <p className="review-overrun-text">
+              予定の{formatDuration(session.plannedMs, 'compact')}を過ぎてから{' '}
+              <b className="num">{formatDuration(overrunMs, 'compact')}</b> 動いたことになっている。
+              席を外していたなら、実作業から外せる。
+            </p>
+            <button type="button" className="btn btn-solid btn-md" onClick={() => void excludeOverrun()}>
+              この{formatDuration(overrunMs, 'compact')}を外す
+            </button>
+          </section>
+        )}
 
         <div className="review-lead">
           <h3>どこまで進んだ？</h3>

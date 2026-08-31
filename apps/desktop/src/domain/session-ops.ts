@@ -3,8 +3,17 @@
  *
  * 終了済み（endedAt != null）のセッションは遷移させない — 記録を後から動かさないため。
  */
-import type { ID, Session, SessionEvent, SessionEventType, PauseInterval } from '@white-box/core/types'
-import { activeSegment, focusMs, isPaused, MINUTE } from '@white-box/core/engine'
+import type { ID, Session, SessionEvent, SessionEventType, PauseInterval, TimeRange } from '@white-box/core/types'
+import {
+  activeSegment,
+  declaredExclusions,
+  focusMs,
+  formatClock,
+  formatDuration,
+  isPaused,
+  MINUTE,
+  totalRangeMs,
+} from '@white-box/core/engine'
 
 export function newId(prefix: string): string {
   const rand = Math.random().toString(36).slice(2, 8)
@@ -140,6 +149,64 @@ export function recordProgress(
     }
   }
   return next
+}
+
+export interface SessionEdit {
+  startedAt?: number
+  endedAt?: number
+  plannedMs?: number
+  note?: string
+  /** 申告された除外区間の全体。渡すと申告ぶんを置き換える（観測された停止には触らない）。 */
+  exclusions?: TimeRange[]
+  segmentTaskId?: ID
+}
+
+/**
+ * 人間が記録を手で直す。除外の申告（作業していなかった区間）もここを通る。
+ * 記録と噛み合わない申告は Error にする — 受け口がこれを {ok:false} にして、状態には何も起きない。
+ */
+export function editSession(session: Session, edit: SessionEdit, now: number): Session {
+  const next = clone(session)
+  if (typeof edit.startedAt === 'number') next.startedAt = edit.startedAt
+  if (typeof edit.endedAt === 'number') next.endedAt = edit.endedAt
+  if (typeof edit.plannedMs === 'number') next.plannedMs = edit.plannedMs
+  if (typeof edit.note === 'string') next.note = edit.note
+  if (edit.segmentTaskId && next.segments[0]) {
+    for (const seg of next.segments) seg.taskId = edit.segmentTaskId
+  }
+  if (next.endedAt !== null && next.startedAt > next.endedAt) next.endedAt = next.startedAt
+  if (edit.exclusions) replaceExclusions(next, edit.exclusions)
+  next.editedAt = now
+  pushEvent(next, now, 'session_edited', editLabel(declaredExclusions(session), declaredExclusions(next)))
+  return next
+}
+
+function replaceExclusions(session: Session, ranges: TimeRange[]): void {
+  const end = session.endedAt
+  if (end === null) throw new Error('終わっていないセッションには除外を申告できない')
+  const observed = session.pauses.filter((p) => p.reason !== 'excluded')
+  const sorted = [...ranges].sort((a, b) => a.startedAt - b.startedAt)
+  let prevEnd = -Infinity
+  for (const r of sorted) {
+    if (r.endedAt <= r.startedAt) throw new Error('除外の終わりは始まりより後にする')
+    if (r.startedAt < session.startedAt || r.endedAt > end) throw new Error('除外はセッションの開始から終了までの中で指定する')
+    if (r.startedAt < prevEnd) throw new Error('除外どうしが重なっている')
+    // 重なりを許すと pausedMsWithin が同じ時間を二度引き、実作業が実際より減る
+    if (observed.some((p) => Math.min(p.endedAt ?? end, r.endedAt) > Math.max(p.startedAt, r.startedAt))) {
+      throw new Error('その時間はすでに一時停止として記録されている')
+    }
+    prevEnd = r.endedAt
+  }
+  const declared: PauseInterval[] = sorted.map((r) => ({ startedAt: r.startedAt, endedAt: r.endedAt, reason: 'excluded' }))
+  session.pauses = [...observed, ...declared].sort((a, b) => a.startedAt - b.startedAt)
+}
+
+function editLabel(before: TimeRange[], after: TimeRange[]): string {
+  const same = before.length === after.length && before.every((r, i) => r.startedAt === after[i]?.startedAt && r.endedAt === after[i]?.endedAt)
+  if (same) return '記録を手で修正'
+  if (after.length === 0) return '記録を手で修正（除外を取り消し）'
+  const spans = after.map((r) => `${formatClock(r.startedAt)}–${formatClock(r.endedAt)}`).join('・')
+  return `記録を手で修正（除外 ${formatDuration(totalRangeMs(after), 'compact')}: ${spans}）`
 }
 
 /**

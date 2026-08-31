@@ -9,7 +9,7 @@ import { z } from 'zod'
 import {
   AppStateSchema,
   IdSchema,
-  PauseReasonSchema,
+  LivePauseReasonSchema,
   PrioritySchema,
   ProgressChangeSchema,
   ProjectSchema,
@@ -17,6 +17,7 @@ import {
   SettingsSchema,
   TaskSchema,
   TaskStatusSchema,
+  TimeRangeSchema,
   WindowKindSchema,
 } from './schemas.js'
 
@@ -68,7 +69,7 @@ export const COMMANDS = {
     }),
     result: SessionSchema.nullable(),
   },
-  'session:pause': { args: z.strictObject({ reason: PauseReasonSchema.optional() }), result: z.null() },
+  'session:pause': { args: z.strictObject({ reason: LivePauseReasonSchema.optional() }), result: z.null() },
   'session:resume': { args: NoArgs, result: z.null() },
   'session:toggle': { args: NoArgs, result: z.null() },
   'session:extend': { args: z.strictObject({ minutes: z.number().optional() }), result: z.null() },
@@ -91,6 +92,8 @@ export const COMMANDS = {
         endedAt: z.number().optional(),
         plannedMs: z.number().optional(),
         note: z.string().optional(),
+        /** 後から申告する除外区間の全体。渡すと申告ぶんを置き換える（観測された一時停止には触らない） */
+        exclusions: z.array(TimeRangeSchema.strict()).optional(),
       }),
       segmentTaskId: IdSchema.optional(),
     }),
