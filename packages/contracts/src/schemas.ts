@@ -135,6 +135,8 @@ export const SettingsSchema = z.object({
   dayStartHour: z.number(),
   lastWelcomeDate: z.string().nullable(),
   stallWarningDays: z.number(),
+  showSessionCard: z.boolean(),
+  onboardedAt: z.number().nullable(),
 })
 
 export const LiveTickSchema = z.object({

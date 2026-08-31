@@ -68,6 +68,8 @@ function state(over: Partial<AppState> = {}): AppState {
       dayStartHour: 4,
       lastWelcomeDate: null,
       stallWarningDays: 3,
+      showSessionCard: true,
+      onboardedAt: null,
     },
     dayNotes: {},
     live: null,

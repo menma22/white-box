@@ -27,6 +27,8 @@ export const DEFAULT_SETTINGS: Settings = {
   dayStartHour: 4,
   lastWelcomeDate: null,
   stallWarningDays: 3,
+  showSessionCard: true,
+  onboardedAt: null,
 }
 
 function emptyDb(): Database {

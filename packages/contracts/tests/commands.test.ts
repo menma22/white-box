@@ -129,6 +129,8 @@ describe('コマンド契約', () => {
         dayStartHour: 4,
         lastWelcomeDate: null,
         stallWarningDays: 3,
+        showSessionCard: true,
+        onboardedAt: null,
       },
       dayNotes: { '2026-08-21': 'メモ' },
       live: null,

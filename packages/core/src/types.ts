@@ -116,6 +116,10 @@ export interface Settings {
   dayStartHour: number
   lastWelcomeDate: string | null
   stallWarningDays: number
+  /** セッション中の最前面カード（HUD）を表示するか。 */
+  showSessionCard: boolean
+  /** 初回オンボーディングを終えた時刻。null は未完了。 */
+  onboardedAt: number | null
 }
 
 export interface Database {

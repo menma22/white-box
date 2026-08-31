@@ -24,6 +24,8 @@ export function emptyDb(): Database {
       dayStartHour: 4,
       lastWelcomeDate: null,
       stallWarningDays: 3,
+      showSessionCard: true,
+      onboardedAt: null,
     },
     dayNotes: {},
   }

@@ -111,6 +111,8 @@ export function devFixture(): AppState {
       dayStartHour: 4,
       lastWelcomeDate: null,
       stallWarningDays: 3,
+      showSessionCard: true,
+      onboardedAt: null,
     },
     live: {
       sessionId: 'ses_live',
