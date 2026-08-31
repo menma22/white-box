@@ -143,8 +143,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
   const multi = new Set(session.segments.map((s) => s.taskId)).size > 1
   const ended = session.endedAt
 
-  /** まだ除外していない範囲の中から、次に外しそうな区間を出す（無ければ足せない）。 */
-  function proposal(): TimeRange | null {
+  function nextExclusionCandidate(): TimeRange | null {
     if (ended === null) return null
     const taken: PauseInterval[] = [
       ...session.pauses.filter((p) => p.reason !== 'excluded'),
@@ -262,9 +261,9 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
           <button
             type="button"
             className="btn btn-ghost btn-sm editor-ex-add"
-            disabled={proposal() === null}
+            disabled={nextExclusionCandidate() === null}
             onClick={() => {
-              const next = proposal()
+              const next = nextExclusionCandidate()
               if (next) setExclusions((rs) => [...rs, next])
             }}
           >

@@ -1,7 +1,3 @@
-/**
- * 未割り当てのショートカット（空文字）の表記を固定する。
- * 既定のショートカットが空になったので、この状態は初回起動時の標準の状態になる。
- */
 import { describe, expect, it } from 'vitest'
 import { shortcutLabel } from '../src/lib/format.js'
 

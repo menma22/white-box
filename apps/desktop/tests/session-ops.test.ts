@@ -115,7 +115,6 @@ describe('状態遷移', () => {
   })
 })
 
-/** 満了に気づかず 3 時間放置してから終了したセッション（予定 50 分・実際は 230 分）。 */
 function neglected(): Session {
   return endSession(base(), T0 + min(230))
 }
@@ -149,7 +148,7 @@ describe('記録の事後修正（除外の申告）', () => {
     const logged = fixed.events.filter((e) => e.type === 'session_edited')
     expect(logged).toHaveLength(1)
     expect(logged[0]!.label).toContain('除外')
-    expect(logged[0]!.label).toContain('3h') // 10:50–13:50 の 3 時間
+    expect(logged[0]!.label).toContain('3h')
   })
 
   it('取り消すと元の実作業に戻る', () => {

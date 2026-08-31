@@ -1,7 +1,5 @@
 /**
  * グローバルショートカット。どのアプリを使っていても効く。
- *
- * 空文字（未割り当て）は登録しない。既定は空で、割り当てるのは初回オンボーディングか設定画面。
  */
 import { globalShortcut } from 'electron'
 import type { Settings } from '@white-box/core/types'

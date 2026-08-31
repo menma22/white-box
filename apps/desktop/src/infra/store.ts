@@ -36,7 +36,6 @@ function emptyDb(): Database {
   return { version: DB_VERSION, projects: [], tasks: [], sessions: [], settings: { ...DEFAULT_SETTINGS }, dayNotes: {} }
 }
 
-/** 人が既に使っている DB か。初回オンボーディングを出してよいかの判定に使う。 */
 function hasBeenUsed(db: Database): boolean {
   // data.json の有無では判定しない——入れて即終了しただけの新規ユーザーにも既定値のファイルが書かれる
   return (

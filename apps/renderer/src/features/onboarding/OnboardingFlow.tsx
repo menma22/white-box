@@ -1,8 +1,6 @@
 /**
- * 初回オンボーディング。ステップの進行と、終わったときの保存だけを持つ。
- *
- * 開いているかどうかは呼び出し側（MainWindow）のローカル状態で持つ。
- * settings の onboardedAt を見て閉じる作りにすると、IPC が空返事のブラウザプレビューで閉じられなくなる。
+ * settings の onboardedAt を見て閉じる作りにすると、IPC が空返事のブラウザプレビューで閉じられなくなる
+ * （開閉は呼び出し側のローカル状態で持つ）。
  */
 import { useState } from 'react'
 import { invoke } from '@/lib/bridge'
@@ -16,7 +14,6 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
   const [shortcuts, setShortcuts] = useState<Shortcuts>({ ...settings.shortcuts })
 
   function finish() {
-    // 1 回の settings:update にまとめる。本体はこの書き込みの直後に applyShortcuts を呼ぶので、割り当てはその場で効く
     void invoke('settings:update', {
       patch: { displayName: name.trim(), shortcuts, onboardedAt: Date.now() },
     })

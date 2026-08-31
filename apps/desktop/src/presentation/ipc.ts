@@ -1,5 +1,5 @@
 /**
- * IPC の受け口。electron の窓口を app 層の receive() に繋ぐだけ。ここに処理を書かない。
+ * ここに検証や処理を書くと、app 層の receive() と二重実装になり静かにずれる。
  */
 import { ipcMain } from 'electron'
 import { receive } from '../app/receive.js'

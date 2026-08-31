@@ -39,10 +39,10 @@ describe('コマンド契約', () => {
     expect(() => parseArgs('task:move', { id: 't', status: 'later', index: 0 })).toThrow() // 存在しない列
     expect(() => parseArgs('window:open', { kind: 'popup' })).toThrow() // 存在しない窓
     expect(() => parseArgs('session:review', { sessionId: 's', changes: [{ taskId: 't' }] })).toThrow() // 変更行の欠落
-    expect(() => parseArgs('session:pause', { reason: 'excluded' })).toThrow() // 事後申告は実行中の停止として受けない
+    expect(() => parseArgs('session:pause', { reason: 'excluded' })).toThrow()
     expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: 1.5, endedAt: 2 }] } })).toThrow()
     expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: NaN, endedAt: 2 }] } })).toThrow()
-    expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: 1 }] } })).toThrow() // 終わりの欠落
+    expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: 1 }] } })).toThrow()
   })
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる

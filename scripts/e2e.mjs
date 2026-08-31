@@ -39,8 +39,7 @@ function mkTask(id, title, progress) {
 }
 
 // ── 準備：この日は Welcome を出さない状態から始める ────────────────
-// settings に onboardedAt を書かないのはわざと。既に使われている DB（projects / tasks がある）を
-// 本体が「オンボーディング済み」に直すところまで、この通し確認で見る
+// onboardedAt を seed に書くと、既存データからの「オンボーディング済み」自動判定を検証できなくなる（わざと書かない）
 fs.rmSync(DATA, { recursive: true, force: true })
 fs.mkdirSync(path.join(DATA, 'backups'), { recursive: true })
 
@@ -180,7 +179,6 @@ try {
   const misspelled = await hud.evaluate(call('task:update', { id: 't1', patch: { titel: 'x' } }))
   check('綴り違いのキーは黙って捨てず拒否される', misspelled.ok === false)
 
-  // ショートカットの既定が空になったので、空のまま登録処理まで走る経路を本物のメインプロセスで通す
   const emptyShortcuts = await hud.evaluate(
     call('settings:update', { patch: { shortcuts: { startPause: '', currentWork: '', dashboard: '' } } }),
   )

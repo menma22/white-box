@@ -1,6 +1,3 @@
-/**
- * 受け口（app/receive.ts）のテスト。ここが {ok:false} を返す＝状態に一切触れないことを固定する。
- */
 import { describe, expect, it } from 'vitest'
 import type { Session } from '@white-box/core/types'
 import { excludedMs, focusMs, MINUTE } from '@white-box/core/engine'
@@ -8,7 +5,6 @@ import { createHandlers, dispatch, type Handlers } from '../src/app/handlers.js'
 import { receive } from '../src/app/receive.js'
 import { emptyDb, fakeCtx, task, type FakeCtx } from './helpers.js'
 
-/** 予定 50 分のセッションを、満了に気づかず 230 分放置してから終了した状態。 */
 async function neglected(): Promise<{ ctx: FakeCtx; h: Handlers; session: Session }> {
   const db = emptyDb()
   db.tasks = [task({ id: 'a' })]

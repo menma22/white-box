@@ -156,15 +156,12 @@ export interface SessionEdit {
   endedAt?: number
   plannedMs?: number
   note?: string
-  /** 申告された除外区間の全体。渡すと申告ぶんを置き換える（観測された停止には触らない）。 */
+  /** 一部だけ渡すと、渡さなかった申告分が消える（常に申告の全体を渡す）。 */
   exclusions?: TimeRange[]
   segmentTaskId?: ID
 }
 
-/**
- * 人間が記録を手で直す。除外の申告（作業していなかった区間）もここを通る。
- * 記録と噛み合わない申告は Error にする — 受け口がこれを {ok:false} にして、状態には何も起きない。
- */
+/** 人間が記録を手で直す。除外の申告（作業していなかった区間）もここを通る。 */
 export function editSession(session: Session, edit: SessionEdit, now: number): Session {
   const next = clone(session)
   if (typeof edit.startedAt === 'number') next.startedAt = edit.startedAt

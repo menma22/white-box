@@ -3,7 +3,7 @@ import { DoneStep, NameStep, ShortcutsStep, WelcomeStep } from '@/features/onboa
 
 const noop = () => {}
 
-// 画面 story は窓そのもの。既定の padded は body に 16px 足すので、実際の窓より内側が狭くなる
+// 既定の padded だと本物の窓より内側が狭くなり、ありもしない折り返しが出る
 const meta: Meta = {
   title: 'screen/Onboarding',
   parameters: { layout: 'fullscreen' },

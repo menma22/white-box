@@ -29,7 +29,7 @@ export const PrioritySchema = z.enum(['low', 'normal', 'high'])
 export const SessionStateSchema = z.enum(['running', 'paused', 'ended'])
 export const WindowKindSchema = z.enum(['main', 'start', 'hud', 'expire', 'review', 'current'])
 export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'excluded'])
-/** 実行中に打てる停止の理由。'excluded' は終了後の申告なので session:pause では受けない。 */
+/** 'excluded' は終了後の申告なので session:pause では受けない。 */
 export const LivePauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
 
 export const ProjectSchema = z.object({

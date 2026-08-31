@@ -26,7 +26,7 @@ export function MainWindow() {
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
-  // 初回はオーバーレイを 2 枚重ねない。lastWelcomeDate は読むだけで、毎日の挨拶の条件は変えない
+  // onboardedAt の条件を外すと、初回にオンボーディングと毎日の挨拶が 2 枚重なる
   const [welcomeOpen, setWelcomeOpen] = useState(
     state.settings.onboardedAt !== null && state.settings.lastWelcomeDate !== todayKey(state, Date.now()),
   )

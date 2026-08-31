@@ -55,7 +55,7 @@ export interface PauseInterval {
   reason: 'manual' | 'suspend' | 'lock' | 'excluded' | null
 }
 
-/** 閉じた時間の範囲。除外の申告と、除外できる範囲の計算に使う。 */
+/** 閉じた時間の範囲。 */
 export interface TimeRange {
   startedAt: number
   endedAt: number

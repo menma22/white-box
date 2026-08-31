@@ -1,7 +1,5 @@
 /**
- * 初回オンボーディングの見た目。4 ステップぶんの画面と、キー捕捉のボタン。
- *
- * ここは渡された props を描くだけにする（保存も遷移も持たない）。状態は OnboardingFlow が持つ。
+ * ここに保存・遷移のロジックは足さない（OnboardingFlow の責務。渡された props を描くだけ）。
  */
 import { useState, type ReactNode } from 'react'
 import { Kbd } from '@/components/ui'
