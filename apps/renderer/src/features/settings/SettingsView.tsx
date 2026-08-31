@@ -89,6 +89,12 @@ export function SettingsView() {
             />
             <span className="set-unit">分</span>
           </Row>
+          <Row
+            label="セッション中のカードを出す"
+            hint="経過と残りだけの小さなカードを最前面に置く。押せないので作業の邪魔にはならない。消せるのはここだけ。"
+          >
+            <Toggle value={s.showSessionCard} onChange={(v) => patch({ showSessionCard: v })} />
+          </Row>
           <Row label="満了時に音を鳴らす">
             <Toggle value={s.soundOnExpire} onChange={(v) => patch({ soundOnExpire: v })} />
           </Row>
