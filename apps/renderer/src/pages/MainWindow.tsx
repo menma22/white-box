@@ -8,6 +8,7 @@ import { TodayView } from '@/features/today/TodayView'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
+import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
 
 type Tab = 'today' | 'board' | 'history' | 'settings'
@@ -24,7 +25,11 @@ export function MainWindow() {
   const tick = useApp((s) => s.tick)
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
-  const [welcomeOpen, setWelcomeOpen] = useState(state.settings.lastWelcomeDate !== todayKey(state, Date.now()))
+  const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
+  // 初回はオーバーレイを 2 枚重ねない。lastWelcomeDate は読むだけで、毎日の挨拶の条件は変えない
+  const [welcomeOpen, setWelcomeOpen] = useState(
+    state.settings.onboardedAt !== null && state.settings.lastWelcomeDate !== todayKey(state, Date.now()),
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -81,9 +86,11 @@ export function MainWindow() {
           ) : (
             <button type="button" className="rail-start" onClick={() => void cmd.openWindow('start')}>
               <span className="rail-start-label disp">セッションを開始</span>
-              <span className="rail-start-key">
-                <Kbd>{shortcutLabel(state.settings.shortcuts.startPause)}</Kbd>
-              </span>
+              {state.settings.shortcuts.startPause !== '' && (
+                <span className="rail-start-key">
+                  <Kbd>{shortcutLabel(state.settings.shortcuts.startPause)}</Kbd>
+                </span>
+              )}
             </button>
           )}
 
@@ -102,7 +109,7 @@ export function MainWindow() {
           <div className="rail-foot">
             <button type="button" className="rail-link" onClick={() => void cmd.openWindow('current')}>
               現在の仕事
-              <Kbd>{shortcutLabel(state.settings.shortcuts.currentWork)}</Kbd>
+              {state.settings.shortcuts.currentWork !== '' && <Kbd>{shortcutLabel(state.settings.shortcuts.currentWork)}</Kbd>}
             </button>
           </div>
         </nav>
@@ -116,6 +123,7 @@ export function MainWindow() {
         </main>
       </div>
 
+      {onboarding && <OnboardingFlow onDone={() => setOnboarding(false)} />}
       {welcomeOpen && <WelcomeOverlay onClose={() => setWelcomeOpen(false)} onGoBoard={() => setTab('board')} />}
     </div>
   )

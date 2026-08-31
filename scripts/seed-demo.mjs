@@ -122,6 +122,8 @@ const db = {
     dayStartHour: 4,
     lastWelcomeDate: null,
     stallWarningDays: 3,
+    // 既に使っている人のデータなので済みにする。null にすると撮影台の全カットに初回オンボーディングが被る
+    onboardedAt: now,
   },
 }
 

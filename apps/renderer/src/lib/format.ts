@@ -8,7 +8,8 @@ export function remainingLabel(remainingMs: number): string {
   return remainingMs < 0 ? `+${formatDuration(-remainingMs, 'hms')}` : formatDuration(remainingMs, 'hms')
 }
 
-/** ショートカットの人間向け表記（例: Control+Alt+S → Ctrl + Alt + S）。 */
+/** ショートカットの人間向け表記（例: Control+Alt+S → Ctrl + Alt + S）。未割り当ては「未設定」。 */
 export function shortcutLabel(accel: string): string {
+  if (!accel) return '未設定'
   return accel.replace(/Control/g, 'Ctrl').replace(/\+/g, ' + ')
 }

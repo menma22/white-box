@@ -16,10 +16,11 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultSessionMinutes: 50,
   defaultExtendMinutes: 15,
   extendOptions: [5, 10, 15, 25, 50],
+  // 既定値を埋めると他アプリのショートカットと衝突する。初回オンボーディングで本人に割り当ててもらう
   shortcuts: {
-    startPause: 'Control+Alt+S',
-    currentWork: 'Control+Alt+W',
-    dashboard: 'Control+Alt+D',
+    startPause: '',
+    currentWork: '',
+    dashboard: '',
   },
   launchAtLogin: false,
   autoPauseOnSuspend: true,
@@ -33,6 +34,19 @@ export const DEFAULT_SETTINGS: Settings = {
 
 function emptyDb(): Database {
   return { version: DB_VERSION, projects: [], tasks: [], sessions: [], settings: { ...DEFAULT_SETTINGS }, dayNotes: {} }
+}
+
+/** 人が既に使っている DB か。初回オンボーディングを出してよいかの判定に使う。 */
+function hasBeenUsed(db: Database): boolean {
+  // data.json の有無では判定しない——入れて即終了しただけの新規ユーザーにも既定値のファイルが書かれる
+  return (
+    db.sessions.length > 0 ||
+    db.tasks.length > 0 ||
+    db.projects.length > 0 ||
+    Object.keys(db.dayNotes).length > 0 ||
+    Object.values(db.settings.shortcuts).some((accel) => accel !== '') ||
+    db.settings.displayName !== ''
+  )
 }
 
 export class Store {
@@ -54,7 +68,7 @@ export class Store {
     try {
       const raw = fs.readFileSync(this.dbPath, 'utf-8')
       const parsed = JSON.parse(raw) as Partial<Database>
-      return {
+      const db: Database = {
         version: parsed.version ?? DB_VERSION,
         projects: parsed.projects ?? [],
         tasks: parsed.tasks ?? [],
@@ -62,6 +76,8 @@ export class Store {
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
         dayNotes: parsed.dayNotes ?? {},
       }
+      if (db.settings.onboardedAt === null && hasBeenUsed(db)) db.settings.onboardedAt = Date.now()
+      return db
     } catch (err) {
       const broken = path.join(this.dir, `data.corrupt-${Date.now()}.json`)
       fs.copyFileSync(this.dbPath, broken)
