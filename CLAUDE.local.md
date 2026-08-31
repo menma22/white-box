@@ -26,6 +26,7 @@
 - **preload は `.cjs` のまま `apps/desktop/src/presentation/` に置く。** package.json が `type: module` なので `.js` にすると読み込みに失敗する。
 - **`packages/core`・`packages/contracts` に実行時依存を足したら `scripts/pack.mjs` の同梱リストを追従する。** 開発ツリーのテストは通り続けるのに配布物だけが起動しなくなる（`WHITEBOX_EXE` 経路の e2e でしか検出できない）。
 - **縦並び（flex column）の箱の中身には `flex: none` を効かせる。** 効いていないと中身が高さ 0 に潰れて文字が消える（開始画面・満了ポップアップ・詳細パネルで実際に起きた）。
+- **HUD は透過窓。** ページの地は `windows.ts` の `insertCSS`（`!important` 必須。無いと本体 CSS に負けて無言で効かない）で消している——`base.css` / `.boot` の地の色を変えたら HUD の見え方も確認する。カードの寸法・影を変えるときは `SPECS.hud` の窓寸法も一緒に見る（透過窓は矩形の外の影をぼかさず直線で切る）。
 - **タスクを削除してもセッションの記録は消さない。** 記録側は「（削除されたタスク）」と表示する。
 - **除外（`pauses` の `reason:'excluded'`）は観測された停止と別物として扱う。** 重なりの拒否を緩めると同じ時間を二重に引き、実作業が実際より減る。集計・表示でも両者を混ぜない（「一時停止」は申告ぶんを引いた値）。
 - **色は `apps/renderer/src/styles/tokens.css` のトークン経由で使う。** 直接書かない。
