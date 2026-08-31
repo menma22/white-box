@@ -8,6 +8,7 @@
 @import './screens/settings.css';
 @import './screens/slider.css';
 @import './screens/welcome.css';
+@import './screens/onboarding.css';
 @import './screens/start.css';
 @import './screens/hud.css';
 @import './screens/expire.css';

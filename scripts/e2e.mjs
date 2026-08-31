@@ -39,6 +39,8 @@ function mkTask(id, title, progress) {
 }
 
 // ── 準備：この日は Welcome を出さない状態から始める ────────────────
+// settings に onboardedAt を書かないのはわざと。既に使われている DB（projects / tasks がある）を
+// 本体が「オンボーディング済み」に直すところまで、この通し確認で見る
 fs.rmSync(DATA, { recursive: true, force: true })
 fs.mkdirSync(path.join(DATA, 'backups'), { recursive: true })
 
@@ -178,6 +180,12 @@ try {
   const misspelled = await hud.evaluate(call('task:update', { id: 't1', patch: { titel: 'x' } }))
   check('綴り違いのキーは黙って捨てず拒否される', misspelled.ok === false)
 
+  // ショートカットの既定が空になったので、空のまま登録処理まで走る経路を本物のメインプロセスで通す
+  const emptyShortcuts = await hud.evaluate(
+    call('settings:update', { patch: { shortcuts: { startPause: '', currentWork: '', dashboard: '' } } }),
+  )
+  check('ショートカットが空のままでも設定の更新が通る', emptyShortcuts.ok === true, emptyShortcuts.error)
+
   const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
   check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
 
@@ -265,6 +273,17 @@ try {
   check('完了にしたタスクが Done になる', t2.status === 'done' && t2.doneAt !== null, t2.status)
   check('進捗の変化が記録に残る', s.progressChanges.length === 2)
   check('バックアップが作られている', fs.readdirSync(path.join(DATA, 'backups')).length >= 1)
+
+  check(
+    '既にデータのある DB はオンボーディング済みになる',
+    typeof saved.settings.onboardedAt === 'number',
+    saved.settings.onboardedAt,
+  )
+  check(
+    'ショートカットは空のまま保存される',
+    Object.values(saved.settings.shortcuts).every((a) => a === ''),
+    saved.settings.shortcuts,
+  )
 
   exitCode = fails.length === 0 ? 0 : 1
   console.log(fails.length === 0 ? '\nすべて通った' : '\n落ちた項目: ' + fails.join(', '))
