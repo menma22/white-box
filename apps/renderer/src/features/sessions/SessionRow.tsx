@@ -11,8 +11,8 @@ import {
   focusMs,
   formatClock,
   formatDuration,
+  livePausedMs,
   MINUTE,
-  pausedMs,
   plannedReachedAt,
   unpausedRanges,
 } from '@white-box/core/engine'
@@ -60,9 +60,9 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
           </span>
 
           <span className="srow-right">
-            {pausedMs(session, end) - excludedMs(session, end) > 0 && (
+            {livePausedMs(session, end) > 0 && (
               <span className="num srow-pause" title="一時停止">
-                {formatDuration(pausedMs(session, end) - excludedMs(session, end), 'compact')} 停止
+                {formatDuration(livePausedMs(session, end), 'compact')} 停止
               </span>
             )}
             {excludedMs(session, end) > 0 && (

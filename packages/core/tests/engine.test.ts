@@ -5,6 +5,7 @@ import {
   declaredExclusions,
   excludedMs,
   focusMs,
+  livePausedMs,
   MINUTE,
   overrunRanges,
   plannedReachedAt,
@@ -112,6 +113,7 @@ describe('申告した除外', () => {
     })
     expect(focusMs(s, T0 + min(180))).toBe(min(50))
     expect(excludedMs(s, T0 + min(180))).toBe(min(120))
+    expect(livePausedMs(s, T0 + min(180))).toBe(min(10))
     expect(declaredExclusions(s)).toEqual([{ startedAt: T0 + min(60), endedAt: T0 + min(180) }])
   })
 })

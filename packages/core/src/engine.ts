@@ -44,6 +44,13 @@ export function excludedMs(session: Session, now: number): number {
   return pausedMsWithin(declared, session.startedAt, end, now)
 }
 
+/** そのとき実際に止めた時間（後からの申告を含まない）。 */
+export function livePausedMs(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  const observed = session.pauses.filter((p) => p.reason !== 'excluded')
+  return pausedMsWithin(observed, session.startedAt, end, now)
+}
+
 /** 申告として記録されている除外区間。 */
 export function declaredExclusions(session: Session): TimeRange[] {
   return session.pauses.flatMap((p) =>

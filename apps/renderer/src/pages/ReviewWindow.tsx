@@ -10,8 +10,8 @@ import {
   focusMs,
   formatClock,
   formatDuration,
+  livePausedMs,
   overrunRanges,
-  pausedMs,
   totalRangeMs,
 } from '@white-box/core/engine'
 import type { ProgressChange, TaskStatus } from '@white-box/core/types'
@@ -83,7 +83,7 @@ export function ReviewWindow() {
       <div className="review-body">
         <section className="review-summary">
           <Stat label="実作業" node={<BigDuration ms={focusMs(session, end)} size={38} />} />
-          <Stat label="一時停止" value={formatDuration(pausedMs(session, end) - excluded, 'compact')} />
+          <Stat label="一時停止" value={formatDuration(livePausedMs(session, end), 'compact')} />
           {excluded > 0 && <Stat label="除外" value={formatDuration(excluded, 'compact')} />}
           <Stat label="予定" value={formatDuration(session.plannedMs, 'compact')} />
           <Stat label="タスク" value={`${drafts.length}`} />
