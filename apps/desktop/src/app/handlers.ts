@@ -177,17 +177,8 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:update': (a) => {
       const s = db().sessions.find((x) => x.id === a.id)
       if (!s) return null
-      if (typeof a.patch.startedAt === 'number') s.startedAt = a.patch.startedAt
-      if (typeof a.patch.endedAt === 'number') s.endedAt = a.patch.endedAt
-      if (typeof a.patch.plannedMs === 'number') s.plannedMs = a.patch.plannedMs
-      if (typeof a.patch.note === 'string') s.note = a.patch.note
-      if (a.segmentTaskId && s.segments[0]) {
-        for (const seg of s.segments) seg.taskId = a.segmentTaskId
-      }
-      if (s.endedAt !== null && s.startedAt > s.endedAt) s.endedAt = s.startedAt
-      const now = ctx.now()
-      s.editedAt = now
-      s.events.push({ at: now, type: 'session_edited', label: '記録を手で修正' })
+      // 先に db を書き換えてから検証しない（申告が拒否されたときに記録が半分だけ変わる）
+      replaceSession(db(), ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, ctx.now()))
       ctx.publish()
       return null
     },
