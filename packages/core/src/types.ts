@@ -48,10 +48,17 @@ export interface TaskSegment {
   endedAt: number | null
 }
 
+/** 'excluded' だけは観測ではなく、人間が後から「作業していなかった」と申告した区間。 */
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'excluded' | null
+}
+
+/** 閉じた時間の範囲。除外の申告と、除外できる範囲の計算に使う。 */
+export interface TimeRange {
+  startedAt: number
+  endedAt: number
 }
 
 export type SessionEventType =

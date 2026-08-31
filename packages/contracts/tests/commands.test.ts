@@ -26,12 +26,23 @@ describe('コマンド契約', () => {
     expect(parseArgs('session:resume', undefined)).toEqual({})
   })
 
+  it('除外区間つきの記録修正が通る', () => {
+    expect(parseArgs('session:update', { id: 's1', patch: { exclusions: [{ startedAt: 1000, endedAt: 2000 }] } })).toEqual({
+      id: 's1',
+      patch: { exclusions: [{ startedAt: 1000, endedAt: 2000 }] },
+    })
+  })
+
   it('壊れた引数は落ちる（代表例）', () => {
     expect(() => parseArgs('task:create', {})).toThrow() // title 欠落
     expect(() => parseArgs('session:start', { minutes: 'fifty' })).toThrow() // 型違い
     expect(() => parseArgs('task:move', { id: 't', status: 'later', index: 0 })).toThrow() // 存在しない列
     expect(() => parseArgs('window:open', { kind: 'popup' })).toThrow() // 存在しない窓
     expect(() => parseArgs('session:review', { sessionId: 's', changes: [{ taskId: 't' }] })).toThrow() // 変更行の欠落
+    expect(() => parseArgs('session:pause', { reason: 'excluded' })).toThrow() // 事後申告は実行中の停止として受けない
+    expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: 1.5, endedAt: 2 }] } })).toThrow()
+    expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: NaN, endedAt: 2 }] } })).toThrow()
+    expect(() => parseArgs('session:update', { id: 's', patch: { exclusions: [{ startedAt: 1 }] } })).toThrow() // 終わりの欠落
   })
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
@@ -54,7 +65,7 @@ describe('コマンド契約', () => {
     'session:end': {},
     'session:review': { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 50, markedDone: false }] },
     'session:skipReview': {},
-    'session:update': { id: 's1', patch: { note: 'n' } },
+    'session:update': { id: 's1', patch: { note: 'n', exclusions: [{ startedAt: 1000, endedAt: 2000 }] } },
     'session:delete': { id: 's1' },
     'recovery:close': {},
     'recovery:resume': {},
@@ -83,6 +94,9 @@ describe('コマンド契約', () => {
     expect(() => parseArgs('project:update', { id: 'p1', patch: { nmae: 'x' } })).toThrow()
     expect(() => parseArgs('settings:update', { patch: { dayStartHor: 5 } })).toThrow()
     expect(() => parseArgs('session:update', { id: 's1', patch: { nte: 'x' } })).toThrow()
+    expect(() =>
+      parseArgs('session:update', { id: 's1', patch: { exclusions: [{ startedAt: 1, endedAt: 2, why: '離席' }] } }),
+    ).toThrow()
     expect(() => parseArgs('session:start', { newTask: { title: 'X', projectid: null } })).toThrow()
     expect(() =>
       parseArgs('session:review', { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 1, markedDone: false, extra: 1 }] }),
@@ -102,7 +116,10 @@ describe('コマンド契約', () => {
       plannedMs: 3_000_000,
       state: 'running',
       segments: [{ id: 'seg_x', taskId: 'tsk_x', startedAt: 1000, endedAt: null }],
-      pauses: [{ startedAt: 2000, endedAt: null, reason: 'manual' }],
+      pauses: [
+        { startedAt: 2000, endedAt: null, reason: 'manual' },
+        { startedAt: 4000, endedAt: 5000, reason: 'excluded' },
+      ],
       events: [{ at: 1000, type: 'session_started', label: '開始', ref: { minutes: 50 } }],
       progressChanges: [{ taskId: 'tsk_x', from: 0, to: 40, markedDone: false }],
       note: '',

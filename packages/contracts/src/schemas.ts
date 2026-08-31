@@ -18,6 +18,7 @@ import type {
   Task,
   TaskSegment,
   TaskStatus,
+  TimeRange,
   WindowKind,
 } from '@white-box/core/types'
 
@@ -27,7 +28,9 @@ export const TaskStatusSchema = z.enum(['inbox', 'todo', 'doing', 'done'])
 export const PrioritySchema = z.enum(['low', 'normal', 'high'])
 export const SessionStateSchema = z.enum(['running', 'paused', 'ended'])
 export const WindowKindSchema = z.enum(['main', 'start', 'hud', 'expire', 'review', 'current'])
-export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
+export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'excluded'])
+/** 実行中に打てる停止の理由。'excluded' は終了後の申告なので session:pause では受けない。 */
+export const LivePauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
 
 export const ProjectSchema = z.object({
   id: IdSchema,
@@ -66,6 +69,11 @@ export const PauseIntervalSchema = z.object({
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   reason: PauseReasonSchema.nullable(),
+})
+
+export const TimeRangeSchema = z.object({
+  startedAt: z.number().int(),
+  endedAt: z.number().int(),
 })
 
 export const SessionEventTypeSchema = z.enum([
@@ -172,6 +180,7 @@ const _exact: [
   Exact<z.infer<typeof TaskSchema>, Task>,
   Exact<z.infer<typeof TaskSegmentSchema>, TaskSegment>,
   Exact<z.infer<typeof PauseIntervalSchema>, PauseInterval>,
+  Exact<z.infer<typeof TimeRangeSchema>, TimeRange>,
   Exact<z.infer<typeof SessionEventTypeSchema>, SessionEventType>,
   Exact<z.infer<typeof SessionEventSchema>, SessionEvent>,
   Exact<z.infer<typeof ProgressChangeSchema>, ProgressChange>,
@@ -179,5 +188,5 @@ const _exact: [
   Exact<z.infer<typeof SettingsSchema>, Settings>,
   Exact<z.infer<typeof LiveTickSchema>, LiveTick>,
   Exact<z.infer<typeof AppStateSchema>, AppState>,
-] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 void _exact

@@ -3,7 +3,7 @@
  *
  * 実作業時間 = 経過時間 − 一時停止の重なり。開いたままの区間は now で閉じて数える。
  */
-import type { PauseInterval, Session, TaskSegment, ID } from './types.js'
+import type { PauseInterval, Session, TaskSegment, TimeRange, ID } from './types.js'
 
 export const MINUTE = 60_000
 export const HOUR = 3_600_000
@@ -35,6 +35,60 @@ export function focusMs(session: Session, now: number): number {
 export function pausedMs(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
   return pausedMsWithin(session.pauses, session.startedAt, end, now)
+}
+
+/** そのうち、後から「作業していなかった」と申告して除外した時間。 */
+export function excludedMs(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  const declared = session.pauses.filter((p) => p.reason === 'excluded')
+  return pausedMsWithin(declared, session.startedAt, end, now)
+}
+
+/** 申告として記録されている除外区間。 */
+export function declaredExclusions(session: Session): TimeRange[] {
+  return session.pauses.flatMap((p) =>
+    p.reason === 'excluded' && p.endedAt !== null ? [{ startedAt: p.startedAt, endedAt: p.endedAt }] : [],
+  )
+}
+
+/** [from, to) のうち、まだ一時停止になっていない範囲。除外を申告できる範囲そのもの。 */
+export function unpausedRanges(pauses: PauseInterval[], from: number, to: number, now: number): TimeRange[] {
+  if (to <= from) return []
+  const blocks = pauses
+    .map((p) => ({ startedAt: Math.max(p.startedAt, from), endedAt: Math.min(p.endedAt ?? now, to) }))
+    .filter((p) => p.endedAt > p.startedAt)
+    .sort((a, b) => a.startedAt - b.startedAt)
+  const out: TimeRange[] = []
+  let cursor = from
+  for (const b of blocks) {
+    if (b.startedAt > cursor) out.push({ startedAt: cursor, endedAt: b.startedAt })
+    cursor = Math.max(cursor, b.endedAt)
+  }
+  if (cursor < to) out.push({ startedAt: cursor, endedAt: to })
+  return out
+}
+
+/** 実作業が予定時間に達した瞬間。まだ達していなければ null。 */
+export function plannedReachedAt(session: Session, now: number): number | null {
+  const end = sessionEndOrNow(session, now)
+  let worked = 0
+  for (const run of unpausedRanges(session.pauses, session.startedAt, end, now)) {
+    const length = run.endedAt - run.startedAt
+    if (worked + length >= session.plannedMs) return run.startedAt + (session.plannedMs - worked)
+    worked += length
+  }
+  return null
+}
+
+/** 予定に達してから終了までの、まだ止まっていない範囲（＝満了後に放置していた分）。 */
+export function overrunRanges(session: Session, now: number): TimeRange[] {
+  const from = plannedReachedAt(session, now)
+  if (from === null) return []
+  return unpausedRanges(session.pauses, from, sessionEndOrNow(session, now), now)
+}
+
+export function totalRangeMs(ranges: TimeRange[]): number {
+  return ranges.reduce((sum, r) => sum + Math.max(0, r.endedAt - r.startedAt), 0)
 }
 
 export function segmentFocusMs(session: Session, segment: TaskSegment, now: number): number {
