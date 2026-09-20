@@ -428,7 +428,7 @@ Planning OS までは作らない。
 | 1-9 | Pause | RUNNING 中にショートカットまたはボタン。Timer 停止 |
 | 1-10 | Pause UI | 小型 UI に Resume / End。× で閉じられる。停止中に同じショートカットで**確認なしで即 Resume** |
 | 1-11 | End | 途中終了可能。基本操作は RUNNING → Pause → End。End すると Review へ |
-| 1-12 | Timer 満了 Popup | 最前面の小型専用 UI。End / Extend（既定 +15分）。`Continue` ボタンは不要 |
+| 1-12 | Timer 満了 Popup | 最前面の小型専用 UI。End / Extend（既定 +15分）/ Break（既定5分、時間変更可）。休憩終了後は通知し、明示的に再開するまで停止を維持 |
 | 1-13 | Next Task 導線 | 満了 Popup に Next Task。現在タスク Review → 次タスク選択 → Start まで滑らかにつなぐ |
 | 1-14 | Current Work 画面 | 別ショートカットで即表示。Current Task と Other Tasks の2区画 |
 | 1-15 | Current Work からの操作 | タスク切替 / 分解 / 新規作成 / 緊急追加 / 編集 |

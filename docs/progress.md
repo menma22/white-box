@@ -40,7 +40,7 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | 1-9 | Pause | 済 | ショートカット / HUD / 現在の仕事 |
 | 1-10 | Pause UI | 済 | `src/routes/HudWindow.tsx`。× で閉じても計測は続く |
 | 1-11 | End | 済 | End 後に Review へ |
-| 1-12 | Timer 満了 Popup | 済 | `src/routes/ExpireWindow.tsx`。End / Extend |
+| 1-12 | Timer 満了 Popup | 済 | `src/routes/ExpireWindow.tsx`。End / Extend / 時間指定の Break。休憩後は手動再開 |
 | 1-13 | Next Task 導線 | 済 | 満了 Popup の「次のタスクへ」 |
 | 1-14 | Current Work 画面 | 済 | `src/routes/CurrentWorkWindow.tsx` |
 | 1-15 | Current Work からの操作 | 済 | 切替 / 分解 / 新規作成 / 追加 |

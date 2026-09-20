@@ -51,7 +51,9 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | null
+  plannedEndAt?: number
+  notifiedAt?: number | null
 }
 
 export type SessionEventType =
@@ -146,6 +148,7 @@ export interface AppState {
   settings: Settings
   dayNotes: Record<string, string>
   live: LiveTick | null
+  breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
   pendingReview: { sessionId: ID; thenStart: boolean } | null
 }

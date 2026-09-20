@@ -153,10 +153,15 @@ const child = spawn(electron, args, {
 let exitCode = 1
 try {
   const hudTarget = await findTarget('#hud')
-  const hud = await connect(hudTarget.webSocketDebuggerUrl)
+  let hud = await connect(hudTarget.webSocketDebuggerUrl)
 
-  const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
-  check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
+  await hud.evaluate('(() => { ' + call('session:start', { taskId: 't1', minutes: 50 }) + '; return true })()')
+  hud.close()
+  await wait(300)
+  const startedTarget = await findTarget('#hud')
+  hud = await connect(startedTarget.webSocketDebuggerUrl)
+  const started = await hud.evaluate('window.whitebox.call("state:get")')
+  check('セッションが始まる', started.ok && started.data.live && started.data.live.state === 'running')
 
   await wait(2500)
   await hud.evaluate(call('session:pause'))
@@ -172,6 +177,22 @@ try {
   })
 
   await hud.evaluate(call('session:resume'))
+  await hud.evaluate(call('session:break', { minutes: 0.01 }))
+  const onBreak = await hud.evaluate('window.whitebox.call("state:get")')
+  check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
+  check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
+
+  const breakTarget = await findTarget('#expire')
+  const breakWindow = await connect(breakTarget.webSocketDebuggerUrl)
+  const afterBreak = await breakWindow.evaluate('window.whitebox.call("state:get")')
+  check('休憩終了後も明示的な再開までは paused のまま', afterBreak.data.live.state === 'paused')
+  check('休憩終了通知が記録される', Boolean(afterBreak.data.breakTimer && afterBreak.data.breakTimer.notifiedAt))
+  await breakWindow.evaluate(call('session:resume'))
+  breakWindow.close()
+  await wait(300)
+  const afterBreakResume = await hud.evaluate('window.whitebox.call("state:get")')
+  check('休憩通知から再開できる', afterBreakResume.data.live.state === 'running' && afterBreakResume.data.breakTimer === null)
+
   await wait(1200)
   await hud.evaluate(call('session:switchTask', { taskId: 't2' }))
   const switched = await hud.evaluate('window.whitebox.call("state:get")')
@@ -214,8 +235,8 @@ try {
 
   check('セッションが 1 本保存されている', saved.sessions.length === 1, saved.sessions.length)
   check('終了時刻が入っている', typeof s.endedAt === 'number' && s.state === 'ended')
-  check('一時停止が閉じている', s.pauses.length === 1 && s.pauses[0].endedAt !== null)
-  check('停止時間が約 2.5 秒', Math.abs(pausedTotal - 2500) < 900, pausedTotal)
+  check('一時停止と休憩が閉じている', s.pauses.length === 2 && s.pauses.every((p) => p.endedAt !== null))
+  check('停止時間に手動停止と休憩の両方が入る', pausedTotal > 3000, pausedTotal)
   check('停止ぶんが実作業から引かれている', pausedTotal > 0 && gross - pausedTotal < gross, { gross, pausedTotal })
   check('区間が 2 本、どちらも閉じている', s.segments.length === 2 && s.segments.every((x) => x.endedAt !== null))
   check('イベントが記録されている', s.events.length >= 6, s.events.map((e) => e.type))

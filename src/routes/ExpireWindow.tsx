@@ -8,13 +8,44 @@ import { formatDuration, MINUTE } from '@shared/engine'
 export function ExpireWindow() {
   const state = useData()
   const tick = useApp((s) => s.tick)
+  const now = useApp((s) => s.now)
   const [extendMinutes, setExtendMinutes] = useState(state.settings.defaultExtendMinutes)
+  const [breakMinutes, setBreakMinutes] = useState(5)
 
   useEffect(() => {
     if (state.settings.soundOnExpire) chime()
   }, [state.settings.soundOnExpire])
 
   if (!tick) return <div className="win expire" />
+
+  const breakTimer = state.breakTimer
+  if (breakTimer) {
+    const breakElapsedMs = Math.max(0, now - breakTimer.startedAt)
+    const breakPlannedMs = breakTimer.endsAt - breakTimer.startedAt
+    const finished = breakTimer.notifiedAt !== null
+    return (
+      <div className="win expire drag">
+        <div className="expire-ring">
+          <Ring elapsedMs={breakElapsedMs} plannedMs={breakPlannedMs} size={126} thickness={6}>
+            <span className="num expire-elapsed">{formatDuration(Math.max(0, breakTimer.endsAt - now), 'compact')}</span>
+            <span className="label">休憩</span>
+          </Ring>
+        </div>
+        <h2 className="expire-title">{finished ? '休憩が終わった' : '休憩中'}</h2>
+        <p className="expire-task">再開するまで実作業時間には入らない</p>
+        {finished && (
+          <div className="expire-actions no-drag">
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => void call('session:resume')} autoFocus>
+              再開する
+            </button>
+            <button type="button" className="btn btn-solid btn-lg" onClick={() => void call('session:end')}>
+              終了する
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const task = taskById(state, tick.activeTaskId)
   const project = projectById(state, task?.projectId ?? null)
@@ -47,9 +78,17 @@ export function ExpireWindow() {
         >
           +{extendMinutes}分 続ける
         </button>
+        <button
+          type="button"
+          className="btn btn-solid btn-lg"
+          onClick={() => void call('session:break', { minutes: breakMinutes })}
+        >
+          {breakMinutes}分 休憩
+        </button>
       </div>
 
       <div className="expire-extends no-drag">
+        <span className="expire-control-label">続行</span>
         {state.settings.extendOptions.map((m) => (
           <button
             key={m}
@@ -60,6 +99,19 @@ export function ExpireWindow() {
             +{m}
           </button>
         ))}
+      </div>
+      <div className="expire-break-controls no-drag">
+        <label className="expire-control-label" htmlFor="break-minutes">休憩</label>
+        <input
+          id="break-minutes"
+          className="expire-break-input num"
+          type="number"
+          min={1}
+          max={120}
+          value={breakMinutes}
+          onChange={(event) => setBreakMinutes(Math.max(1, Math.min(120, Number(event.target.value) || 1)))}
+        />
+        <span className="expire-control-label">分</span>
         <span className="expire-sep" />
         <button type="button" className="expire-next disp" onClick={() => void call('session:end', { thenStart: true })}>
           次のタスクへ →

@@ -59,9 +59,19 @@ function buildState(): AppState {
     settings: db().settings,
     dayNotes: db().dayNotes,
     live: buildTick(),
+    breakTimer: buildBreakTimer(),
     recovery,
     pendingReview,
   }
+}
+
+function buildBreakTimer(): AppState['breakTimer'] {
+  const pause = liveSession()?.pauses.find(
+    (item) => item.endedAt === null && item.reason === 'break' && item.plannedEndAt !== undefined,
+  )
+  return pause?.plannedEndAt === undefined
+    ? null
+    : { startedAt: pause.startedAt, endsAt: pause.plannedEndAt, notifiedAt: pause.notifiedAt ?? null }
 }
 
 function buildTick(): LiveTick | null {
@@ -111,6 +121,14 @@ function tick(): void {
   if (now - lastAliveWrite > ALIVE_WRITE_INTERVAL_MS) {
     lastAliveWrite = now
     store.markAlive()
+  }
+
+  const breakTimer = buildBreakTimer()
+  if (breakTimer && breakTimer.notifiedAt === null && now >= breakTimer.endsAt) {
+    replaceSession(ops.markBreakExpired(session, now))
+    push()
+    openWindow('expire')
+    return
   }
 
   if (!isPaused(session) && session.expiredNotifiedAt === null && remainingMs(session, now) <= 0) {
@@ -246,8 +264,10 @@ async function run(name: string, args: Args = {}): Promise<unknown> {
     case 'session:resume': {
       const s = liveSession()
       if (!s) return null
+      const resumingBreak = buildBreakTimer() !== null
       replaceSession(ops.resumeSession(s, now))
       push()
+      if (resumingBreak) closeLater('expire')
       return null
     }
     case 'session:toggle': {
@@ -264,6 +284,18 @@ async function run(name: string, args: Args = {}): Promise<unknown> {
       const minutes = Number(args['minutes']) || db().settings.defaultExtendMinutes
       replaceSession(ops.extendSession(s, minutes, now))
       push()
+      closeLater('expire')
+      return null
+    }
+    case 'session:break': {
+      const s = liveSession()
+      if (!s) return null
+      const minutes = Number(args['minutes']) || 5
+      const next = ops.startBreak(s, minutes, now)
+      if (next === s) return null
+      replaceSession(next)
+      push()
+      openWindow('hud', false)
       closeLater('expire')
       return null
     }
@@ -470,6 +502,10 @@ function applyLoginItem(): void {
 function restoreOpenSession(): void {
   const s = liveSession()
   if (!s) return
+  if (buildBreakTimer()) {
+    startTicker()
+    return
+  }
   const lastAlive = store.readLastAlive()
   const gap = lastAlive ? Date.now() - lastAlive : Infinity
   if (lastAlive && gap > CRASH_GAP_MS) {

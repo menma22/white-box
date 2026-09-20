@@ -67,14 +67,15 @@ const SHOTS = [
   { kind: 'hud', w: 328, h: 132, live: true, name: '07-hud' },
   {
     kind: 'expire',
-    w: 480,
-    h: 424,
+    w: 500,
+    h: 458,
     live: true,
     over: true,
     name: '08-expire',
     probe:
       '(()=>{const e=document.querySelector(".expire-task");if(!e)return "MISSING";const r=e.getBoundingClientRect();return {text:e.textContent,w:r.width,h:r.height,color:getComputedStyle(e).color};})()',
   },
+  { kind: 'expire', w: 500, h: 458, live: true, breakFinished: true, name: '08b-break-finished' },
   { kind: 'review', w: 900, h: 720, live: false, review: true, name: '09-review' },
   { kind: 'current', w: 760, h: 660, live: true, name: '10-current' },
   {
@@ -115,12 +116,15 @@ function stateFor(shot) {
     live: shot.live
       ? {
           sessionId: liveSession.id,
-          state: 'running',
+          state: shot.breakFinished ? 'paused' : 'running',
           elapsedMs: shot.over ? 53 * MIN : 30 * MIN,
           remainingMs: shot.over ? -3 * MIN : 20 * MIN,
           plannedMs: 50 * MIN,
           activeTaskId: liveTaskId,
         }
+      : null,
+    breakTimer: shot.breakFinished
+      ? { startedAt: now - 5 * MIN, endsAt: now, notifiedAt: now }
       : null,
     recovery: null,
     pendingReview: shot.review ? { sessionId: db.sessions[0].id, thenStart: false } : null,

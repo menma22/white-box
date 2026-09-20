@@ -44,7 +44,7 @@ const SPECS: Record<WindowKind, Spec> = {
   },
   start: { width: 660, height: 500, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
   hud: { width: 328, height: 132, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
-  expire: { width: 480, height: 424, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
+  expire: { width: 500, height: 458, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
   review: { width: 900, height: 720, minWidth: 720, minHeight: 560, frame: false, alwaysOnTop: false, resizable: true, skipTaskbar: false },
   current: { width: 760, height: 660, minWidth: 620, minHeight: 480, frame: false, alwaysOnTop: true, resizable: true, skipTaskbar: true },
 }

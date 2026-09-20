@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from '@shared/types'
 import { activeTaskId, dayKey, focusByTask, focusMs, isPaused, MINUTE, pausedMs, remainingMs, segmentFocusMs } from '@shared/engine'
-import { closeAtLastKnown, createSession, endSession, extendSession, pauseSession, resumeSession, switchTask } from '@shared/session-ops'
+import {
+  closeAtLastKnown,
+  createSession,
+  endSession,
+  extendSession,
+  markBreakExpired,
+  pauseSession,
+  resumeSession,
+  startBreak,
+  switchTask,
+} from '@shared/session-ops'
 
 const T0 = new Date(2026, 7, 20, 10, 0, 0).getTime()
 const min = (n: number) => n * MINUTE
@@ -86,6 +96,20 @@ describe('状態遷移', () => {
     s = extendSession(s, 15, T0 + min(50))
     expect(s.plannedMs).toBe(min(65))
     expect(s.expiredNotifiedAt).toBeNull()
+  })
+
+  it('休憩中は停止し、満了後も再開操作までは実作業が増えない', () => {
+    let s = startBreak(base(), 5, T0 + min(50))
+    expect(isPaused(s)).toBe(true)
+    expect(s.pauses.at(-1)).toMatchObject({ reason: 'break', plannedEndAt: T0 + min(55), notifiedAt: null })
+
+    s = markBreakExpired(s, T0 + min(55))
+    expect(s.pauses.at(-1)?.notifiedAt).toBe(T0 + min(55))
+    expect(focusMs(s, T0 + min(65))).toBe(min(50))
+
+    s = resumeSession(s, T0 + min(65))
+    expect(isPaused(s)).toBe(false)
+    expect(focusMs(s, T0 + min(66))).toBe(min(51))
   })
 
   it('落ちたセッションは最後に記録が取れた時刻で閉じる', () => {
