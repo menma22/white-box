@@ -507,10 +507,12 @@ function restoreOpenSession(): void {
     return
   }
   const lastAlive = store.readLastAlive()
-  const gap = lastAlive ? Date.now() - lastAlive : Infinity
-  if (lastAlive && gap > CRASH_GAP_MS) {
-    if (!isPaused(s)) replaceSession(ops.pauseSession(s, lastAlive, 'suspend'))
-    recovery = { sessionId: s.id, lastKnownAt: lastAlive }
+  const lastRecordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
+  const lastKnownAt = lastAlive ? Math.max(lastAlive, lastRecordedAt) : null
+  const gap = lastKnownAt ? Date.now() - lastKnownAt : Infinity
+  if (lastKnownAt && gap > CRASH_GAP_MS) {
+    if (!isPaused(s)) replaceSession(ops.pauseSession(s, lastKnownAt, 'suspend'))
+    recovery = { sessionId: s.id, lastKnownAt }
     store.save()
     return
   }
