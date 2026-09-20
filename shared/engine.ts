@@ -8,7 +8,6 @@ import type { PauseInterval, Session, TaskSegment, ID } from './types.js'
 export const MINUTE = 60_000
 export const HOUR = 3_600_000
 
-/** [from, to) と一時停止区間の重なりの合計。重複区間は一度だけ数える。 */
 export function pausedMsWithin(pauses: PauseInterval[], from: number, to: number, now: number): number {
   if (to <= from) return 0
 
