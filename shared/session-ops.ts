@@ -62,6 +62,35 @@ export function pauseSession(session: Session, now: number, reason: PauseInterva
   return next
 }
 
+export function startBreak(session: Session, minutes: number, now: number): Session {
+  if (session.endedAt || isPaused(session) || !Number.isFinite(minutes) || minutes <= 0) return session
+  const next = clone(session)
+  next.pauses.push({
+    startedAt: now,
+    endedAt: null,
+    reason: 'break',
+    plannedEndAt: now + minutes * MINUTE,
+    notifiedAt: null,
+  })
+  next.state = 'paused'
+  pushEvent(next, now, 'paused', `休憩（${minutes}分）`)
+  return next
+}
+
+export function markBreakExpired(session: Session, now: number): Session {
+  if (session.endedAt) return session
+  const currentBreak = session.pauses.find(
+    (pause) => pause.endedAt === null && pause.reason === 'break' && pause.plannedEndAt !== undefined,
+  )
+  if (!currentBreak || currentBreak.notifiedAt != null || now < currentBreak.plannedEndAt!) return session
+  const next = clone(session)
+  const nextBreak = next.pauses.find(
+    (pause) => pause.endedAt === null && pause.reason === 'break' && pause.plannedEndAt !== undefined,
+  )
+  if (nextBreak) nextBreak.notifiedAt = now
+  return next
+}
+
 export function resumeSession(session: Session, now: number): Session {
   if (session.endedAt || !isPaused(session)) return session
   const next = clone(session)

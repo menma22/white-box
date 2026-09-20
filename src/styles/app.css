@@ -1724,10 +1724,39 @@
   gap: 10px;
   margin: 20px 0 14px;
 }
+.expire-actions .btn-lg {
+  padding: 0 18px;
+}
 .expire-extends {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.expire-break-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+.expire-control-label {
+  color: var(--text-4);
+  font-family: var(--font-display);
+  font-size: 10.5px;
+}
+.expire-break-input {
+  width: 54px;
+  height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 11px;
+  text-align: center;
+}
+.expire-break-input:focus {
+  border-color: var(--accent);
+  outline: none;
 }
 .expire-ext {
   height: 26px;
