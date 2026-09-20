@@ -30,6 +30,18 @@ describe('実作業時間', () => {
     expect(pausedMs(s, T0 + min(99))).toBe(min(7))
   })
 
+  it('重複した一時停止区間を二重に引かない', () => {
+    const s = base()
+    s.pauses = [
+      { startedAt: T0 + min(10), endedAt: T0 + min(30), reason: 'suspend' },
+      { startedAt: T0 + min(10), endedAt: T0 + min(40), reason: 'suspend' },
+    ]
+
+    expect(pausedMs(s, T0 + min(50))).toBe(min(30))
+    expect(focusMs(s, T0 + min(50))).toBe(min(20))
+    expect(remainingMs(s, T0 + min(50))).toBe(min(30))
+  })
+
   it('停止したままなら now までを停止として数える', () => {
     let s = base()
     s = pauseSession(s, T0 + min(20))
