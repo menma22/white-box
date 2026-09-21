@@ -1,12 +1,14 @@
 import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById } from '../lib/selectors'
+import { liveTimerPresentation } from '../lib/liveTimer'
 import { Ring } from '../ui/primitives'
 import { formatDuration } from '@shared/engine'
 
 export function HudWindow() {
   const state = useData()
   const tick = useApp((s) => s.tick)
+  const now = useApp((s) => s.now)
 
   if (!tick) {
     return (
@@ -25,16 +27,17 @@ export function HudWindow() {
   const task = taskById(state, tick.activeTaskId)
   const project = projectById(state, task?.projectId ?? null)
   const paused = tick.state === 'paused'
-  const over = tick.remainingMs < 0
+  const timer = liveTimerPresentation(tick, state.breakTimer, now)
+  const time = timer.isOver ? `+${formatDuration(-timer.remainingMs, 'hms')}` : formatDuration(timer.remainingMs, 'hms')
 
   return (
     <div className="win hud drag">
       <CloseButton />
-      <Ring elapsedMs={tick.elapsedMs} plannedMs={tick.plannedMs} size={82} thickness={5} paused={paused}>
-        <span className={`hud-time num ${over ? 'is-over' : ''} ${paused ? 'is-paused' : ''}`}>
-          {over ? `+${formatDuration(-tick.remainingMs, 'hms')}` : formatDuration(tick.remainingMs, 'hms')}
+      <Ring elapsedMs={timer.elapsedMs} plannedMs={timer.plannedMs} size={82} thickness={5} paused={timer.isPaused}>
+        <span className={`hud-time num ${timer.isOver ? 'is-over' : ''} ${timer.isPaused ? 'is-paused' : ''}`}>
+          {time}
         </span>
-        <span className="hud-time-label label">{paused ? '停止中' : over ? '超過' : '残り'}</span>
+        <span className="hud-time-label label">{timer.label}</span>
       </Ring>
 
       <div className="hud-body">
@@ -56,7 +59,7 @@ export function HudWindow() {
             className="hud-btn disp is-primary"
             onClick={() => void call(paused ? 'session:resume' : 'session:pause')}
           >
-            {paused ? '再開' : '一時停止'}
+            {timer.isBreak ? '休憩を終える' : paused ? '再開' : '一時停止'}
           </button>
           <button type="button" className="hud-btn disp" onClick={() => void call('session:end')}>
             終了
