@@ -181,6 +181,8 @@ try {
   const onBreak = await hud.evaluate('window.whitebox.call("state:get")')
   check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
   check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
+  const breakHud = await hud.evaluate('({ label: document.querySelector(".hud-time-label")?.textContent, time: document.querySelector(".hud-time")?.textContent, body: document.body.innerText })')
+  check('HUD が停止中ではなく休憩タイマーを表示する', breakHud.label === '休憩' && !breakHud.body.includes('停止中'), breakHud)
 
   const breakTarget = await findTarget('#expire')
   const breakWindow = await connect(breakTarget.webSocketDebuggerUrl)
