@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { call } from '../bridge'
 import { useApp, useData } from '../store'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '../lib/selectors'
@@ -12,6 +12,8 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const task = taskById(state, taskId)
   const [title, setTitle] = useState(task?.title ?? '')
   const [notes, setNotes] = useState(task?.notes ?? '')
+  const editingTitle = useRef(false)
+  const editingNotes = useRef(false)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
@@ -19,9 +21,11 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   useEscape(!confirmDelete, onClose)
 
   useEffect(() => {
-    setTitle(task?.title ?? '')
-    setNotes(task?.notes ?? '')
-  }, [taskId])
+    if (!editingTitle.current) setTitle(task?.title ?? '')
+  }, [taskId, task?.title])
+  useEffect(() => {
+    if (!editingNotes.current) setNotes(task?.notes ?? '')
+  }, [taskId, task?.notes])
 
   if (!task) return null
 
@@ -56,7 +60,11 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
           value={title}
           rows={2}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={() => title.trim() && title !== task.title && patch({ title: title.trim() })}
+          onFocus={() => { editingTitle.current = true }}
+          onBlur={() => {
+            editingTitle.current = false
+            if (title.trim() && title !== task.title) patch({ title: title.trim() })
+          }}
         />
 
         <div className="detail-grid">
@@ -93,6 +101,17 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
               ))}
             </select>
           </div>
+          <label className="detail-field">
+            <span className="label">締切</span>
+            <input className="input" type="date" value={task.due ?? ''} onChange={(e) => patch({ due: e.target.value || null })} />
+          </label>
+          <label className="detail-field">
+            <span className="label">目標（道標）</span>
+            <select className="input" value={task.goalNodeId ?? ''} onChange={(e) => patch({ goalNodeId: e.target.value || null })}>
+              <option value="">なし</option>
+              {Object.values(state.goalMap.nodes).map((node) => <option key={node.id} value={node.id}>{node.goal || '未入力の目標'}</option>)}
+            </select>
+          </label>
         </div>
 
         <div className="detail-field">
@@ -133,7 +152,11 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             placeholder="次に再開するときの手がかり"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            onBlur={() => notes !== task.notes && patch({ notes })}
+            onFocus={() => { editingNotes.current = true }}
+            onBlur={() => {
+              editingNotes.current = false
+              if (notes !== task.notes) patch({ notes })
+            }}
           />
         </div>
 
@@ -211,4 +234,3 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
     </aside>
   )
 }
-

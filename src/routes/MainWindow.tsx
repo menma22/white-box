@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { call, cmd } from '../bridge'
 import { useApp, useData } from '../store'
 import { projectById, projectColor, taskById, todayKey } from '../lib/selectors'
@@ -8,16 +8,20 @@ import { BoardView } from '../views/BoardView'
 import { TodayView } from '../views/TodayView'
 import { HistoryView } from '../views/HistoryView'
 import { SettingsView } from '../views/SettingsView'
+import { GoalMapView } from '../views/GoalMapView'
+import { GoalIssuesView } from '../views/goals/GoalIssues'
 import { WelcomeOverlay } from '../views/WelcomeOverlay'
 import { formatDuration } from '@shared/engine'
 
-type Tab = 'today' | 'board' | 'history' | 'settings'
+type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues'
 
-const TABS: { id: Tab; label: string; glyph: string }[] = [
-  { id: 'today', label: '今日', glyph: '◷' },
-  { id: 'board', label: 'ボード', glyph: '▤' },
-  { id: 'history', label: '記録', glyph: '≣' },
-  { id: 'settings', label: '設定', glyph: '⚙' },
+const TABS: { id: Tab; label: string; glyph: string; shortcut: string }[] = [
+  { id: 'today', label: '今日', glyph: '◷', shortcut: '1' },
+  { id: 'board', label: 'ボード', glyph: '▤', shortcut: '2' },
+  { id: 'history', label: '記録', glyph: '≣', shortcut: '3' },
+  { id: 'goals', label: '道標', glyph: '⌘', shortcut: '5' },
+  { id: 'issues', label: '問題・改善', glyph: '◇', shortcut: '6' },
+  { id: 'settings', label: '設定', glyph: '⚙', shortcut: '4' },
 ]
 
 export function MainWindow() {
@@ -25,15 +29,23 @@ export function MainWindow() {
   const tick = useApp((s) => s.tick)
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<string | null>(null)
+  const [boardView, setBoardView] = useState<'board' | 'list'>('board')
+  const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); setTab('goals') }, [])
+  const goTasks = useCallback((id?: string) => { setSelectedTask(id ?? null); setBoardView('list'); setTab('board') }, [])
+  const goIssues = useCallback(() => setTab('issues'), [])
+  const jumpHandled = useCallback(() => setSelectedGoal(null), [])
+  const taskJumpHandled = useCallback(() => setSelectedTask(null), [])
   const [welcomeOpen, setWelcomeOpen] = useState(state.settings.lastWelcomeDate !== todayKey(state, Date.now()))
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return
-      const i = ['1', '2', '3', '4'].indexOf(e.key)
-      if (i >= 0) {
+      const destination = TABS.find((item) => item.shortcut === e.key)
+      if (destination) {
         e.preventDefault()
-        setTab(TABS[i]!.id)
+        setTab(destination.id)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -90,13 +102,13 @@ export function MainWindow() {
           )}
 
           <div className="rail-tabs">
-            {TABS.map((t, i) => (
+            {TABS.map((t) => (
               <button key={t.id} type="button" className={`rail-tab ${tab === t.id ? 'is-active' : ''}`} onClick={() => setTab(t.id)}>
                 <span className="rail-tab-glyph" aria-hidden>
                   {t.glyph}
                 </span>
                 <span className="rail-tab-label">{t.label}</span>
-                <span className="rail-tab-key num">{i + 1}</span>
+                <span className="rail-tab-key num">{t.shortcut}</span>
               </button>
             ))}
           </div>
@@ -112,9 +124,11 @@ export function MainWindow() {
         <main className="main-content">
           {state.recovery && <RecoveryBanner />}
           {tab === 'today' && <TodayView />}
-          {tab === 'board' && <BoardView />}
+          {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}
+          {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}
+          {tab === 'issues' && <GoalIssuesView onJump={jumpGoal} />}
         </main>
       </div>
 
