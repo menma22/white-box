@@ -1,16 +1,16 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 33 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全 34 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
 import { focusMs, MINUTE } from '@white-box/core/engine'
 import { createHandlers, dispatch } from '../src/app/handlers.js'
 import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
-import { liveSession } from '../src/app/state.js'
+import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（33 コマンド）', () => {
+describe('ユースケースの網羅（34 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -41,6 +41,7 @@ describe('ユースケースの網羅（33 コマンド）', () => {
       'session:resume': {},
       'session:toggle': {},
       'session:extend': { minutes: 5 },
+      'session:break': { minutes: 5 },
       'session:switchTask': { taskId: 't1' },
       'session:end': {},
       'session:review': { sessionId, changes: [{ taskId: 't1', from: 0, to: 50, markedDone: false }] },
@@ -152,9 +153,53 @@ describe('セッションの一連の流れ（Electron なし）', () => {
     expect(s?.plannedMs).toBe(25 * MINUTE)
     expect(ctx.store.data.tasks[0]!.status).toBe('doing')
   })
+
+  it('指定した休憩時間は作業時間を止め、満了通知後も再開までは止まる', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', minutes: 50 })
+    ctx.advance(20 * MINUTE)
+    await dispatch(h, 'session:break', { minutes: 7 })
+    const startedAt = ctx.now()
+    expect(buildState(db, ctx.runtime, ctx.now()).breakTimer).toEqual({
+      startedAt,
+      endsAt: startedAt + 7 * MINUTE,
+      notifiedAt: null,
+    })
+    expect(db.sessions[0]!.pauses.at(-1)?.reason).toBe('break')
+    ctx.advance(7 * MINUTE)
+    checkExpire(ctx)
+    expect(ctx.calls).toContain('open:expire')
+    expect(buildState(db, ctx.runtime, ctx.now()).breakTimer?.notifiedAt).toBe(ctx.now())
+    ctx.advance(5 * MINUTE)
+    expect(focusMs(db.sessions[0]!, ctx.now())).toBe(20 * MINUTE)
+    await dispatch(h, 'session:resume', {})
+    expect(buildState(db, ctx.runtime, ctx.now()).breakTimer).toBeNull()
+    expect(ctx.calls).toContain('closeLater:expire')
+    ctx.advance(MINUTE)
+    expect(focusMs(db.sessions[0]!, ctx.now())).toBe(21 * MINUTE)
+  })
 })
 
 describe('復旧と満了（lifecycle）', () => {
+  it('休憩中の再起動では復旧確認を出さず、休憩満了の監視を再開する', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a' })
+    await dispatch(h, 'session:break', { minutes: 5 })
+    ctx.setLastAlive(ctx.now())
+    ctx.advance(10 * MINUTE)
+    restoreOpenSession(ctx, 90_000)
+    expect(ctx.runtime.recovery).toBeNull()
+    expect(ctx.calls.filter((c) => c === 'ticker:start')).toHaveLength(2)
+    checkExpire(ctx)
+    expect(db.sessions[0]!.pauses.at(-1)?.notifiedAt).toBe(ctx.now())
+  })
+
   it('記録の空白が閾値を超えていたら、最後に生きていた時刻で止めて人間に聞く', async () => {
     const db = emptyDb()
     db.tasks = [task({ id: 'a' })]
@@ -189,6 +234,25 @@ describe('復旧と満了（lifecycle）', () => {
     restoreOpenSession(ctx, 90_000)
     expect(ctx.runtime.recovery).toBeNull()
     expect(ctx.calls.filter((c) => c === 'ticker:start')).toHaveLength(2) // 開始時 + 復旧時
+  })
+
+  it('生存記録より新しい操作があれば、その操作時刻を復旧の基点にする', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a' })
+    const lastAlive = ctx.now()
+    ctx.setLastAlive(lastAlive)
+    ctx.advance(2 * MINUTE)
+    await dispatch(h, 'session:pause', {})
+    await dispatch(h, 'session:resume', {})
+    const lastRecordedAt = ctx.now()
+    ctx.advance(10 * MINUTE)
+
+    restoreOpenSession(ctx, 90_000)
+    expect(ctx.runtime.recovery?.lastKnownAt).toBe(lastRecordedAt)
+    expect(liveSession(db)?.pauses.at(-1)?.startedAt).toBe(lastRecordedAt)
   })
 
   it('予定時間に到達したら満了の印を付けてポップアップを出す（1 回だけ）', async () => {

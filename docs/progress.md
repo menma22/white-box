@@ -41,10 +41,10 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | 1-6 | Start UI | 済 | `apps/renderer/src/pages/StartWindow.tsx` |
 | 1-7 | Session Duration | 済 | 既定 50 分。開始画面で 25 / 50 / 90 / 任意 |
 | 1-8 | Session Start | 済 | `apps/desktop/src/domain/session-ops.ts` |
-| 1-9 | Pause | 済 | ショートカット / HUD / 現在の仕事 |
-| 1-10 | Pause UI | 済 | `apps/renderer/src/pages/HudWindow.tsx`。× で閉じても計測は続く |
+| 1-9 | Pause | 済 | ショートカット / 現在の仕事 |
+| 1-10 | Pause UI | 済 | `apps/renderer/src/pages/HudWindow.tsx` は表示専用ミニカード。操作は「現在の仕事」画面から行う |
 | 1-11 | End | 済 | End 後に Review へ |
-| 1-12 | Timer 満了 Popup | 済 | `apps/renderer/src/pages/ExpireWindow.tsx`。End / Extend |
+| 1-12 | Timer 満了 Popup | 済 | `apps/renderer/src/pages/ExpireWindow.tsx`。End / Extend / 時間指定の Break。休憩後は手動再開 |
 | 1-13 | Next Task 導線 | 済 | 満了 Popup の「次のタスクへ」 |
 | 1-14 | Current Work 画面 | 済 | `apps/renderer/src/pages/CurrentWorkWindow.tsx` |
 | 1-15 | Current Work からの操作 | 済 | 切替 / 分解 / 新規作成 / 追加 |

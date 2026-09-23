@@ -28,7 +28,7 @@ export const TaskStatusSchema = z.enum(['inbox', 'todo', 'doing', 'done'])
 export const PrioritySchema = z.enum(['low', 'normal', 'high'])
 export const SessionStateSchema = z.enum(['running', 'paused', 'ended'])
 export const WindowKindSchema = z.enum(['main', 'start', 'hud', 'expire', 'review', 'current'])
-export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'excluded'])
+export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'break', 'excluded'])
 /** 'excluded' は終了後の申告なので session:pause では受けない。 */
 export const LivePauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
 
@@ -69,6 +69,8 @@ export const PauseIntervalSchema = z.object({
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   reason: PauseReasonSchema.nullable(),
+  plannedEndAt: z.number().optional(),
+  notifiedAt: z.number().nullable().optional(),
 })
 
 export const TimeRangeSchema = z.object({
@@ -164,6 +166,7 @@ export const AppStateSchema = z.object({
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
   live: LiveTickSchema.nullable(),
+  breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),
   recovery: z.object({ sessionId: IdSchema, lastKnownAt: z.number() }).nullable(),
   pendingReview: z.object({ sessionId: IdSchema, thenStart: z.boolean() }).nullable(),
 })

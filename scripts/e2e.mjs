@@ -168,7 +168,7 @@ const child = spawn(electron, args, {
 let exitCode = 1
 try {
   const hudTarget = await findTarget('#hud')
-  const hud = await connect(hudTarget.webSocketDebuggerUrl)
+  let hud = await connect(hudTarget.webSocketDebuggerUrl)
   await waitReady(hud)
 
   // 契約（zod）の検証が生きていることを、本物の IPC 越しに確かめる
@@ -184,8 +184,14 @@ try {
   )
   check('ショートカットが空のままでも設定の更新が通る', emptyShortcuts.ok === true, emptyShortcuts.error)
 
-  const started = await hud.evaluate(call('session:start', { taskId: 't1', minutes: 50 }))
-  check('セッションが始まる', started.ok && started.data && started.data.state === 'running')
+  await hud.evaluate('(() => { ' + call('session:start', { taskId: 't1', minutes: 50 }) + '; return true })()')
+  hud.close()
+  await wait(300)
+  const startedTarget = await findTarget('#hud')
+  hud = await connect(startedTarget.webSocketDebuggerUrl)
+  await waitReady(hud)
+  const started = await hud.evaluate('window.whitebox.call("state:get")')
+  check('セッションが始まる', started.ok && started.data.live && started.data.live.state === 'running')
 
   await wait(2500)
   // アプリが刻む一時停止の時刻は、この往復のどこかにある。前後を挟んで控えておき、
@@ -207,6 +213,24 @@ try {
   const resumeSentAt = Date.now()
   await hud.evaluate(call('session:resume'))
   const resumeAckAt = Date.now()
+  await hud.evaluate(call('session:break', { minutes: 0.03 }))
+  const onBreak = await hud.evaluate('window.whitebox.call("state:get")')
+  check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
+  check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
+  await wait(250)
+  const breakHud = await hud.evaluate('({ labels: [...document.querySelectorAll(".hud-slot-label")].map((x) => x.textContent), body: document.body.innerText })')
+  check('ミニカードが休憩タイマーを表示する', breakHud.labels.includes('休憩') && !breakHud.body.includes('停止中'), breakHud)
+
+  const breakTarget = await findTarget('#expire')
+  const breakWindow = await connect(breakTarget.webSocketDebuggerUrl)
+  await waitReady(breakWindow)
+  const afterBreak = await breakWindow.evaluate('window.whitebox.call("state:get")')
+  check('休憩終了後も明示的な再開までは paused のまま', afterBreak.data.live.state === 'paused')
+  check('休憩終了通知が記録される', Boolean(afterBreak.data.breakTimer && afterBreak.data.breakTimer.notifiedAt))
+  await breakWindow.evaluate(call('session:resume'))
+  breakWindow.close()
+  const afterBreakResume = await hud.evaluate('window.whitebox.call("state:get")')
+  check('休憩通知から再開できる', afterBreakResume.data.live.state === 'running' && afterBreakResume.data.breakTimer === null)
   await wait(1200)
   await hud.evaluate(call('session:switchTask', { taskId: 't2' }))
   const switched = await hud.evaluate('window.whitebox.call("state:get")')
@@ -250,16 +274,19 @@ try {
 
   check('セッションが 1 本保存されている', saved.sessions.length === 1, saved.sessions.length)
   check('終了時刻が入っている', typeof s.endedAt === 'number' && s.state === 'ended')
-  check('一時停止が閉じている', s.pauses.length === 1 && s.pauses[0].endedAt !== null)
+  check('一時停止と休憩が閉じている', s.pauses.length === 2 && s.pauses.every((p) => p.endedAt !== null))
   // 固定値との比較にすると、起動直後でディスクが遅い環境では往復が伸びて落ちる（実際に落ちた）。
   // アプリが刻んだ停止区間は、必ずテスト側が挟んで実測したこの範囲に入る
   const pausedFloor = resumeSentAt - pauseAckAt
   const pausedCeil = resumeAckAt - pauseSentAt
-  check('停止時間がテスト側の実測範囲に収まる', pausedTotal >= pausedFloor && pausedTotal <= pausedCeil, {
-    pausedTotal,
+  const manualPause = s.pauses.find((p) => p.reason === 'manual')
+  const manualPausedMs = manualPause ? manualPause.endedAt - manualPause.startedAt : 0
+  check('手動停止時間がテスト側の実測範囲に収まる', manualPausedMs >= pausedFloor && manualPausedMs <= pausedCeil, {
+    manualPausedMs,
     floor: pausedFloor,
     ceil: pausedCeil,
   })
+  check('停止時間に手動停止と休憩の両方が入る', pausedTotal > manualPausedMs, pausedTotal)
   check('停止ぶんが実作業から引かれている', pausedTotal > 0 && gross - pausedTotal < gross, { gross, pausedTotal })
   check('区間が 2 本、どちらも閉じている', s.segments.length === 2 && s.segments.every((x) => x.endedAt !== null))
   check('イベントが記録されている', s.events.length >= 6, s.events.map((e) => e.type))

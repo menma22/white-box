@@ -7,7 +7,7 @@ import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
 import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import type { Ctx } from './ports.js'
-import { buildState, liveSession, replaceSession, taskTitle } from './state.js'
+import { buildBreakTimer, buildState, liveSession, replaceSession, taskTitle } from './state.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -102,8 +102,10 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:resume': () => {
       const s = liveSession(db())
       if (!s) return null
+      const resumingBreak = buildBreakTimer(db()) !== null
       replaceSession(db(), ops.resumeSession(s, ctx.now()))
       ctx.publish()
+      if (resumingBreak) ctx.windows.closeLater('expire')
       return null
     },
     'session:toggle': async () => {
@@ -120,6 +122,18 @@ export function createHandlers(ctx: Ctx): Handlers {
       const minutes = a.minutes || db().settings.defaultExtendMinutes
       replaceSession(db(), ops.extendSession(s, minutes, ctx.now()))
       ctx.publish()
+      ctx.windows.closeLater('expire')
+      return null
+    },
+    'session:break': (a) => {
+      const s = liveSession(db())
+      if (!s) return null
+      const minutes = a.minutes || 5
+      const next = ops.startBreak(s, minutes, ctx.now())
+      if (next === s) return null
+      replaceSession(db(), next)
+      ctx.publish()
+      ctx.windows.open('hud', false)
       ctx.windows.closeLater('expire')
       return null
     },

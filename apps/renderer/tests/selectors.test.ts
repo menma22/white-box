@@ -73,6 +73,7 @@ function state(over: Partial<AppState> = {}): AppState {
     },
     dayNotes: {},
     live: null,
+    breakTimer: null,
     recovery: null,
     pendingReview: null,
     ...over,

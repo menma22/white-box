@@ -52,7 +52,9 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | 'excluded' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | null
+  plannedEndAt?: number
+  notifiedAt?: number | null
 }
 
 /** 閉じた時間の範囲。 */
@@ -157,6 +159,7 @@ export interface AppState {
   settings: Settings
   dayNotes: Record<string, string>
   live: LiveTick | null
+  breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
   pendingReview: { sessionId: ID; thenStart: boolean } | null
 }

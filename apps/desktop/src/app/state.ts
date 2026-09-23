@@ -43,6 +43,15 @@ export function buildTick(db: Database, now: number): LiveTick | null {
   }
 }
 
+export function buildBreakTimer(db: Database): AppState['breakTimer'] {
+  const pause = liveSession(db)?.pauses.find(
+    (item) => item.endedAt === null && item.reason === 'break' && item.plannedEndAt !== undefined,
+  )
+  return pause?.plannedEndAt === undefined
+    ? null
+    : { startedAt: pause.startedAt, endsAt: pause.plannedEndAt, notifiedAt: pause.notifiedAt ?? null }
+}
+
 export function buildState(db: Database, runtime: RuntimeState, now: number): AppState {
   return {
     revision: ++runtime.revision,
@@ -52,6 +61,7 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     settings: db.settings,
     dayNotes: db.dayNotes,
     live: buildTick(db, now),
+    breakTimer: buildBreakTimer(db),
     recovery: runtime.recovery,
     pendingReview: runtime.pendingReview,
   }

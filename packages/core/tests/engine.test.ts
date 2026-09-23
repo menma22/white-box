@@ -8,6 +8,7 @@ import {
   livePausedMs,
   MINUTE,
   overrunRanges,
+  pausedMsWithin,
   plannedReachedAt,
   totalRangeMs,
   unpausedRanges,
@@ -23,6 +24,15 @@ describe('一日の境目', () => {
   it('境目ちょうどはその日に入る', () => {
     expect(dayKey(new Date(2026, 7, 21, 4, 0).getTime(), 4)).toBe('2026-08-21')
   })
+})
+
+it('重なった停止区間は一度だけ差し引く', () => {
+  const pauses = [
+    { startedAt: 10, endedAt: 30, reason: 'manual' as const },
+    { startedAt: 20, endedAt: 40, reason: 'excluded' as const },
+  ]
+  expect(pausedMsWithin(pauses, 0, 50, 50)).toBe(30)
+  expect(pausedMsWithin(pauses, 25, 35, 50)).toBe(10)
 })
 
 const T0 = new Date(2026, 7, 20, 10, 0, 0).getTime()

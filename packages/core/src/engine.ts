@@ -8,16 +8,31 @@ import type { PauseInterval, Session, TaskSegment, TimeRange, ID } from './types
 export const MINUTE = 60_000
 export const HOUR = 3_600_000
 
-/** [from, to) と一時停止区間の重なりの合計。 */
+/** [from, to) と一時停止区間の重なりの長さ。停止区間同士の重複は一度だけ数え、開いた区間は now まで数える。 */
 export function pausedMsWithin(pauses: PauseInterval[], from: number, to: number, now: number): number {
   if (to <= from) return 0
+
+  const intervals = pauses
+    .map((pause) => [Math.max(pause.startedAt, from), Math.min(pause.endedAt ?? now, to)] as const)
+    .filter(([start, end]) => end > start)
+    .sort(([a], [b]) => a - b)
+
   let total = 0
-  for (const p of pauses) {
-    const start = Math.max(p.startedAt, from)
-    const end = Math.min(p.endedAt ?? now, to)
-    if (end > start) total += end - start
+  let currentStart: number | null = null
+  let currentEnd = 0
+  for (const [start, end] of intervals) {
+    if (currentStart === null) {
+      currentStart = start
+      currentEnd = end
+    } else if (start <= currentEnd) {
+      currentEnd = Math.max(currentEnd, end)
+    } else {
+      total += currentEnd - currentStart
+      currentStart = start
+      currentEnd = end
+    }
   }
-  return total
+  return currentStart === null ? 0 : total + currentEnd - currentStart
 }
 
 export function sessionEndOrNow(session: Session, now: number): number {

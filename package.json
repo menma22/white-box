@@ -14,7 +14,7 @@
     "start": "pnpm build && electron .",
     "app": "electron .",
     "typecheck": "pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --noEmit && tsc -p tsconfig.test.json",
-    "lint": "eslint apps/renderer/src",
+    "lint": "eslint apps/renderer/src apps/renderer/.storybook",
     "test": "pnpm build:packages && vitest run",
     "storybook": "pnpm --filter @white-box/renderer storybook",
     "icons": "node scripts/make-icon.mjs",

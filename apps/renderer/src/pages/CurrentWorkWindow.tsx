@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '@/lib/selectors'
+import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import { remainingLabel } from '@/lib/format'
@@ -9,6 +10,7 @@ import { remainingLabel } from '@/lib/format'
 export function CurrentWorkWindow() {
   const state = useData()
   const tick = useApp((s) => s.tick)
+  const now = useApp((s) => s.now)
   const [draft, setDraft] = useState('')
   const [draftColumn, setDraftColumn] = useState<'inbox' | 'todo'>('inbox')
   const [splitting, setSplitting] = useState(false)
@@ -20,6 +22,7 @@ export function CurrentWorkWindow() {
   const currentProject = projectById(state, current?.projectId ?? null)
   const others = candidateTasks(state).filter((t) => t.id !== current?.id)
   const subtasks = current ? childrenOf(state, current.id) : []
+  const timer = tick ? liveTimerPresentation(tick, state.breakTimer, now) : null
 
   async function addTask() {
     const title = draft.trim()
@@ -51,13 +54,13 @@ export function CurrentWorkWindow() {
       <TitleBar title="現在の仕事" onClose={() => void cmd.closeSelf()} />
 
       <div className="current-body">
-        {tick && current ? (
+        {tick && current && timer ? (
           <section className="current-focus">
-            <Ring elapsedMs={tick.elapsedMs} plannedMs={tick.plannedMs} size={96} thickness={5} paused={tick.state === 'paused'}>
+            <Ring elapsedMs={timer.elapsedMs} plannedMs={timer.plannedMs} size={96} thickness={5} paused={timer.isPaused}>
               <span className="num current-ring-time">
-                {remainingLabel(tick.remainingMs)}
+                {remainingLabel(timer.remainingMs)}
               </span>
-              <span className="label">{tick.state === 'paused' ? '停止中' : '残り'}</span>
+              <span className="label">{timer.label}</span>
             </Ring>
 
             <div className="current-focus-main">
@@ -79,7 +82,7 @@ export function CurrentWorkWindow() {
                   className="btn btn-ghost btn-sm"
                   onClick={() => void invoke(tick.state === 'paused' ? 'session:resume' : 'session:pause')}
                 >
-                  {tick.state === 'paused' ? '再開' : '一時停止'}
+                  {timer.isBreak ? '休憩を終える' : tick.state === 'paused' ? '再開' : '一時停止'}
                 </button>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('session:end')}>
                   セッション終了

@@ -122,6 +122,7 @@ export function devFixture(): AppState {
       plannedMs: 50 * MIN,
       activeTaskId: backend.id,
     },
+    breakTimer: null,
     dayNotes: {},
     recovery: null,
     pendingReview: { sessionId: sessions[0]!.id, thenStart: false },

@@ -73,6 +73,7 @@ export const COMMANDS = {
   'session:resume': { args: NoArgs, result: z.null() },
   'session:toggle': { args: NoArgs, result: z.null() },
   'session:extend': { args: z.strictObject({ minutes: z.number().optional() }), result: z.null() },
+  'session:break': { args: z.strictObject({ minutes: z.number().optional() }), result: z.null() },
   'session:switchTask': { args: z.strictObject({ taskId: IdSchema }), result: z.null() },
   'session:end': { args: z.strictObject({ thenStart: z.boolean().optional() }), result: z.null() },
   'session:review': {
@@ -110,7 +111,12 @@ export const COMMANDS = {
   'window:close': { args: z.strictObject({ kind: WindowKindSchema }), result: z.null() },
   'window:toggle': { args: z.strictObject({ kind: WindowKindSchema }), result: z.null() },
   'window:minimize': { args: NoArgs, result: z.null() },
-  'settings:update': { args: z.strictObject({ patch: SettingsSchema.partial().strict() }), result: z.null() },
+  'settings:update': {
+    args: z.strictObject({
+      patch: SettingsSchema.partial().strict().extend({ shortcuts: SettingsSchema.shape.shortcuts.strict().optional() }),
+    }),
+    result: z.null(),
+  },
   'day:note': { args: z.strictObject({ key: z.string(), text: z.string() }), result: z.null() },
   'welcome:dismiss': { args: NoArgs, result: z.null() },
   'data:export': { args: NoArgs, result: z.string().nullable() },

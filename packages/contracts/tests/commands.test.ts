@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 33 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(33)
+  it('コマンドは 34 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(34)
   })
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
@@ -31,6 +31,11 @@ describe('コマンド契約', () => {
       id: 's1',
       patch: { exclusions: [{ startedAt: 1000, endedAt: 2000 }] },
     })
+  })
+
+  it('休憩コマンドの時間を受け取り、停止理由としての直接指定は拒否する', () => {
+    expect(parseArgs('session:break', { minutes: 7 })).toEqual({ minutes: 7 })
+    expect(() => parseArgs('session:pause', { reason: 'break' })).toThrow()
   })
 
   it('壊れた引数は落ちる（代表例）', () => {
@@ -61,6 +66,7 @@ describe('コマンド契約', () => {
     'session:resume': {},
     'session:toggle': {},
     'session:extend': { minutes: 5 },
+    'session:break': { minutes: 5 },
     'session:switchTask': { taskId: 't1' },
     'session:end': {},
     'session:review': { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 50, markedDone: false }] },
@@ -93,6 +99,9 @@ describe('コマンド契約', () => {
     expect(() => parseArgs('task:update', { id: 't1', patch: { titel: 'x' } })).toThrow()
     expect(() => parseArgs('project:update', { id: 'p1', patch: { nmae: 'x' } })).toThrow()
     expect(() => parseArgs('settings:update', { patch: { dayStartHor: 5 } })).toThrow()
+    expect(() => parseArgs('settings:update', {
+      patch: { shortcuts: { startPause: '', currentWork: '', dashboard: '', hudToggle: 'Control+H' } },
+    })).toThrow()
     expect(() => parseArgs('session:update', { id: 's1', patch: { nte: 'x' } })).toThrow()
     expect(() =>
       parseArgs('session:update', { id: 's1', patch: { exclusions: [{ startedAt: 1, endedAt: 2, why: '離席' }] } }),
@@ -128,6 +137,10 @@ describe('コマンド契約', () => {
       createdAt: 1000,
     }
     expect(() => SessionSchema.parse(session)).not.toThrow()
+    expect(SessionSchema.parse({
+      ...session,
+      pauses: [{ startedAt: 2000, endedAt: null, reason: 'break', plannedEndAt: 422000, notifiedAt: null }],
+    }).pauses[0]).toMatchObject({ reason: 'break', plannedEndAt: 422000, notifiedAt: null })
 
     const appState = {
       revision: 1,
@@ -151,9 +164,14 @@ describe('コマンド契約', () => {
       },
       dayNotes: { '2026-08-21': 'メモ' },
       live: null,
+      breakTimer: null,
       recovery: null,
       pendingReview: { sessionId: 'ses_x', thenStart: false },
     }
     expect(() => AppStateSchema.parse(appState)).not.toThrow()
+    expect(AppStateSchema.parse({
+      ...appState,
+      breakTimer: { startedAt: 2000, endsAt: 422000, notifiedAt: null },
+    }).breakTimer).toEqual({ startedAt: 2000, endsAt: 422000, notifiedAt: null })
   })
 })

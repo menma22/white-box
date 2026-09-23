@@ -12,6 +12,10 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'ImportExpression', message: 'renderer の動的 import は境界の検査を迂回するため禁止。' },
+      ],
       'no-restricted-imports': [
         'error',
         {
@@ -34,7 +38,7 @@ export default [
   },
   {
     // T1: stories 限定で storybook 系 import を追加許可する。renderer 本体（上のブロック）の境界は変えない。
-    files: ['apps/renderer/src/stories/**/*.{ts,tsx}'],
+    files: ['apps/renderer/src/stories/**/*.{ts,tsx}', 'apps/renderer/.storybook/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tseslint.parser,
       ecmaVersion: 'latest',
@@ -42,13 +46,17 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'ImportExpression', message: 'renderer の動的 import は境界の検査を迂回するため禁止。' },
+      ],
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
               regex:
-                '^(?!react($|/)|react-dom($|/)|zustand$|@white-box/core($|/)|@white-box/contracts($|/)|storybook($|/)|@storybook/|@/|\\.{1,2}/)',
+                '^(?!react($|/)|react-dom($|/)|zustand$|node:url$|vite$|@white-box/core($|/)|@white-box/contracts($|/)|storybook($|/)|@storybook/|@/|\\.{1,2}/)',
               message:
                 'renderer が import できるのは react / react-dom / zustand / @white-box/core / @white-box/contracts / storybook 系 / @/（自 src）/ 相対 だけ（docs/decisions.md 013 + T1 stories 例外）。',
             },

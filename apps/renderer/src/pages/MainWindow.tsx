@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById, todayKey } from '@/lib/selectors'
+import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Kbd } from '@/components/ui'
 import { BoardView } from '@/features/board/BoardView'
 import { TodayView } from '@/features/today/TodayView'
@@ -46,6 +47,7 @@ export function MainWindow() {
 
   const liveTask = taskById(state, tick?.activeTaskId ?? null)
   const liveProject = projectById(state, liveTask?.projectId ?? null)
+  const liveTimer = tick ? liveTimerPresentation(tick, state.breakTimer, now) : null
 
   return (
     <div className="win main">
@@ -66,13 +68,13 @@ export function MainWindow() {
 
       <div className="main-shell">
         <nav className="rail">
-          {tick && liveTask ? (
+          {tick && liveTask && liveTimer ? (
             <button type="button" className={`rail-live ${tick.state === 'paused' ? 'is-paused' : ''}`} onClick={() => void cmd.openWindow('current')}>
               <span className="rail-live-top">
                 <span className="rail-live-dot" />
-                <span className="label">{tick.state === 'paused' ? '一時停止' : '実行中'}</span>
+                <span className="label">{liveTimer.status}</span>
                 <span className="num rail-live-time">
-                  {remainingLabel(tick.remainingMs)}
+                  {remainingLabel(liveTimer.remainingMs)}
                 </span>
               </span>
               <span className="rail-live-task">{liveTask.title}</span>

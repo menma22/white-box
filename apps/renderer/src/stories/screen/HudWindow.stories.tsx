@@ -7,6 +7,11 @@ import { seedApp } from './seed'
 const MIN = 60_000
 const state = devFixture()
 const cardOff: AppState = { ...state, settings: { ...state.settings, showSessionCard: false } }
+const storyNow = Date.now()
+const onBreak: AppState = {
+  ...state,
+  breakTimer: { startedAt: storyNow - MIN, endsAt: storyNow + 4 * MIN, notifiedAt: null },
+}
 const activeTaskId = state.tasks[0]!.id
 
 const runningTick: LiveTick = {
@@ -54,6 +59,10 @@ export const Running: Story = {
 
 export const Paused: Story = {
   beforeEach: seedApp(state, { ...runningTick, state: 'paused' }),
+}
+
+export const Break: Story = {
+  beforeEach: seedApp(onBreak, { ...runningTick, state: 'paused' }),
 }
 
 export const Over: Story = {
