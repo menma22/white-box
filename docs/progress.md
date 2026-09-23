@@ -3,17 +3,17 @@
 このリポジトリの現在地。**生きた文書**なので、状態が変わったらこのファイルを更新する。
 何を作るかは [product-spec.md](product-spec.md)、なぜそう作ったかは [decisions.md](decisions.md)。
 
-最終更新: 2026-09-01
+最終更新: 2026-09-24
 
 ---
 
 ## 現在地
 
-**Phase 1（MVP）実装完了。日常投入の直前。**
+**Phase 1（MVP）実装完了。日常使用中。** 再編と第 1 波は PR #2 の `feat/rearchitecture` にあり、まだ `main` と普段起動する配布版には反映されていない。
 
 仕様書の開発原則どおり、ここで機能追加を止める。実際に毎日使って出た問題を溜めてから Phase 2 に入る。
 
-**再編（[rebuild-plan.md](rebuild-plan.md) Phase 0–5 / [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1–S7）は完了。** 実装の中身・機能は変わっていない（移行中に仕様は変えない方針）が、構成が pnpm monorepo（apps/desktop・apps/renderer・packages/core・packages/contracts）へ変わったため、下表「実装場所」列は新しいパスに更新した。実装の詳細は [architecture.md](architecture.md) を参照。
+**再編（[rebuild-plan.md](rebuild-plan.md) Phase 0–5 / [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1–S7）は完了。** 再編の各段階では機能を変えずに pnpm monorepo（apps/desktop・apps/renderer・packages/core・packages/contracts）へ移した。PR #2 には、その後の第 1 波と `main` の PR #3〜#5 の機能も統合した。下表「実装場所」列は新しいパスを示す。実装の詳細は [architecture.md](architecture.md) を参照。
 
 **実使用起点の第 1 波（2026-08-31 まひろ指示・09-01 完了）**: 実使用 11 日で溜まったアプリ内 todo から優先 3 件を選び、ai-org-os の並列セッション 3 本で開発・統合した。T3（記録の事後修正。決定 017/018）・T4（セッション中ミニカード。決定 020）・T5（初回オンボーディング。決定 019）。
 
@@ -80,9 +80,9 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 
 ## 次にやること
 
-1. **毎日使う。** 機能追加はここで止める（仕様書 MVP 完成条件の開発原則）
-2. 使って出た問題を下の「実使用で出た課題」に書き溜める
-3. 溜まった課題を見て、Phase 2 の中から着手順を決める
+1. **PR #2 をレビューして `main` に統合する。** PR #3〜#5 の機能も新構成に移してある
+2. **統合した版を再パックし、普段起動するアプリへ反映する。** PR の更新だけでは配布版は切り替わらない
+3. 実使用で出た問題を下に記録し、Phase 2 の着手順を決める
 
 ### 実使用で出た課題
 
