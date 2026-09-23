@@ -8,6 +8,7 @@ import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '../shared/types.js'
+import { emptyGoalMap, parseGoalMap, validGoalDue } from '../shared/goal-map.js'
 
 const DB_VERSION = 1
 
@@ -30,7 +31,24 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 function emptyDb(): Database {
-  return { version: DB_VERSION, projects: [], tasks: [], sessions: [], settings: { ...DEFAULT_SETTINGS }, dayNotes: {} }
+  return normalizeDatabase({})
+}
+
+export function normalizeDatabase(parsed: Partial<Database>): Database {
+  const goalMap = parsed.goalMap === undefined ? emptyGoalMap() : parseGoalMap(parsed.goalMap)
+  const tasks = parsed.tasks ?? []
+  for (const task of tasks) {
+    validGoalDue(task.due)
+    if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
+  }
+  if (parsed.goalMapImports !== undefined && (!Array.isArray(parsed.goalMapImports) || parsed.goalMapImports.some((item) => typeof item !== 'string'))) throw new Error('道標の取込履歴が不正です')
+  return {
+    version: parsed.version ?? DB_VERSION,
+    projects: parsed.projects ?? [], tasks, sessions: parsed.sessions ?? [],
+    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+    dayNotes: parsed.dayNotes ?? {}, goalMap,
+    goalMapImports: parsed.goalMapImports ?? [],
+  }
 }
 
 export class Store {
@@ -52,14 +70,7 @@ export class Store {
     try {
       const raw = fs.readFileSync(this.dbPath, 'utf-8')
       const parsed = JSON.parse(raw) as Partial<Database>
-      return {
-        version: parsed.version ?? DB_VERSION,
-        projects: parsed.projects ?? [],
-        tasks: parsed.tasks ?? [],
-        sessions: parsed.sessions ?? [],
-        settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
-        dayNotes: parsed.dayNotes ?? {},
-      }
+      return normalizeDatabase(parsed)
     } catch (err) {
       const broken = path.join(this.dir, `data.corrupt-${Date.now()}.json`)
       fs.copyFileSync(this.dbPath, broken)
@@ -118,7 +129,9 @@ export class Store {
   }
 
   replace(next: Database): void {
-    this.db = next
+    const normalized = normalizeDatabase(next)
+    fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), 'utf-8')
+    this.db = normalized
     this.save()
   }
 }

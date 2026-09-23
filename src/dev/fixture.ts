@@ -3,6 +3,7 @@
  * 振る舞い（コマンドの処理）をここに足さないこと。
  */
 import type { AppState, Project, Session, Task } from '@shared/types'
+import { emptyGoalMap } from '@shared/goal-map'
 
 const MIN = 60_000
 const H = 3_600_000
@@ -96,6 +97,15 @@ export function devFixture(): AppState {
 
   return {
     revision: 1,
+    goalMap: {
+      ...emptyGoalMap(),
+      nodes: {
+        goal_demo: { id: 'goal_demo', goal: '自分との約束を、日々の行動につなぐ', reason: '大事にしたいことへ、時間を使うため。', parentId: null, children: ['goal_step'], hidden: false, hiddenAt: null, hideReason: '' },
+        goal_step: { id: 'goal_step', goal: '今週の一歩を決める', reason: '目標を実行できる大きさにする。', parentId: 'goal_demo', children: [], hidden: false, hiddenAt: null, hideReason: '' },
+      },
+      heads: ['goal_demo'],
+      activeHeadId: 'goal_demo',
+    },
     projects,
     tasks,
     sessions,

@@ -8,10 +8,11 @@
 
 | 目的 | コマンド | 見ているもの |
 | --- | --- | --- |
-| 時間計算 | `npm test` | 一時停止の減算・区間ごとの按分・状態遷移・一日の境目 |
+| 単体検証 | `npm test` | 時間計算・タイマー表示・目標の木の操作・レイアウト・移行と保存 |
 | 型 | `npm run typecheck` | レンダラとメインプロセスの両方 |
+| 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物のIPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
-| 配布物 | `npm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
+| 配布物 | `npm run pack` → `WHITEBOX_EXE` に exe のパスを設定し、両方の E2E を実行 | 組み上げた exe の中で同じことが起きるか |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす |
 
 ## 通し確認が見ているもの
@@ -46,7 +47,7 @@
 
 `e2e.mjs` はデバッグポート経由でアプリを操作する。**別の Electron アプリが同じポートを掴んでいると、そちらのデバッガに繋がる**（実際に一度、無関係のアプリのページ一覧を読んでいた）。
 
-使う前に `netstat` で空いていることを確認する。
+両方の E2E は OS が割り当てる空きポートと、実行ごとのデータ・プロファイルを使う。接続先の URL が検証対象ビルドの `dist/index.html` と一致することも確認する。
 
 ### 自分を閉じるコマンドの結果は待てない
 

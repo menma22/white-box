@@ -58,6 +58,7 @@ function buildState(): AppState {
     sessions: db().sessions,
     settings: db().settings,
     dayNotes: db().dayNotes,
+    goalMap: db().goalMap,
     live: buildTick(),
     breakTimer: buildBreakTimer(),
     recovery,
@@ -229,6 +230,51 @@ async function run(name: string, args: Args = {}): Promise<unknown> {
       return null
     case 'task:hasTime':
       return mut.hasRecordedTime(db(), args['id'])
+
+    case 'goal:create': {
+      const result = mut.createGoal(db(), args as any)
+      push()
+      return result
+    }
+    case 'goal:update':
+      mut.updateGoal(db(), args['id'], args['patch'])
+      push()
+      return null
+    case 'goal:merge': {
+      const result = mut.mergeGoals(db(), args as any)
+      push()
+      return result
+    }
+    case 'goal:hide':
+      mut.hideGoal(db(), args['id'], args['reason'] ?? '')
+      push()
+      return null
+    case 'goal:restore':
+      mut.restoreGoal(db(), args['id'])
+      push()
+      return null
+    case 'goal:ui':
+      mut.updateGoalUi(db(), args)
+      push()
+      return null
+    case 'issue:create': {
+      const result = mut.createIssue(db(), args as any)
+      push()
+      return result
+    }
+    case 'issue:update':
+      mut.updateIssue(db(), args['id'], args['patch'])
+      push()
+      return null
+    case 'issue:delete':
+      mut.deleteIssue(db(), args['id'])
+      push()
+      return null
+    case 'goal:import': {
+      const result = mut.importGoals(db(), args['data'])
+      push()
+      return result
+    }
 
     // ── Session
     case 'session:start': {
