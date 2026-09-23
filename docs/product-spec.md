@@ -426,7 +426,7 @@ Planning OS までは作らない。
 | 1-7 | Session Duration | 「今から何分仕事するか」。既定 50 分。変更可能、義務ではない |
 | 1-8 | Session Start | 開始時刻・タスク・プロジェクト・設定 Duration を保存 |
 | 1-9 | Pause | RUNNING 中にショートカットまたはボタン。Timer 停止 |
-| 1-10 | Pause UI | 小型 UI に Resume / End。× で閉じられる。停止中に同じショートカットで**確認なしで即 Resume** |
+| 1-10 | Pause UI | HUD は経過・残り時間だけの表示専用ミニカード。クリックを素通りし、設定で非表示にできる。停止中に同じショートカットで**確認なしで即 Resume**。操作はショートカットと「現在の仕事」画面で行う |
 | 1-11 | End | 途中終了可能。基本操作は RUNNING → Pause → End。End すると Review へ |
 | 1-12 | Timer 満了 Popup | 最前面の小型専用 UI。End / Extend（既定 +15分）/ Break（既定5分、時間変更可）。休憩終了後は通知し、明示的に再開するまで停止を維持 |
 | 1-13 | Next Task 導線 | 満了 Popup に Next Task。現在タスク Review → 次タスク選択 → Start まで滑らかにつなぐ |

@@ -39,6 +39,7 @@ function mkTask(id, title, progress) {
 }
 
 // ── 準備：この日は Welcome を出さない状態から始める ────────────────
+// onboardedAt を seed に書くと、既存データからの「オンボーディング済み」自動判定を検証できなくなる（わざと書かない）
 fs.rmSync(DATA, { recursive: true, force: true })
 fs.mkdirSync(path.join(DATA, 'backups'), { recursive: true })
 
@@ -137,11 +138,25 @@ function connect(url) {
 
 const call = (name, args) => 'window.whitebox.call(' + JSON.stringify(name) + ', ' + JSON.stringify(args || {}) + ')'
 
+// window.whitebox の存在だけ見て進むと、初期 about:blank の暫定コンテキストに接続してしまい
+// 本物のページの commit で "Execution context was destroyed" になる（preload は暫定側にも付く）
+async function waitReady(client) {
+  const ready = 'typeof window.whitebox === "object" && document.readyState === "complete" && location.hash.length > 1'
+  for (let i = 0; i < 25; i++) {
+    try {
+      if (await client.evaluate(ready)) return
+    } catch {}
+    await wait(400)
+  }
+  throw new Error('ページの読み込みが完了しない')
+}
+
 // ── 実行 ───────────────────────────────────────────────────────────
 // WHITEBOX_EXE を指せば、組み上げた release の exe をそのまま確かめられる
 const packaged = process.env.WHITEBOX_EXE
 const electron = packaged || path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
-const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT]
+// userData を隔離しないと、起動中の White Box の single instance lock に当たって無言で終了する
+const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT, '--user-data-dir=' + path.join(DATA, 'userdata')]
 if (!packaged) args.unshift('.')
 console.log('対象: ' + electron)
 const child = spawn(electron, args, {
@@ -154,17 +169,36 @@ let exitCode = 1
 try {
   const hudTarget = await findTarget('#hud')
   let hud = await connect(hudTarget.webSocketDebuggerUrl)
+  await waitReady(hud)
+
+  // 契約（zod）の検証が生きていることを、本物の IPC 越しに確かめる
+  const rejected = await hud.evaluate(call('task:create', { title: 123 }))
+  check('壊れた引数は契約で拒否される', rejected.ok === false && String(rejected.error).length > 0)
+  const unknown = await hud.evaluate(call('task:steal', {}))
+  check('未知のコマンドは拒否される', unknown.ok === false)
+  const misspelled = await hud.evaluate(call('task:update', { id: 't1', patch: { titel: 'x' } }))
+  check('綴り違いのキーは黙って捨てず拒否される', misspelled.ok === false)
+
+  const emptyShortcuts = await hud.evaluate(
+    call('settings:update', { patch: { shortcuts: { startPause: '', currentWork: '', dashboard: '' } } }),
+  )
+  check('ショートカットが空のままでも設定の更新が通る', emptyShortcuts.ok === true, emptyShortcuts.error)
 
   await hud.evaluate('(() => { ' + call('session:start', { taskId: 't1', minutes: 50 }) + '; return true })()')
   hud.close()
   await wait(300)
   const startedTarget = await findTarget('#hud')
   hud = await connect(startedTarget.webSocketDebuggerUrl)
+  await waitReady(hud)
   const started = await hud.evaluate('window.whitebox.call("state:get")')
   check('セッションが始まる', started.ok && started.data.live && started.data.live.state === 'running')
 
   await wait(2500)
+  // アプリが刻む一時停止の時刻は、この往復のどこかにある。前後を挟んで控えておき、
+  // 停止時間は固定値ではなくこの範囲で判定する（往復の遅さで落ちないため）
+  const pauseSentAt = Date.now()
   await hud.evaluate(call('session:pause'))
+  const pauseAckAt = Date.now()
   const paused = await hud.evaluate('window.whitebox.call("state:get")')
   check('一時停止すると paused になる', paused.data.live.state === 'paused', paused.data.live.state)
   const elapsedAtPause = paused.data.live.elapsedMs
@@ -176,25 +210,27 @@ try {
     after: stillPaused.data.live.elapsedMs,
   })
 
+  const resumeSentAt = Date.now()
   await hud.evaluate(call('session:resume'))
-  await hud.evaluate(call('session:break', { minutes: 0.01 }))
+  const resumeAckAt = Date.now()
+  await hud.evaluate(call('session:break', { minutes: 0.03 }))
   const onBreak = await hud.evaluate('window.whitebox.call("state:get")')
   check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
   check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
-  const breakHud = await hud.evaluate('({ label: document.querySelector(".hud-time-label")?.textContent, time: document.querySelector(".hud-time")?.textContent, body: document.body.innerText })')
-  check('HUD が停止中ではなく休憩タイマーを表示する', breakHud.label === '休憩' && !breakHud.body.includes('停止中'), breakHud)
+  await wait(250)
+  const breakHud = await hud.evaluate('({ labels: [...document.querySelectorAll(".hud-slot-label")].map((x) => x.textContent), body: document.body.innerText })')
+  check('ミニカードが休憩タイマーを表示する', breakHud.labels.includes('休憩') && !breakHud.body.includes('停止中'), breakHud)
 
   const breakTarget = await findTarget('#expire')
   const breakWindow = await connect(breakTarget.webSocketDebuggerUrl)
+  await waitReady(breakWindow)
   const afterBreak = await breakWindow.evaluate('window.whitebox.call("state:get")')
   check('休憩終了後も明示的な再開までは paused のまま', afterBreak.data.live.state === 'paused')
   check('休憩終了通知が記録される', Boolean(afterBreak.data.breakTimer && afterBreak.data.breakTimer.notifiedAt))
   await breakWindow.evaluate(call('session:resume'))
   breakWindow.close()
-  await wait(300)
   const afterBreakResume = await hud.evaluate('window.whitebox.call("state:get")')
   check('休憩通知から再開できる', afterBreakResume.data.live.state === 'running' && afterBreakResume.data.breakTimer === null)
-
   await wait(1200)
   await hud.evaluate(call('session:switchTask', { taskId: 't2' }))
   const switched = await hud.evaluate('window.whitebox.call("state:get")')
@@ -208,6 +244,7 @@ try {
 
   const reviewTarget = await findTarget('#review')
   const review = await connect(reviewTarget.webSocketDebuggerUrl)
+  await waitReady(review)
   const afterEnd = await review.evaluate('window.whitebox.call("state:get")')
   check('終了後に live が消える', afterEnd.data.live === null)
   check('レビュー対象が指定される', Boolean(afterEnd.data.pendingReview))
@@ -238,7 +275,18 @@ try {
   check('セッションが 1 本保存されている', saved.sessions.length === 1, saved.sessions.length)
   check('終了時刻が入っている', typeof s.endedAt === 'number' && s.state === 'ended')
   check('一時停止と休憩が閉じている', s.pauses.length === 2 && s.pauses.every((p) => p.endedAt !== null))
-  check('停止時間に手動停止と休憩の両方が入る', pausedTotal > 3000, pausedTotal)
+  // 固定値との比較にすると、起動直後でディスクが遅い環境では往復が伸びて落ちる（実際に落ちた）。
+  // アプリが刻んだ停止区間は、必ずテスト側が挟んで実測したこの範囲に入る
+  const pausedFloor = resumeSentAt - pauseAckAt
+  const pausedCeil = resumeAckAt - pauseSentAt
+  const manualPause = s.pauses.find((p) => p.reason === 'manual')
+  const manualPausedMs = manualPause ? manualPause.endedAt - manualPause.startedAt : 0
+  check('手動停止時間がテスト側の実測範囲に収まる', manualPausedMs >= pausedFloor && manualPausedMs <= pausedCeil, {
+    manualPausedMs,
+    floor: pausedFloor,
+    ceil: pausedCeil,
+  })
+  check('停止時間に手動停止と休憩の両方が入る', pausedTotal > manualPausedMs, pausedTotal)
   check('停止ぶんが実作業から引かれている', pausedTotal > 0 && gross - pausedTotal < gross, { gross, pausedTotal })
   check('区間が 2 本、どちらも閉じている', s.segments.length === 2 && s.segments.every((x) => x.endedAt !== null))
   check('イベントが記録されている', s.events.length >= 6, s.events.map((e) => e.type))
@@ -250,6 +298,17 @@ try {
   check('完了にしたタスクが Done になる', t2.status === 'done' && t2.doneAt !== null, t2.status)
   check('進捗の変化が記録に残る', s.progressChanges.length === 2)
   check('バックアップが作られている', fs.readdirSync(path.join(DATA, 'backups')).length >= 1)
+
+  check(
+    '既にデータのある DB はオンボーディング済みになる',
+    typeof saved.settings.onboardedAt === 'number',
+    saved.settings.onboardedAt,
+  )
+  check(
+    'ショートカットは空のまま保存される',
+    Object.values(saved.settings.shortcuts).every((a) => a === ''),
+    saved.settings.shortcuts,
+  )
 
   exitCode = fails.length === 0 ? 0 : 1
   console.log(fails.length === 0 ? '\nすべて通った' : '\n落ちた項目: ' + fails.join(', '))

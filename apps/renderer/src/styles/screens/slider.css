@@ -1,0 +1,29 @@
+/* ══ スライダー ════════════════════════════════════ */
+
+.slider {
+  flex: 1;
+  appearance: none;
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--fill, 0%),
+    var(--surface-3) var(--fill, 0%) 100%
+  );
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-1);
+  transition: transform 0.14s var(--ease-out), border-color 0.14s var(--ease);
+}
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  border-color: var(--accent);
+}
+

@@ -1,0 +1,23 @@
+{
+  "name": "@white-box/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "両プロセスで使う純粋な時間計算と型。外部依存ゼロ",
+  "exports": {
+    "./engine": {
+      "types": "./dist/engine.d.ts",
+      "default": "./dist/engine.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

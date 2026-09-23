@@ -1,0 +1,77 @@
+/* ══ HUD ═══════════════════════════════════════════ */
+
+.hud {
+  height: 100%;
+  display: grid;
+  place-items: start center;
+  /* 透過窓の外へ出た影は直線で切れる。影が伸びる下に 24px、左右に 10px を空けておく */
+  padding: 8px 10px 0;
+}
+
+.hud-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 212px;
+  max-width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-strong) 55%, transparent);
+  box-shadow: var(--shadow-3);
+}
+
+.hud-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  animation: breathe 2.6s var(--ease) infinite;
+}
+.hud-card.is-over .hud-dot {
+  background: var(--amber);
+}
+.hud-card.is-paused .hud-dot {
+  background: var(--text-4);
+  animation: none;
+}
+
+.hud-slot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hud-slot-label {
+  flex: none;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+}
+.hud-slot-value {
+  flex: none;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text);
+}
+.hud-slot-value.is-remaining {
+  color: var(--accent-deep);
+}
+.hud-card.is-over .hud-slot-value.is-remaining {
+  color: var(--amber);
+}
+.hud-card.is-paused .hud-slot-value,
+.hud-card.is-paused .hud-slot-value.is-remaining {
+  color: var(--text-3);
+}
+
+.hud-sep {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  background: color-mix(in srgb, var(--line-strong) 60%, transparent);
+}

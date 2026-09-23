@@ -1,0 +1,16 @@
+/* 画面ごとのレイアウトの索引。実体は screens/ 配下（定義順＝カスケード順なので並びを変えない）。 */
+@import './screens/shell.css';
+@import './screens/main-shell.css';
+@import './screens/view-common.css';
+@import './screens/today.css';
+@import './screens/history.css';
+@import './screens/board.css';
+@import './screens/settings.css';
+@import './screens/slider.css';
+@import './screens/welcome.css';
+@import './screens/onboarding.css';
+@import './screens/start.css';
+@import './screens/hud.css';
+@import './screens/expire.css';
+@import './screens/review.css';
+@import './screens/current.css';

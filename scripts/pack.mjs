@@ -14,10 +14,15 @@ const OUT = path.join(ROOT, 'release', 'White Box')
 const EXE = path.join(OUT, 'White Box.exe')
 const ELECTRON_DIST = path.join(ROOT, 'node_modules', 'electron', 'dist')
 
-const need = ['dist', 'dist-electron', 'assets']
+// pnpm workspace: dist-electron からの実行時 import（@white-box/core, @white-box/contracts）が
+// bare specifier のまま残る（tsc はバンドルしない）。node_modules を持たない配布先では
+// Node の ESM 解決が通らないため、必要な実体だけを resources/app/node_modules に組み立てる。
+const WORKSPACE_PACKAGES = ['core', 'contracts']
+
+const need = ['dist', 'dist-electron', 'assets', ...WORKSPACE_PACKAGES.map((p) => `packages/${p}/dist`)]
 for (const dir of need) {
   if (!fs.existsSync(path.join(ROOT, dir))) {
-    console.error(`${dir}/ が無い。先に npm run build を通すこと。`)
+    console.error(`${dir}/ が無い。先に pnpm run build を通すこと。`)
     process.exit(1)
   }
 }
@@ -35,8 +40,15 @@ fs.mkdirSync(APP, { recursive: true })
 for (const dir of ['dist', 'dist-electron', 'assets']) {
   copyTree(path.join(ROOT, dir), path.join(APP, dir))
 }
-fs.mkdirSync(path.join(APP, 'electron'), { recursive: true })
-fs.copyFileSync(path.join(ROOT, 'electron', 'preload.cjs'), path.join(APP, 'electron', 'preload.cjs'))
+fs.mkdirSync(path.join(APP, 'apps', 'desktop', 'src', 'presentation'), { recursive: true })
+fs.copyFileSync(
+  path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
+  path.join(APP, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
+)
+
+console.log('assembling workspace dependencies...')
+for (const name of WORKSPACE_PACKAGES) packWorkspacePackage(name)
+packZod()
 
 // 実行に要らないものは持ち込まない（開発用の依存やスクリプト）
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8'))
@@ -89,6 +101,25 @@ function copyTree(src, dst) {
   if ((res.status ?? 16) >= 8) {
     throw new Error('copy failed: ' + src + ' -> ' + dst + ' (robocopy ' + res.status + ')')
   }
+}
+
+/** dist/ と exports だけを resources/app/node_modules/<name> に実体コピーする（開発用依存は持ち込まない）。 */
+function packWorkspacePackage(dirName) {
+  const src = path.join(ROOT, 'packages', dirName)
+  const pkg = JSON.parse(fs.readFileSync(path.join(src, 'package.json'), 'utf-8'))
+  const dest = path.join(APP, 'node_modules', ...pkg.name.split('/'))
+  copyTree(path.join(src, 'dist'), path.join(dest, 'dist'))
+  fs.writeFileSync(
+    path.join(dest, 'package.json'),
+    JSON.stringify({ name: pkg.name, version: pkg.version, type: pkg.type, exports: pkg.exports }, null, 2),
+    'utf-8',
+  )
+}
+
+/** pnpm はシンボリックリンクで .pnpm ストアを指すだけなので、実体（realpath）をコピーする。 */
+function packZod() {
+  const link = path.join(ROOT, 'packages', 'contracts', 'node_modules', 'zod')
+  copyTree(fs.realpathSync(link), path.join(APP, 'node_modules', 'zod'))
 }
 
 function findRcedit() {

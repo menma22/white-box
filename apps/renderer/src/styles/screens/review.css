@@ -1,0 +1,277 @@
+/* ══ レビュー ══════════════════════════════════════ */
+
+.review {
+  background: var(--panel);
+}
+.review-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 38px 32px;
+}
+.review-summary {
+  display: flex;
+  gap: 42px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stat-value {
+  font-size: 17px;
+  color: var(--text);
+}
+.stat.is-big .stat-value {
+  font-size: 38px;
+  font-weight: 300;
+  color: var(--accent-deep);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.review-lead {
+  margin: 30px 0 16px;
+}
+.review-lead h3 {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: 400;
+}
+.review-lead p {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.review-task {
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.review-task.is-done {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.review-task-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.review-task-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14.5px;
+  color: var(--text);
+  min-width: 0;
+}
+.review-task-spent {
+  font-size: 12.5px;
+  color: var(--text-3);
+  flex: none;
+}
+.review-progress {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.review-progress-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: none;
+  font-size: 13px;
+}
+.review-from,
+.review-arrow {
+  color: var(--text-4);
+}
+.review-to {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-2);
+  min-width: 52px;
+  text-align: right;
+}
+.review-to.is-up {
+  color: var(--accent);
+}
+.review-to.is-down {
+  color: var(--amber);
+}
+.review-done {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.review-done input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+.review-created {
+  margin: 24px 0;
+  padding: 18px 20px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--line-strong);
+}
+.review-created-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+}
+.review-created-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-created-select {
+  width: 158px;
+  height: 32px;
+  flex: none;
+}
+.review-note {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 26px 0;
+}
+.review-log-toggle {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+.review-log-toggle:hover {
+  color: var(--text);
+}
+.review-log-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0 0 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.review-log-list li {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.review-log-time {
+  color: var(--text-4);
+}
+.review-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 38px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+.review-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.review-foot-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.review-overrun {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--amber-dim);
+  border: 1px solid var(--line-soft);
+}
+.review-overrun-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+.review-overrun-text b {
+  color: var(--amber);
+  font-weight: 600;
+}
+.review-overrun .btn {
+  flex: none;
+}
+.editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0 16px;
+}
+.editor-note {
+  margin-bottom: 4px;
+}
+.editor-ex {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+/* 縦並びの箱の中身は flex:none にしないと高さ 0 に潰れる */
+.editor-ex > * {
+  flex: none;
+}
+.editor-ex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+/* 日時の入力は中の文字がちょうど収まる幅しかないので、左右の余白を詰める */
+.editor-ex-row .input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+}
+.editor-ex-sep {
+  flex: none;
+  color: var(--text-4);
+}
+.editor-ex-len {
+  flex: none;
+  width: 46px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.editor-ex-add {
+  align-self: flex-start;
+}
+.editor-ex-error {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--rose);
+}
+

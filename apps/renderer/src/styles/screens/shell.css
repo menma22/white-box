@@ -1,0 +1,14 @@
+/* 画面ごとのレイアウト。共通部品は components.css。 */
+
+.boot {
+  height: 100%;
+  background: var(--bg);
+}
+
+.win {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+

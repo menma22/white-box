@@ -8,11 +8,19 @@
 
 | 目的 | コマンド | 見ているもの |
 | --- | --- | --- |
-| 時間計算 | `npm test` | 一時停止の減算・区間ごとの按分・状態遷移・一日の境目 |
-| 型 | `npm run typecheck` | レンダラとメインプロセスの両方 |
+| 時間計算 | `pnpm run test` | 一時停止の減算・区間ごとの按分・状態遷移・一日の境目 |
+| 型 | `pnpm run typecheck` | レンダラ・メインプロセス・テストの 3 つ（`tsconfig.test.json` が全テストを拾う） |
+| 境界 | `pnpm run lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
-| 配布物 | `npm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
-| 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす |
+| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
+| 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
+| UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
+
+変更したら通すのはこの並び。
+
+```bash
+pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs
+```
 
 ## 通し確認が見ているもの
 
@@ -20,6 +28,7 @@
 
 ```
 開始 → 一時停止（停止中に実作業が増えないことを実測）→ 再開
+  → 時間指定の休憩（ミニカードの表示・満了後も停止を維持）→ 再開
   → タスク切替（区間が2本になる）→ 終了 → レビュー
   → 保存 → 進捗がタスクへ反映 → バックアップ生成
 ```
@@ -48,6 +57,12 @@
 
 使う前に `netstat` で空いていることを確認する。
 
+### 起動中の White Box があると、実 exe の検証は無言で終わる
+
+メインプロセスは `requestSingleInstanceLock()` で二重起動を弾く。この判定は userData（Chromium のプロファイル置き場）が同じかどうかで決まるので、検証用に起動した exe が常用中のアプリと同じ userData を指していると、**ウィンドウを 1 枚も作らずに終了する**。デバッグポートは一瞬だけ開くため、e2e からは「ウィンドウが見つからない: #hud / 接続できない」としか見えない。
+
+`e2e.mjs` は `--user-data-dir` に `.e2e/userdata` を渡してこれを避けている。この引数を外すと、White Box を開いたままの検証が全部赤になる（開発ツリー経路は userData が別名なので衝突せず、実 exe を確かめたときにだけ表面化する）。
+
 ### 自分を閉じるコマンドの結果は待てない
 
 「開始」「延長」「終了」「レビュー保存」は、呼び出したウィンドウ自身を閉じる。その窓から結果を待つと、返事が届く前に実行コンテキストごと消える。
@@ -65,3 +80,9 @@
 - 3 箇所で同じ形で起きたので、`flex: none` を効かせる規則をまとめて置いてある
 
 `shoot.cjs` の各カットには `probe` を書ける（その場で JS を実行して値をログに出す）。「見えない」と思ったら推測せずここで測る。
+
+### 比較の基準は shots-baseline/
+
+`shots-baseline/` の 11 枚（今日 / ボード / 履歴 / 設定 / Welcome / 開始 / HUD / 満了 / レビュー / 現在の仕事 / タスク詳細）は、Quri 形式への再編を始める前の見た目。**「見た目は変えていない」はずの変更**では、ここへ撮り直したものを重ねて差分を見る。T4 の HUD 刷新と休憩画面は意図した見た目の変更なので、撮影台の `07-hud` / `07b-hud-break` / `08b-break-finished` を実物として確認する。時計の表示は撮るたびに変わるので、そこだけは差が出てよい。
+
+撮った PNG は `shots-baseline/` 以外コミットしない。`.gitignore` が `shots*/` を除外し、`!shots-baseline/` で基準だけを追跡対象に戻している。出力先は毎回好きな名前でよく（`shots-t20/` のような作業中の比較用ディレクトリもそのまま無視される）、基準そのものを更新するときだけ `shots-baseline/` へ上書きする。
