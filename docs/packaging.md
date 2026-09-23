@@ -64,7 +64,7 @@ pnpm の `node_modules/@white-box/*` や `node_modules/.pnpm/*` はジャンク�
 
 ## 保存先
 
-`%APPDATA%\white-box\data\data.json`（設定 → データ →「保存先を開く」で開ける）。
+配布版の標準保存先は `%APPDATA%\White Box\data\data.json`（設定 → データ →「保存先を開く」で開ける）。
 
 **アプリ名を変えると保存先も変わる。** 名前を変えるときは、設定から書き出し → 新しい名前で起動 → 読み込み、で移す。
 

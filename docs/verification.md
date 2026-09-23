@@ -19,7 +19,7 @@
 変更したら通すのはこの並び。
 
 ```bash
-pnpm run typecheck && pnpm run lint && pnpm run test && node scripts/e2e.mjs
+pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs
 ```
 
 ## 通し確認が見ているもの

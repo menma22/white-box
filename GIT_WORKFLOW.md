@@ -77,7 +77,7 @@ main ブランチ ────●────●────●────●
 
 - **1 セッション（再編中）／1 story（機能開発）= 1 ブランチ = 1 PR**。別の仕事は別ブランチで
 - ブランチ名は `feat/…`・`fix/…`・`docs/…` のように内容が一目で分かる形にする
-- **マージ前のゲート**: `pnpm typecheck && pnpm test && node scripts/e2e.mjs` が全緑であること。見た目を変えたときは実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）
+- **マージ前のゲート**: `pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs` が全緑であること。見た目を変えたときは実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）
 - コミットはタスク単位で刻む。コミットメッセージは日本語で「何を・なぜ」を書く（コードを見なくても設計レビューできる粒度）
 - TDD の残骸（skip されたテスト）・デッドコード・不要ファイルを PR に含めない
 - 機能追加はまず [docs/stories/](docs/stories/) に story を書いてから実装する。セッションを跨ぐ作業は [tasks/](tasks/) に handover を残す

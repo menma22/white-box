@@ -36,9 +36,9 @@
 ## 変更したら必ず通すもの
 
 ```bash
-pnpm run typecheck && pnpm run lint && pnpm run test && node scripts/e2e.mjs
+pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs
 ```
 
-**e2e の前に `pnpm run build` を挟む（アプリ本体のコードを変えたとき）。** e2e が起動するのは `dist-electron/`・`apps/renderer/dist` の最終ビルドで、typecheck は `--noEmit` なので何もビルドしない。古いビルドのまま e2e が合格し、変更が検証されない（2026-09-01 統合時に実際に起きた）。
+**上の `pnpm run build` を省かない。** e2e が起動するのは `dist-electron/`・`apps/renderer/dist` の最終ビルドで、typecheck は `--noEmit` なので何もビルドしない。古いビルドのまま e2e が合格し、変更が検証されない（2026-09-01 統合時に実際に起きた）。
 
 見た目を変えたときは、加えて実際に描画した PNG を見る（[docs/verification.md](docs/verification.md)）。UI 部品は `pnpm run storybook` で状態ごとに確認できる。配布に関わる変更（scripts/・packages/ の依存）をしたら `pnpm run pack` → `WHITEBOX_EXE` 経路の e2e まで回す（[docs/packaging.md](docs/packaging.md)）。

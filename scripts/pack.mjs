@@ -22,7 +22,7 @@ const WORKSPACE_PACKAGES = ['core', 'contracts']
 const need = ['dist', 'dist-electron', 'assets', ...WORKSPACE_PACKAGES.map((p) => `packages/${p}/dist`)]
 for (const dir of need) {
   if (!fs.existsSync(path.join(ROOT, dir))) {
-    console.error(`${dir}/ が無い。先に npm run build を通すこと。`)
+    console.error(`${dir}/ が無い。先に pnpm run build を通すこと。`)
     process.exit(1)
   }
 }
