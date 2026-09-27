@@ -37,6 +37,24 @@ function legacy() {
 }
 
 describe('目標の操作', () => {
+  it('子タスクのない目標も成果を記録して達成・非達成を判定できる', () => {
+    const db = normalizeDatabase({})
+    const goal = createGoal(db, { goal: '研究テーマを決める' })
+    expect(goal.outcome).toMatchObject({ status: 'pending', deliverable: '', result: '', assessedAt: null })
+    const before = JSON.stringify(goal)
+    expect(() => updateGoal(db, goal.id, { outcome: { status: 'achieved' } })).toThrow('成果物または達成結果')
+    expect(JSON.stringify(goal)).toBe(before)
+    updateGoal(db, goal.id, { outcome: { result: '研究テーマを決定した' } })
+    updateGoal(db, goal.id, { outcome: { status: 'achieved' } })
+    expect(goal.outcome).toMatchObject({ status: 'achieved', result: '研究テーマを決定した' })
+    expect(goal.outcome?.assessedAt).toEqual(expect.any(Number))
+    expect(db.tasks).toHaveLength(0)
+    updateGoal(db, goal.id, { outcome: { status: 'not-achieved', result: '再検討が必要' } })
+    expect(goal.outcome).toMatchObject({ status: 'not-achieved', result: '再検討が必要' })
+    updateGoal(db, goal.id, { outcome: { status: 'pending' } })
+    expect(goal.outcome?.assessedAt).toBe(null)
+  })
+
   it('作成と統合は親子構造を保持し、文章の編集は構造履歴を増やさない', () => {
     const db = normalizeDatabase({})
     const a = createGoal(db, { goal: 'A', reason: '理由' })
@@ -140,6 +158,15 @@ describe('目標の操作', () => {
 })
 
 describe('道標JSONの追加取り込み', () => {
+  it('旧版で記録した取込指紋を維持し、同じデータの再取込を防ぐ', () => {
+    const db = normalizeDatabase({})
+    const source = { version: 1, nodes: { n1: { id: 'n1', goal: '研究テーマを決める', reason: '', parentId: null, children: [] } }, heads: ['n1'], activeHeadId: 'n1' }
+    const fingerprint = '56c9340f461846e4fcd53b8cc3692c47ed4b162d3048be27637f27a7e7181bce'
+    db.goalMapImports = [fingerprint]
+    expect(() => importGoals(db, source)).toThrow('取り込み済み')
+    expect(db.goalMap.heads).toHaveLength(0)
+  })
+
   it('全IDと参照を振り直し、既存データ・本文・順序・UIを保持する', () => {
     const db = normalizeDatabase({})
     const existing = createGoal(db, { goal: '既存' })

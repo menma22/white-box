@@ -57,6 +57,17 @@
 .gm-tooltip p { margin: 7px 0; color: var(--text-2); }
 .gm-detail { width: 306px; flex: none; padding: 18px; overflow-y: auto; border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; gap: 16px; }
 .gm-detail > * { flex: none; }
+.gm-outcome { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.gm-outcome h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.gm-outcome > p { margin: 0; }
+.gm-outcome .field { display: flex; flex-direction: column; gap: 5px; }
+.gm-outcome textarea { resize: vertical; line-height: 1.5; }
+.gm-outcome-status { border-radius: var(--r-pill); padding: 3px 8px; background: var(--surface-2); color: var(--text-2); font-size: 11px; }
+.gm-outcome-achieved { background: var(--accent-soft); color: var(--accent-deep); }
+.gm-outcome-not-achieved { background: var(--rose-soft); color: var(--rose); }
+.gm-outcome-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.gm-outcome-actions .btn[aria-pressed='true'] { border: 1px solid var(--accent-line); }
+.gm-outcome-error { color: var(--rose); font-size: 11px; }
 .gm-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .gm-section-heading h2 { font-size: 14px; font-weight: 600; margin: 0; }
 .gm-text { width: 100%; min-width: 0; }

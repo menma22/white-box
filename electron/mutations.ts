@@ -3,10 +3,11 @@
  *
  * タスクを消してもセッションの記録は消さない（過去を書き換えないため）。
  */
-import type { Database, GoalHistory, GoalIssue, GoalMap, GoalNode, ID, Priority, Project, Task, TaskStatus } from '../shared/types.js'
+import type { Database, GoalHistory, GoalIssue, GoalMap, GoalNode, ID, OutcomeRecord, Priority, Project, Task, TaskStatus } from '../shared/types.js'
 import { newId } from '../shared/session-ops.js'
 import { createHash } from 'node:crypto'
 import { goalHead, goalId, goalRecord, goalString, goalTime, isGoalHidden, parseGoalMap, parseGoalUi, validGoalDue } from '../shared/goal-map.js'
+import { changeOutcome, emptyOutcome } from '../shared/outcome.js'
 
 export function createProject(db: Database, input: { name: string; hue?: number }): Project {
   const now = Date.now()
@@ -154,7 +155,7 @@ function history(db: Database, type: GoalHistory['type'], nodeId: ID, extra: Par
 }
 
 function node(goal: string, reason: string, parentId: ID | null): GoalNode {
-  return { id: newId('goal'), goal: goalString(goal), reason: goalString(reason), parentId, children: [], hidden: false, hiddenAt: null, hideReason: '' }
+  return { id: newId('goal'), goal: goalString(goal), reason: goalString(reason), parentId, children: [], hidden: false, hiddenAt: null, hideReason: '', outcome: emptyOutcome() }
 }
 
 export function createGoal(db: Database, input: { goal: string; reason?: string; parentId?: ID | null }): GoalNode {
@@ -171,12 +172,14 @@ export function createGoal(db: Database, input: { goal: string; reason?: string;
   return created
 }
 
-export function updateGoal(db: Database, id: ID, patch: { goal?: string; reason?: string }): void {
+export function updateGoal(db: Database, id: ID, patch: { goal?: string; reason?: string; outcome?: Partial<OutcomeRecord> }): void {
   const target = requireGoal(db, id)
   if (patch.goal !== undefined) goalString(patch.goal)
   if (patch.reason !== undefined) goalString(patch.reason)
+  const outcome = patch.outcome === undefined ? target.outcome : changeOutcome(target.outcome, patch.outcome, Date.now())
   if (patch.goal !== undefined) target.goal = patch.goal
   if (patch.reason !== undefined) target.reason = patch.reason
+  if (outcome !== undefined) target.outcome = outcome
 }
 
 export function mergeGoals(db: Database, input: { ids: ID[]; goal: string; reason?: string }): GoalNode {
@@ -301,7 +304,9 @@ export function importGoals(db: Database, data: unknown): { nodes: number; tasks
       due: validGoalDue(task.due === '' ? null : task.due), goalNodeId: null,
     }
   })
-  const fingerprint = createHash('sha256').update(canonical({ ...imported, tasks })).digest('hex')
+  // Keep the v1 import fingerprint stable across the new outcome field.
+  const legacyNodes = Object.fromEntries(Object.entries(imported.nodes).map(([id, { outcome: _outcome, ...node }]) => [id, node]))
+  const fingerprint = createHash('sha256').update(canonical({ ...imported, nodes: legacyNodes, tasks })).digest('hex')
   if (db.goalMapImports?.includes(fingerprint)) throw new Error('この道標データは取り込み済みです。同じ JSON を再度取り込む必要はありません')
   const remap = new Map(Object.keys(imported.nodes).map((id) => [id, newId('goal')]))
   const ref = (id: ID): ID => remap.get(id)!

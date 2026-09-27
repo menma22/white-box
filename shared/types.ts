@@ -40,6 +40,15 @@ export interface Task {
   goalNodeId?: ID | null
 }
 
+export type OutcomeStatus = 'pending' | 'achieved' | 'not-achieved'
+
+export interface OutcomeRecord {
+  status: OutcomeStatus
+  deliverable: string
+  result: string
+  assessedAt: number | null
+}
+
 export interface GoalNode {
   id: ID
   goal: string
@@ -49,6 +58,7 @@ export interface GoalNode {
   hidden: boolean
   hiddenAt: number | null
   hideReason: string
+  outcome?: OutcomeRecord
 }
 
 export interface GoalIssue {

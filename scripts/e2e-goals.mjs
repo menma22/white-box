@@ -300,6 +300,17 @@ async function verifyUi() {
   await fill('[aria-label="新しい目標の理由"]', '日々の実行と目標をつなげる')
   await button('作成する')
   const head = await until(() => Object.values(read().goalMap.nodes).find((n) => n.goal === '画面で作る最上位目標'), 'UI head persisted')
+  await button('達成にする', '.gm-outcome')
+  check('UI rejects achievement without a recorded result', read().goalMap.nodes[head.id].outcome.status === 'pending' && await page.evaluate('document.querySelector(".gm-outcome-error")?.textContent.includes("成果物または達成結果")'))
+  await fill('.gm-outcome label:nth-of-type(2) textarea', '研究テーマを決めた')
+  await button('達成にする', '.gm-outcome')
+  await until(() => read().goalMap.nodes[head.id].outcome.status === 'achieved', 'UI outcome persisted')
+  check('A head with no tasks can be achieved with a result', read().tasks.every((task) => task.goalNodeId !== head.id) && read().goalMap.nodes[head.id].outcome.result === '研究テーマを決めた' && await page.evaluate(`document.querySelector('[data-node-id="${head.id}"] .gm-node-meta')?.textContent.includes('達成')`))
+  await screenshot('01-achieved-outcome')
+  await button('非達成', '.gm-outcome')
+  await until(() => read().goalMap.nodes[head.id].outcome.status === 'not-achieved', 'UI outcome reassessed')
+  await button('未判定', '.gm-outcome')
+  await until(() => read().goalMap.nodes[head.id].outcome.status === 'pending', 'UI outcome reset')
   await button('＋ 子目標', '.gm-detail')
   await fill('[aria-label="新しい目標"]', '画面で作る子目標')
   await button('作成する')
@@ -506,5 +517,5 @@ try {
   try { await stop() } catch (error) { console.error(error); exitCode = 1 }
   fs.writeFileSync(path.join(RUN, 'result.json'), JSON.stringify({ exitCode, checks, errors }, null, 2))
   console.log(`Evidence: ${RUN}`)
-  process.exitCode = exitCode
+  process.exit(exitCode)
 }

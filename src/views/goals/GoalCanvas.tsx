@@ -133,7 +133,7 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
           <button type="button" className="gm-node-body" aria-label={`目標：${goal.goal || '未入力の目標'}`} aria-pressed={selected === id}
             onClick={() => { if (tipTimer.current) clearTimeout(tipTimer.current); onSelect(id); setTip(null) }} onMouseEnter={(event) => showTip(id, event.currentTarget)} onMouseLeave={hideTip}
             onFocus={(event) => showTip(id, event.currentTarget)} onBlur={hideTip}>
-            <span className="gm-node-meta">{!goal.parentId ? '最上位の目標' : '目標'}{hidden ? ' · 非表示' : ''}</span>
+            <span className="gm-node-meta">{!goal.parentId ? '最上位の目標' : '目標'}{goal.outcome?.status === 'achieved' ? ' · 達成' : goal.outcome?.status === 'not-achieved' ? ' · 非達成' : ''}{hidden ? ' · 非表示' : ''}</span>
             <strong>{goal.goal || '未入力の目標'}</strong><span className="gm-node-reason">{goal.reason || '理由を添える'}</span>
           </button>
           {!hidden && <button type="button" className="gm-node-add" aria-label={`${goal.goal}に子目標を追加`} onClick={() => onAdd(id)}>＋</button>}
