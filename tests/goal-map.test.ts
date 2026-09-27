@@ -113,10 +113,14 @@ describe('目標の操作', () => {
     const before = JSON.stringify(task)
     expect(() => updateTask(db, task.id, { title: '壊さない', due: '2026-02-30' })).toThrow()
     expect(JSON.stringify(task)).toBe(before)
+    expect(() => updateTask(db, task.id, { title: '  ' })).toThrow('タスク名を入力してください')
+    expect(JSON.stringify(task)).toBe(before)
     const issue = createIssue(db, { kind: 'idea', text: '  改善  ', nodeId: goal.id })
     updateIssue(db, issue.id, { text: '共通の編集', resolved: true })
     expect(db.goalMap.issues[0]).toBe(issue)
     expect(issue).toMatchObject({ text: '共通の編集', resolved: true, nodeId: goal.id })
+    expect(() => updateIssue(db, issue.id, { text: '  ' })).toThrow('問題の内容を入力してください')
+    expect(issue.text).toBe('共通の編集')
   })
 
   it('葉は114px間隔・列は360px間隔で親は子の中点に置く', () => {

@@ -117,7 +117,15 @@ function TaskTitle({ value, onSave }: { value: string; onSave: (value: string) =
   const editing = useRef(false)
   useEffect(() => { if (!editing.current) setDraft(value) }, [value])
   return <input className="input gm-task-title" aria-label="タスク名" title={draft} value={draft}
-    onFocus={() => { editing.current = true }} onBlur={() => { editing.current = false }}
-    onChange={(event) => { setDraft(event.target.value); onSave(event.target.value) }}
+    onFocus={() => { editing.current = true }} onBlur={() => {
+      editing.current = false
+      const title = draft.trim()
+      setDraft(title || value)
+      if (title && title !== value) onSave(title)
+    }}
+    onChange={(event) => {
+      setDraft(event.target.value)
+      if (event.target.value.trim()) onSave(event.target.value)
+    }}
     onKeyDown={(event) => { if (!event.nativeEvent.isComposing && (event.key === 'Enter' || event.key === 'Escape')) event.currentTarget.blur() }} />
 }

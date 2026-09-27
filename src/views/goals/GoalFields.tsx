@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 export type GoalRun = (command: string, args: Record<string, unknown>) => Promise<boolean>
 
-export function GoalText({ value, label, multiline = false, onSave }: {
-  value: string; label: string; multiline?: boolean; onSave: (value: string) => void
+export function GoalText({ value, label, multiline = false, required = false, onSave }: {
+  value: string; label: string; multiline?: boolean; required?: boolean; onSave: (value: string) => void
 }) {
   const [draft, setDraft] = useState(value)
   const focused = useRef(false)
@@ -11,10 +11,17 @@ export function GoalText({ value, label, multiline = false, onSave }: {
   const props = {
     className: 'input gm-text', 'aria-label': label, value: draft,
     onFocus: () => { focused.current = true },
-    onBlur: () => { focused.current = false },
+    onBlur: () => {
+      focused.current = false
+      if (required) {
+        const text = draft.trim()
+        setDraft(text || value)
+        if (text && text !== value) onSave(text)
+      }
+    },
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setDraft(event.target.value)
-      onSave(event.target.value)
+      if (!required || event.target.value.trim()) onSave(event.target.value)
     },
   }
   return multiline ? <textarea {...props} rows={2} /> : <input {...props} />

@@ -228,7 +228,9 @@ async function verifyIpc() {
     ['goal:hide', { id: 'missing', reason: '' }],
     ['issue:create', { kind: 'unknown', text: '不正種別' }],
     ['issue:create', { kind: 'idea', text: '参照切れ', nodeId: 'missing' }],
+    ['issue:update', { id: issue.id, patch: { text: '  ' } }],
     ['task:update', { id: linked.id, patch: { title: '部分変更禁止', due: '2026-02-30' } }],
+    ['task:update', { id: linked.id, patch: { title: '  ' } }],
     ['task:update', { id: linked.id, patch: { goalNodeId: 'missing' } }],
     ['goal:ui', { patch: { view: 'unknown' } }],
   ]
@@ -319,6 +321,9 @@ async function verifyUi() {
   await click('.gm-issue-row input[type="checkbox"]')
   await until(() => read().goalMap.issues.find((i) => i.id === issue.id)?.resolved, 'UI issue resolved')
   check('UI edits and resolves the same issue', read().goalMap.issues.some((i) => i.id === issue.id && i.text === '画面で編集した問い' && i.kind === 'idea' && i.resolved))
+  await fill('[aria-label="問題・問い・改善の本文"]', '  ')
+  await click('[aria-label="問題の種別"]')
+  check('Blank issue edit restores the saved text', read().goalMap.issues.find((i) => i.id === issue.id)?.text === '画面で編集した問い' && await page.evaluate(`document.querySelector(${JSON.stringify('[aria-label="問題・問い・改善の本文"]')})?.value === '画面で編集した問い'`))
   await click('.gm-issue-row input[type="checkbox"]')
   await until(() => !read().goalMap.issues.find((i) => i.id === issue.id)?.resolved, 'UI issue reopened')
   await click('.gm-detail-section:has(.gm-linked-tasks) > summary')
@@ -406,7 +411,12 @@ async function verifyUi() {
   const task = await until(() => read().tasks.find((t) => t.title === '画面で追加する共通タスク'), 'UI task persisted')
   const row = `.gm-task-row[data-task-id="${task.id}"]`
   await fill(`${row} [aria-label="タスク名"]`, '編集した共通タスク')
+  await click(`${row} select`)
+  await until(() => read().tasks.find((t) => t.id === task.id)?.title === '編集した共通タスク', 'UI title saved on blur')
   await select(`${row} select`, 'high')
+  await fill(`${row} [aria-label="タスク名"]`, '  ')
+  await click(`${row} select`)
+  check('Blank task edit restores the saved title', read().tasks.find((t) => t.id === task.id)?.title === '編集した共通タスク' && await page.evaluate(`document.querySelector(${JSON.stringify(row + ' [aria-label="タスク名"]')})?.value === '編集した共通タスク'`))
   await page.evaluate(`(() => {const input=document.querySelector(${JSON.stringify(row + ' input[type=date]')}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'2026-12-25');input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`)
   await until(() => read().tasks.find((t) => t.id === task.id)?.due === '2026-12-25', 'UI due saved')
   await button('詳細', row)

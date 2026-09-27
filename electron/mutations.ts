@@ -82,6 +82,7 @@ export function createTask(
 export function updateTask(db: Database, id: ID, patch: Partial<Task>): void {
   const t = db.tasks.find((x) => x.id === id)
   if (!t) return
+  if (patch.title !== undefined && (typeof patch.title !== 'string' || !patch.title.trim())) throw new Error('タスク名を入力してください')
   if (patch.due !== undefined) validGoalDue(patch.due)
   if (patch.goalNodeId != null) requireGoal(db, patch.goalNodeId)
   const nextStatus = patch.status ?? t.status
@@ -237,7 +238,10 @@ export function updateGoalUi(db: Database, input: { patch?: Partial<GoalMap['ui'
 
 function issuePatch(db: Database, patch: Partial<Pick<GoalIssue, 'text' | 'kind' | 'resolved' | 'nodeId'>>): Partial<GoalIssue> {
   const out: Partial<GoalIssue> = {}
-  if (patch.text !== undefined) out.text = goalString(patch.text)
+  if (patch.text !== undefined) {
+    out.text = goalString(patch.text)
+    if (!out.text.trim()) throw new Error('問題の内容を入力してください')
+  }
   if (patch.kind !== undefined) {
     if (!['problem', 'question', 'idea'].includes(patch.kind)) throw new Error('問題の種別が不正です')
     out.kind = patch.kind

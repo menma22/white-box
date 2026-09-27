@@ -42,7 +42,7 @@ export function GoalIssues({ nodeId, onJump, run }: { nodeId?: string; onJump: (
       <input type="checkbox" checked={issue.resolved} aria-label={`${issue.text}を${issue.resolved ? '未解決に戻す' : '解決する'}`}
         onChange={(event) => void run('issue:update', { id: issue.id, patch: { resolved: event.target.checked } })} />
       <div className="gm-issue-content">
-        <GoalText value={issue.text} label="問題・問い・改善の本文" onSave={(value) => void run('issue:update', { id: issue.id, patch: { text: value } })} />
+        <GoalText value={issue.text} label="問題・問い・改善の本文" required onSave={(value) => void run('issue:update', { id: issue.id, patch: { text: value } })} />
         <div className="gm-row-meta">
           <select className="input gm-kind" aria-label="問題の種別" value={issue.kind}
             onChange={(event) => void run('issue:update', { id: issue.id, patch: { kind: event.target.value } })}>
