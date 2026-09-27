@@ -1,0 +1,37 @@
+.gm-task-view { display: flex; min-height: 0; height: 100%; overflow: hidden; }
+.gm-root > .gm-task-view { flex: 1; height: auto; }
+.board > .gm-task-view { flex: 1; height: auto; }
+.board-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.board-head .board-projects { min-width: 0; flex: 1; }
+.board-head > .segmented { flex: none; }
+.gm-task-list { flex: 1; min-width: 0; overflow: auto; padding: 24px; }
+.gm-task-list h2 { font-size: 20px; margin: 0 0 8px; }
+.gm-task-count, .gm-task-intro { color: var(--text-3); font-size: 12px; font-weight: 400; }
+.gm-task-add { display: flex; gap: 8px; margin: 18px 0; }
+.gm-task-add > input { flex: 1; min-width: 0; }
+.gm-task-row { display: flex; align-items: center; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+.gm-task-row > input[type=checkbox] { accent-color: var(--accent); width: 17px; height: 17px; flex: none; }
+.gm-task-text { flex: 1; min-width: 100px; }
+.gm-task-title { width: 100%; border-color: transparent; background: transparent; text-overflow: ellipsis; }
+.gm-task-row.is-done .gm-task-title { color: var(--text-3); text-decoration: line-through; }
+.gm-task-goal { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; background: transparent; color: var(--accent); font-size: 11px; text-align: left; cursor: pointer; }
+.gm-task-priority { width: 62px; flex: none; }
+.gm-task-action { opacity: 0; transition: opacity .12s var(--ease); }
+.gm-task-row:hover .gm-task-action, .gm-task-row:focus-within .gm-task-action { opacity: 1; }
+.gm-task-priority.priority-high { background: var(--accent-deep); color: var(--panel); }
+.gm-task-priority.priority-low { color: var(--text-3); }
+.gm-task-due { width: 142px; flex: none; color: var(--text-2); }
+.gm-task-due.is-overdue { color: var(--rose); border-color: var(--rose); }
+.gm-task-due.is-today { color: var(--accent); border-color: var(--accent); }
+.gm-task-done { margin-top: 18px; }
+.gm-task-error { color: var(--rose); overflow-wrap: anywhere; }
+.gm-import-help { font-size: 12px; color: var(--text-2); margin: 16px 0; }
+.gm-import-help summary { cursor: pointer; color: var(--accent); }
+.gm-import-help code { display: block; padding: 10px; background: var(--surface-2); overflow-wrap: anywhere; }
+.gm-import-file { margin: 16px 0; }
+.gm-import-json { width: 100%; resize: vertical; font-family: var(--font-body); }
+@media (max-width: 1100px) {
+  .gm-task-row { flex-wrap: wrap; }
+  .gm-task-text { flex-basis: calc(100% - 35px); }
+  .gm-task-list { padding: 16px; }
+}

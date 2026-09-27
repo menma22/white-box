@@ -4,6 +4,7 @@ dist-electron/
 .demo/
 .e2e/
 .e2e2/
+.e2e-goals/
 shots/
 *.log
 release/

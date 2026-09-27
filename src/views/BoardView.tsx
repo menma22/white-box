@@ -12,11 +12,15 @@ import {
   STATUS_ORDER,
 } from '../lib/selectors'
 import type { Task, TaskStatus } from '@shared/types'
-import { Chip, ProgressBar } from '../ui/primitives'
+import { Chip, ProgressBar, Segmented } from '../ui/primitives'
 import { formatDuration } from '@shared/engine'
 import { TaskDetail } from './TaskDetail'
+import { GoalTasks } from './goals/GoalTasks'
 
-export function BoardView() {
+export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, onTaskJumpHandled }: {
+  onJumpGoal?: (id: string) => void; initialView?: 'board' | 'list'; initialTaskId?: string | null
+  onTaskJumpHandled?: () => void
+}) {
   const state = useData()
   const now = useApp((s) => s.now)
   const [filter, setFilter] = useState<string | null>(null)
@@ -25,6 +29,7 @@ export function BoardView() {
   const [dropAt, setDropAt] = useState<{ status: TaskStatus; index: number } | null>(null)
   const [newProject, setNewProject] = useState('')
   const [addingProject, setAddingProject] = useState(false)
+  const [view, setView] = useState<'board' | 'list'>(initialView)
 
   const spent = useMemo(() => focusByTask(state, now), [state.sessions, now])
 
@@ -77,8 +82,10 @@ export function BoardView() {
             </button>
           )}
         </div>
+        <Segmented value={view} onChange={setView} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
       </header>
 
+      {view === 'list' ? <GoalTasks onJump={onJumpGoal} initialTaskId={initialTaskId} onJumpHandled={onTaskJumpHandled} projectId={filter} /> : <>
       <div className="board-cols">
         {STATUS_ORDER.map((status) => {
           const roots = visible(columnRoots(state, status))
@@ -127,6 +134,7 @@ export function BoardView() {
       </div>
 
       {selected && <TaskDetail taskId={selected} onClose={() => setSelected(null)} />}
+      </>}
     </div>
   )
 }
@@ -213,6 +221,8 @@ function Card({
 
         <div className="card-meta">
           {project && <Chip color={projectColor(project)}>{project.name}</Chip>}
+          {task.due && <Chip title="締切">{task.due}</Chip>}
+          {task.goalNodeId && state.goalMap.nodes[task.goalNodeId] && <Chip title="道標の目標">{state.goalMap.nodes[task.goalNodeId]!.goal || '未入力の目標'}</Chip>}
           {time > 0 && <span className="num card-time">{formatDuration(time, 'compact')}</span>}
           {children.length > 0 && (
             <span className="card-sub disp">
