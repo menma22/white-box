@@ -52,7 +52,7 @@ core      →  （依存なし）
 
 全 IPC コマンドは `packages/contracts/src/commands.ts` の `COMMANDS` に **コマンド名 → 引数スキーマ / 返り値スキーマ** として定義されている。振る舞いを変える前に、まずここを変える。
 
-- **型の正は `packages/core` の interface。** `packages/contracts/src/schemas.ts` の zod スキーマは `z.ZodType<CoreType>` で注釈され、型とスキーマがずれると `tsc` が落ちる（decisions 002 系の一方向ルール。zod から型を生やす逆方向は core の依存ゼロを壊すので採らない）
+- **型の正は `packages/core` の interface。** `packages/contracts/src/schemas.ts` は zod スキーマの推論型と core の型を `Exact` 型で照合し、ずれると `tsc` が落ちる（decisions 002 系の一方向ルール。zod から core の型を生やす逆方向は core の依存ゼロを壊すので採らない）
 - レンダラの `apps/renderer/src/lib/bridge.ts` は `invoke<N extends CommandName>(name, args)` の形で、コマンド名・引数・返り値が契約から型推論される。文字列 + `any` の素通し呼び出しは無い
 - メイン側は `apps/desktop/src/presentation/ipc.ts` が `isCommand` / `parseArgs` で検証してから `app/handlers.ts` の `dispatch` へ渡す。壊れた引数・未知のコマンドは `{ok:false, error}` で拒否される（`scripts/e2e.mjs` が実 IPC 越しにこれを確認している）
 - なぜ OpenAPI ではなく zod の TS スキーマか、なぜ IPC チャンネル名を変えなかったかは decisions 013 / [plans/rebuild-sessions.md](plans/rebuild-sessions.md) D-02・D-03 を参照
@@ -103,7 +103,7 @@ dayKey(ts, dayStartHour)   一日の境目を考慮した日付キー
 
 ## 状態遷移（apps/desktop/src/domain）
 
-`domain/session-ops.ts` が、開始・一時停止・休憩・再開・タスク切替・延長・満了・終了・進捗記録を扱う。`domain/task-ops.ts` が Project / Task の作成・更新・移動・削除を扱う。**すべて「新しい値を返す」純関数**で統一されている（decisions D-05。以前は Session だけ純関数で Task は破壊的変更という割れがあったが、再編で解消した）。終了済みのセッションの開始・終了・区間という事実は動かさない（除外の申告は一時停止区間として記録する）。
+`domain/session-ops.ts` が、開始・一時停止・休憩・再開・タスク切替・延長・満了・終了・進捗記録を扱う。`domain/task-ops.ts` が Project / Task の作成・更新・移動・削除を扱う。**すべて「新しい値を返す」純関数**で統一されている（decisions D-05。以前は Session だけ純関数で Task は破壊的変更という割れがあったが、再編で解消した）。除外の申告では終了済みセッションの開始・終了時刻を動かさず、一時停止区間を追加する。既存の手動時刻編集は開始・終了時刻を変更でき、タスク別実作業の集計は変更後のセッション範囲で行う。
 
 ## app 層 — ユースケースと Port（apps/desktop/src/app）
 

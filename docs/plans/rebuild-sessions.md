@@ -26,7 +26,7 @@
 | # | 問題 | 採用 | 理由と捨てた候補 | 再検討条件 |
 |---|---|---|---|---|
 | D-01 | pnpm のビルドスクリプト許可 | `allowBuilds: {electron: true, esbuild: true}` を pnpm-workspace.yaml に明示（※S1 実測: pnpm 11 は旧設定名 onlyBuiltDependencies を無視する。electron はバイナリ取得、esbuild は vite が使う実行バイナリの取得に必須） | pnpm は既定で postinstall を止める。全許可は不要物まで走る | 依存追加でビルドが必要になったとき |
-| D-02 | データ型の正とスキーマの関係 | 型の正は `packages/core` の interface。contracts の zod は `z.ZodType<T>` 注釈で結ぶ | スキーマと型のドリフトをコンパイラが検出できる。zod から型を生やす逆方向は core の独立性（依存ゼロ）を壊す | — |
+| D-02 | データ型の正とスキーマの関係 | 型の正は `packages/core` の interface。contracts の zod スキーマの推論型を `Exact` 型で core と照合する | スキーマと型のドリフトをコンパイラが検出できる。zod から core の型を生やす逆方向は core の独立性（依存ゼロ）を壊す | — |
 | D-03 | IPC チャネル | 既存 `whitebox:cmd` / `state` / `tick` を維持。コマンド名も 33 個そのまま | preload（壊れやすい CJS 境界）を触らない。e2e が回帰網としてそのまま効く | 契約の破壊的変更が必要になったとき |
 | D-04 | workspace パッケージのビルド | packages/* は各自 tsc で dist を吐き、exports で公開。アプリは dist を参照 | Electron メインは node16 解決の実行時 require があるため TS ソース直参照は不可。Vite 側も同じ経路に揃えて二重解決を避ける | ビルド待ちが開発の摩擦になったとき（watch 併用で緩和） |
 | D-05 | mutations の純関数化 | Session 系と同じ「新しい値を返す」形へ統一 | ドメイン層の方針が 2 つに割れている現状（Session=純関数 / Task=破壊的変更）を解消。データ規模（個人数年で数千件）で clone コストは無視できる | — |
@@ -60,7 +60,7 @@
 | ID | タスク | 成果物 | 完了条件（機械判定） |
 |---|---|---|---|
 | T06 | packages/core 新設（D-04） | shared/types.ts + engine.ts の移設・独自 tsc ビルド・exports | core 単体で `pnpm --filter core build && test` 緑。旧 shared/ が消え、全 import が @white-box/core を向く |
-| T07 | packages/contracts 骨格 + zod 導入（D-02） | contracts パッケージ・Task/Session/AppState 等のスキーマ（z.ZodType<T> で core と結線） | スキーマの型注釈が core の interface と一致しないと tsc が落ちることを、1 フィールド変えて実証→戻す |
+| T07 | packages/contracts 骨格 + zod 導入（D-02） | contracts パッケージ・Task/Session/AppState 等のスキーマ（`Exact` 型で core と照合） | スキーマの推論型が core の interface と一致しないと tsc が落ちることを、1 フィールド変えて実証→戻す |
 | T08 | 全 33 コマンドの契約定義 | コマンド名 → args/result スキーマの対応表 1 ファイル | 33 コマンド全部に args・result スキーマが存在（テストで件数を固定） |
 | T09 | レンダラ bridge の型付き化 | bridge.ts: `invoke('session:start', {...})` が契約から型推論される形 | `call('文字列', any)` の素通し呼び出しが src/ から 0 件（grep）。引数名を 1 つ変えると typecheck が落ちることを実証→戻す |
 | T10 | メイン側受け口の契約検証 | ipcMain ハンドラで args を契約 validate してから run() へ | 不正 args が {ok:false} で拒否されるテスト。`as any` 3 箇所が 0 件 |
