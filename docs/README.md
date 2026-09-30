@@ -11,6 +11,7 @@
 | 5 | [verification.md](verification.md) | 何をどう検証するか。**検証器そのものが嘘をつく落とし穴**も含む |
 | 6 | [packaging.md](packaging.md) | 配布物の作り方と、デスクトップ・タスクバーへの置き方 |
 | 7 | [decisions.md](decisions.md) | 決めたことと、**採らなかった選択肢** |
+| 8 | [michishirube.md](michishirube.md) | 道標の機能対応・使い方・旧データ取り込み・保存と検証 |
 
 使い方は [ルートの README](../README.md)、コードを触る前の前提は [CLAUDE.local.md](../CLAUDE.local.md)。
 

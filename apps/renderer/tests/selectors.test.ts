@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AppState, Session, Task } from '@white-box/core/types'
 import { HOUR, MINUTE } from '@white-box/core/engine'
+import { emptyGoalMap } from '@white-box/core/goal-map'
 import {
   ancestorTitles,
   candidateTasks,
@@ -72,6 +73,7 @@ function state(over: Partial<AppState> = {}): AppState {
       onboardedAt: null,
     },
     dayNotes: {},
+    goalMap: emptyGoalMap(),
     live: null,
     breakTimer: null,
     recovery: null,

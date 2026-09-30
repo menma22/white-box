@@ -12,6 +12,14 @@
     "./types": {
       "types": "./dist/types.d.ts",
       "default": "./dist/types.js"
+    },
+    "./goal-map": {
+      "types": "./dist/goal-map.d.ts",
+      "default": "./dist/goal-map.js"
+    },
+    "./outcome": {
+      "types": "./dist/outcome.d.ts",
+      "default": "./dist/outcome.js"
     }
   },
   "scripts": {

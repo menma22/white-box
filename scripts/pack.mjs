@@ -8,11 +8,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUT = path.join(ROOT, 'release', 'White Box')
 const EXE = path.join(OUT, 'White Box.exe')
-const ELECTRON_DIST = path.join(ROOT, 'node_modules', 'electron', 'dist')
+const ELECTRON_DIST = path.dirname(createRequire(import.meta.url)('electron'))
 
 // pnpm workspace: dist-electron からの実行時 import（@white-box/core, @white-box/contracts）が
 // bare specifier のまま残る（tsc はバンドルしない）。node_modules を持たない配布先では

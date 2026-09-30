@@ -12,14 +12,15 @@
 | 型 | `pnpm run typecheck` | レンダラ・メインプロセス・テストの 3 つ（`tsconfig.test.json` が全テストを拾う） |
 | 境界 | `pnpm run lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
-| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe" node scripts/e2e.mjs` | 組み上げた exe の中で同じことが起きるか |
+| 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物の IPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
+| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて両方の E2E を実行 | 組み上げた exe の中で同じことが起きるか |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
 | UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
 
 変更したら通すのはこの並び。
 
 ```bash
-pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs
+pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node scripts/e2e.mjs && node scripts/e2e-goals.mjs
 ```
 
 ## 通し確認が見ているもの
@@ -55,7 +56,7 @@ pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node s
 
 `e2e.mjs` はデバッグポート経由でアプリを操作する。**別の Electron アプリが同じポートを掴んでいると、そちらのデバッガに繋がる**（実際に一度、無関係のアプリのページ一覧を読んでいた）。
 
-使う前に `netstat` で空いていることを確認する。
+両方の E2E は OS が割り当てる空きポートと、実行ごとのデータ・プロファイルを使う。接続先の URL が検証対象ビルドの `dist/index.html` と一致することも確認する。
 
 ### 起動中の White Box があると、実 exe の検証は無言で終わる
 

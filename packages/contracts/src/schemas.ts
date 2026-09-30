@@ -5,7 +5,13 @@
 import { z } from 'zod'
 import type {
   AppState,
+  GoalHistory,
+  GoalIssue,
+  GoalMap,
+  GoalNode,
   LiveTick,
+  OutcomeRecord,
+  OutcomeStatus,
   PauseInterval,
   Priority,
   ProgressChange,
@@ -56,6 +62,67 @@ export const TaskSchema = z.object({
   updatedAt: z.number(),
   doneAt: z.number().nullable(),
   createdInSessionId: IdSchema.nullable(),
+  due: z.string().nullable().optional(),
+  goalNodeId: IdSchema.nullable().optional(),
+})
+
+export const OutcomeStatusSchema = z.enum(['pending', 'achieved', 'not-achieved'])
+
+export const OutcomeRecordSchema = z.object({
+  status: OutcomeStatusSchema,
+  deliverable: z.string(),
+  result: z.string(),
+  assessedAt: z.number().nullable(),
+})
+
+export const GoalNodeSchema = z.object({
+  id: IdSchema,
+  goal: z.string(),
+  reason: z.string(),
+  parentId: IdSchema.nullable(),
+  children: z.array(IdSchema),
+  hidden: z.boolean(),
+  hiddenAt: z.number().nullable(),
+  hideReason: z.string(),
+  outcome: OutcomeRecordSchema.optional(),
+})
+
+export const GoalIssueKindSchema = z.enum(['problem', 'question', 'idea'])
+
+export const GoalIssueSchema = z.object({
+  id: IdSchema,
+  text: z.string(),
+  kind: GoalIssueKindSchema,
+  nodeId: IdSchema.nullable(),
+  resolved: z.boolean(),
+  createdAt: z.number(),
+})
+
+export const GoalHistorySchema = z.object({
+  id: IdSchema,
+  at: z.number(),
+  type: z.enum(['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote']),
+  nodeId: IdSchema,
+  parentId: IdSchema.nullable(),
+  note: z.string(),
+  withIds: z.array(IdSchema),
+})
+
+export const GoalUiSchema = z.object({
+  view: z.enum(['map', 'tasks', 'issues', 'history']),
+  headsOpen: z.boolean(),
+  doneOpen: z.boolean(),
+  resolvedOpen: z.boolean(),
+  showHidden: z.boolean(),
+})
+
+export const GoalMapSchema = z.object({
+  nodes: z.record(IdSchema, GoalNodeSchema),
+  heads: z.array(IdSchema),
+  activeHeadId: IdSchema.nullable(),
+  issues: z.array(GoalIssueSchema),
+  history: z.array(GoalHistorySchema),
+  ui: GoalUiSchema,
 })
 
 export const TaskSegmentSchema = z.object({
@@ -165,6 +232,7 @@ export const AppStateSchema = z.object({
   sessions: z.array(SessionSchema),
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
+  goalMap: GoalMapSchema,
   live: LiveTickSchema.nullable(),
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),
   recovery: z.object({ sessionId: IdSchema, lastKnownAt: z.number() }).nullable(),
@@ -191,5 +259,11 @@ const _exact: [
   Exact<z.infer<typeof SettingsSchema>, Settings>,
   Exact<z.infer<typeof LiveTickSchema>, LiveTick>,
   Exact<z.infer<typeof AppStateSchema>, AppState>,
-] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+  Exact<z.infer<typeof OutcomeStatusSchema>, OutcomeStatus>,
+  Exact<z.infer<typeof OutcomeRecordSchema>, OutcomeRecord>,
+  Exact<z.infer<typeof GoalNodeSchema>, GoalNode>,
+  Exact<z.infer<typeof GoalIssueSchema>, GoalIssue>,
+  Exact<z.infer<typeof GoalHistorySchema>, GoalHistory>,
+  Exact<z.infer<typeof GoalMapSchema>, GoalMap>,
+] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 void _exact

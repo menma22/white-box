@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Database, Task } from '@white-box/core/types'
+import { emptyGoalMap } from '@white-box/core/goal-map'
 import {
   createProject,
   createTask,
@@ -32,6 +33,7 @@ function emptyDb(): Database {
       onboardedAt: null,
     },
     dayNotes: {},
+    goalMap: emptyGoalMap(),
   }
 }
 

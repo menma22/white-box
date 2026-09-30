@@ -3,6 +3,7 @@
  * 起きたこと（開いた窓・開始/停止・保存）は calls に記録され、テストが検証できる。
  */
 import type { Database, Task } from '@white-box/core/types'
+import { emptyGoalMap } from '@white-box/core/goal-map'
 import type { Ctx } from '../src/app/ports.js'
 import { newRuntime } from '../src/app/state.js'
 
@@ -28,6 +29,7 @@ export function emptyDb(): Database {
       onboardedAt: null,
     },
     dayNotes: {},
+    goalMap: emptyGoalMap(),
   }
 }
 

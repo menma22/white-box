@@ -5,7 +5,9 @@
  * タスクを消してもセッションの記録は消さない（過去を書き換えないため）。
  */
 import type { Database, ID, Priority, Project, Task, TaskStatus } from '@white-box/core/types'
+import { validGoalDue } from '@white-box/core/goal-map'
 import { newId } from './session-ops.js'
+import { requireGoal } from './goal-ops.js'
 
 export function createProject(db: Database, input: { name: string; hue?: number }): { projects: Project[]; project: Project } {
   const now = Date.now()
@@ -45,8 +47,12 @@ export function createTask(
     priority?: Priority
     notes?: string
     sessionId?: ID | null
+    due?: string | null
+    goalNodeId?: ID | null
   },
 ): { tasks: Task[]; task: Task } {
+  const due = validGoalDue(input.due)
+  const goalNodeId = input.goalNodeId == null ? null : requireGoal(db, input.goalNodeId).id
   const now = Date.now()
   const status = input.status ?? 'inbox'
   const siblings = db.tasks.filter((t) => t.status === status)
@@ -64,11 +70,16 @@ export function createTask(
     updatedAt: now,
     doneAt: null,
     createdInSessionId: input.sessionId ?? null,
+    due,
+    goalNodeId,
   }
   return { tasks: [...db.tasks, task], task }
 }
 
 export function updateTask(db: Database, id: ID, patch: Partial<Task>): Task[] {
+  if (patch.title !== undefined && !patch.title.trim()) throw new Error('タスク名を入力してください')
+  if (patch.due !== undefined) validGoalDue(patch.due)
+  if (patch.goalNodeId != null) requireGoal(db, patch.goalNodeId)
   return db.tasks.map((t) => {
     if (t.id !== id) return t
     const now = Date.now()

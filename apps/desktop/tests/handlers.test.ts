@@ -1,6 +1,6 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 34 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全 44 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（34 コマンド）', () => {
+describe('ユースケースの網羅（44 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -19,6 +19,10 @@ describe('ユースケースの網羅（34 コマンド）', () => {
   it('全コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る', async () => {
     const db = emptyDb()
     db.tasks = [task({ id: 't1' }), task({ id: 't2' })]
+    const goal = (id: string) => ({ id, goal: id, reason: '', parentId: null, children: [], hidden: false, hiddenAt: null, hideReason: '' })
+    db.goalMap.nodes = { g1: goal('g1'), g2: goal('g2') }
+    db.goalMap.heads = ['g1', 'g2']
+    db.goalMap.issues = [{ id: 'i1', text: '難点', kind: 'problem', nodeId: null, resolved: false, createdAt: 0 }]
     const ctx = fakeCtx(db)
     // 復旧系・レビュー系が「対象あり」の経路を通るよう、実行時状態を仕込む
     const handlers = createHandlers(ctx)
@@ -36,6 +40,16 @@ describe('ユースケースの網羅（34 コマンド）', () => {
       'task:move': { id: 't1', status: 'todo', index: 0 },
       'task:delete': { id: 't2' },
       'task:hasTime': { id: 't1' },
+      'goal:create': { goal: '新しい目標' },
+      'goal:update': { id: 'g1', patch: { reason: '理由', outcome: { result: '決まった' } } },
+      'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+      'goal:hide': { id: 'g1', reason: '休止' },
+      'goal:restore': { id: 'g1' },
+      'goal:ui': { patch: { view: 'map' } },
+      'goal:import': { data: { version: 1, nodes: { n1: { id: 'n1', goal: '取込', reason: '', parentId: null, children: [] } }, heads: ['n1'], activeHeadId: 'n1' } },
+      'issue:create': { kind: 'idea', text: '改善', nodeId: 'g1' },
+      'issue:update': { id: 'i1', patch: { resolved: true } },
+      'issue:delete': { id: 'i1' },
       'session:start': { taskId: 't1', minutes: 50 },
       'session:pause': {},
       'session:resume': {},

@@ -8,7 +8,12 @@
 import { z } from 'zod'
 import {
   AppStateSchema,
+  GoalIssueKindSchema,
+  GoalIssueSchema,
+  GoalNodeSchema,
+  GoalUiSchema,
   IdSchema,
+  OutcomeRecordSchema,
   LivePauseReasonSchema,
   PrioritySchema,
   ProgressChangeSchema,
@@ -44,6 +49,8 @@ export const COMMANDS = {
       priority: PrioritySchema.optional(),
       notes: z.string().optional(),
       sessionId: IdSchema.nullable().optional(),
+      due: z.string().nullable().optional(),
+      goalNodeId: IdSchema.nullable().optional(),
       /** true なら実行中セッションのログに「タスク追加」を残す */
       fromSession: z.boolean().optional(),
     }),
@@ -59,6 +66,55 @@ export const COMMANDS = {
   },
   'task:delete': { args: z.strictObject({ id: IdSchema }), result: z.null() },
   'task:hasTime': { args: z.strictObject({ id: IdSchema }), result: z.boolean() },
+
+  // ── 道標（目標・問題・改善）
+  'goal:create': {
+    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional() }),
+    result: GoalNodeSchema,
+  },
+  'goal:update': {
+    args: z.strictObject({
+      id: IdSchema,
+      patch: z.strictObject({
+        goal: z.string().optional(),
+        reason: z.string().optional(),
+        outcome: OutcomeRecordSchema.omit({ assessedAt: true }).partial().strict().optional(),
+      }),
+    }),
+    result: z.null(),
+  },
+  'goal:merge': {
+    args: z.strictObject({ ids: z.array(IdSchema), goal: z.string(), reason: z.string().optional() }),
+    result: GoalNodeSchema,
+  },
+  'goal:hide': { args: z.strictObject({ id: IdSchema, reason: z.string().optional() }), result: z.null() },
+  'goal:restore': { args: z.strictObject({ id: IdSchema }), result: z.null() },
+  'goal:ui': {
+    args: z.strictObject({ patch: GoalUiSchema.partial().strict().optional(), activeHeadId: IdSchema.nullable().optional() }),
+    result: z.null(),
+  },
+  /** zod で形を縛らない: 参照・循環まで見る検証は取り込み処理（parseGoalMap）にしか書けない */
+  'goal:import': {
+    args: z.strictObject({ data: z.unknown() }),
+    result: z.object({ nodes: z.number(), tasks: z.number(), issues: z.number(), history: z.number() }),
+  },
+  'issue:create': {
+    args: z.strictObject({ kind: GoalIssueKindSchema, text: z.string(), nodeId: IdSchema.nullable().optional() }),
+    result: GoalIssueSchema,
+  },
+  'issue:update': {
+    args: z.strictObject({
+      id: IdSchema,
+      patch: z.strictObject({
+        text: z.string().optional(),
+        kind: GoalIssueKindSchema.optional(),
+        resolved: z.boolean().optional(),
+        nodeId: IdSchema.nullable().optional(),
+      }),
+    }),
+    result: z.null(),
+  },
+  'issue:delete': { args: z.strictObject({ id: IdSchema }), result: z.null() },
 
   // ── Session
   'session:start': {

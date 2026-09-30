@@ -6,6 +6,7 @@ import type { ArgsOf, CommandName, ResultOf } from '@white-box/contracts'
 import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
 import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
+import * as goalOps from '../domain/goal-ops.js'
 import type { Ctx } from './ports.js'
 import { buildBreakTimer, buildState, liveSession, replaceSession, taskTitle } from './state.js'
 
@@ -64,6 +65,64 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'task:hasTime': (a) => taskOps.hasRecordedTime(db(), a.id),
+
+    // ── 道標
+    'goal:create': (a) => {
+      const r = goalOps.createGoal(db(), a)
+      db().goalMap = r.goalMap
+      ctx.publish()
+      return r.goal
+    },
+    'goal:update': (a) => {
+      db().goalMap = goalOps.updateGoal(db(), a.id, a.patch)
+      ctx.publish()
+      return null
+    },
+    'goal:merge': (a) => {
+      const r = goalOps.mergeGoals(db(), a)
+      db().goalMap = r.goalMap
+      ctx.publish()
+      return r.goal
+    },
+    'goal:hide': (a) => {
+      db().goalMap = goalOps.hideGoal(db(), a.id, a.reason ?? '')
+      ctx.publish()
+      return null
+    },
+    'goal:restore': (a) => {
+      db().goalMap = goalOps.restoreGoal(db(), a.id)
+      ctx.publish()
+      return null
+    },
+    'goal:ui': (a) => {
+      db().goalMap = goalOps.updateGoalUi(db(), a)
+      ctx.publish()
+      return null
+    },
+    'goal:import': (a) => {
+      const r = goalOps.importGoals(db(), a.data)
+      db().goalMap = r.goalMap
+      db().tasks = r.tasks
+      db().goalMapImports = r.goalMapImports
+      ctx.publish()
+      return r.counts
+    },
+    'issue:create': (a) => {
+      const r = goalOps.createIssue(db(), a)
+      db().goalMap = r.goalMap
+      ctx.publish()
+      return r.issue
+    },
+    'issue:update': (a) => {
+      db().goalMap = goalOps.updateIssue(db(), a.id, a.patch)
+      ctx.publish()
+      return null
+    },
+    'issue:delete': (a) => {
+      db().goalMap = goalOps.deleteIssue(db(), a.id)
+      ctx.publish()
+      return null
+    },
 
     // ── Session
     'session:start': (a) => {

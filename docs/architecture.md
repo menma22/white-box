@@ -80,7 +80,7 @@ core      →  （依存なし）
 
 | kind | 役割 | 特徴 |
 | --- | --- | --- |
-| `main` | 今日 / ボード / 記録 / 設定 | 通常ウィンドウ |
+| `main` | 今日 / ボード / 記録 / 設定 / 道標 / 問題・改善 | 通常ウィンドウ |
 | `start` | 何をやるか選んで開始 | 最前面・枠なし・キーボード完結 |
 | `hud` | 実行中のミニカード | 最前面・透過・クリック素通り。経過と残り（休憩中は休憩の時間）を表示し、設定で非表示にできる |
 | `expire` | 予定時間に到達 | 最前面（全画面アプリの上にも出す） |
@@ -131,7 +131,7 @@ JSON 1ファイル + 日次バックアップ。
 
 ```
 components/ui/   画面をまたぐ部品（Button・Ring・ProgressBar・Chip・Modal など）。1 ファイル 1 部品
-features/        機能ごとの画面部品（board・today・history・settings・welcome・sessions）
+features/        機能ごとの画面部品（board・today・history・settings・welcome・sessions・goals）
 pages/            窓 1 つ = ファイル 1 つ（main → MainWindow.tsx など）
 stores/           app.ts。メインから配られた状態を持つだけ。計算はしない（zustand）
 lib/              bridge.ts（window.whitebox の型付き包み）・selectors.ts（状態から表示用の値を導く）・format.ts
@@ -145,6 +145,10 @@ stories/          Storybook。ui/ と screen/ に分かれ、screen は seed.ts 
 ### import 境界（eslint で機械強制。decisions D-07）
 
 `eslint.config.mjs` が `apps/renderer/src/**/*.{ts,tsx}` に `no-restricted-imports` を掛け、許可する import を `react` / `react-dom` / `zustand` / `@white-box/core` / `@white-box/contracts` / `@/`（自 src のエイリアス）/ 相対 import だけに絞る。`apps/desktop` へ届く import や 3 階層以上の `../` での脱出は別ルールで明示的に禁止。`apps/renderer/src/stories/**` だけは Storybook 関連の import が追加で許可される（本体の境界は変えない）。
+
+## 道標（goals）
+
+道標の目標・問題・構造履歴は同じ Database の `goalMap` に保存する。タスクは既存の `tasks` を共有し、`goalNodeId` で目標へ関連付ける。木の参照・検証・レイアウトは `packages/core/src/goal-map.ts`、成果の判定は `packages/core/src/outcome.ts`、変更は `apps/desktop/src/domain/goal-ops.ts`（他の domain と同じく新しい値を返す純関数）。[統合と旧形式の変換](michishirube.md)を参照。
 
 ## Storybook（apps/renderer/src/stories）
 

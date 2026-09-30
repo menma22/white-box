@@ -36,6 +36,63 @@ export interface Task {
   updatedAt: number
   doneAt: number | null
   createdInSessionId: ID | null
+  due?: string | null
+  goalNodeId?: ID | null
+}
+
+export type OutcomeStatus = 'pending' | 'achieved' | 'not-achieved'
+
+export interface OutcomeRecord {
+  status: OutcomeStatus
+  deliverable: string
+  result: string
+  assessedAt: number | null
+}
+
+export interface GoalNode {
+  id: ID
+  goal: string
+  reason: string
+  parentId: ID | null
+  children: ID[]
+  hidden: boolean
+  hiddenAt: number | null
+  hideReason: string
+  outcome?: OutcomeRecord
+}
+
+export interface GoalIssue {
+  id: ID
+  text: string
+  kind: 'problem' | 'question' | 'idea'
+  nodeId: ID | null
+  resolved: boolean
+  createdAt: number
+}
+
+export interface GoalHistory {
+  id: ID
+  at: number
+  type: 'create-head' | 'create-child' | 'hide' | 'unhide' | 'merge' | 'promote'
+  nodeId: ID
+  parentId: ID | null
+  note: string
+  withIds: ID[]
+}
+
+export interface GoalMap {
+  nodes: Record<ID, GoalNode>
+  heads: ID[]
+  activeHeadId: ID | null
+  issues: GoalIssue[]
+  history: GoalHistory[]
+  ui: {
+    view: 'map' | 'tasks' | 'issues' | 'history'
+    headsOpen: boolean
+    doneOpen: boolean
+    resolvedOpen: boolean
+    showHidden: boolean
+  }
 }
 
 export type SessionState = 'running' | 'paused' | 'ended'
@@ -138,6 +195,8 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  goalMap: GoalMap
+  goalMapImports?: string[]
 }
 
 /** 毎秒流す軽い更新。状態全体の再送はミューテーション時だけに限る。 */
@@ -158,6 +217,7 @@ export interface AppState {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null

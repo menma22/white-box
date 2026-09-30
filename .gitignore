@@ -4,6 +4,7 @@ dist-electron/
 .demo/
 .e2e/
 .e2e2/
+.e2e-goals/
 # 撮影台の出力は残さない。比較の基準になる shots-baseline/ だけを追跡する
 shots*/
 !shots-baseline/

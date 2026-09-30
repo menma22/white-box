@@ -7,11 +7,17 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import net from 'node:net'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const DATA = path.join(ROOT, '.e2e')
-const PORT = 9412
+fs.mkdirSync(path.join(ROOT, '.e2e'), { recursive: true })
+const DATA = fs.mkdtempSync(path.join(ROOT, '.e2e', 'run-'))
+const portServer = net.createServer()
+await new Promise((resolve, reject) => { portServer.once('error', reject); portServer.listen(0, '127.0.0.1', resolve) })
+const PORT = portServer.address().port
+await new Promise((resolve) => portServer.close(resolve))
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const fails = []
@@ -40,7 +46,6 @@ function mkTask(id, title, progress) {
 
 // ── 準備：この日は Welcome を出さない状態から始める ────────────────
 // onboardedAt を seed に書くと、既存データからの「オンボーディング済み」自動判定を検証できなくなる（わざと書かない）
-fs.rmSync(DATA, { recursive: true, force: true })
 fs.mkdirSync(path.join(DATA, 'backups'), { recursive: true })
 
 const now = Date.now()
@@ -82,7 +87,7 @@ async function findTarget(hashSuffix, tries) {
     try {
       const res = await fetch('http://127.0.0.1:' + PORT + '/json/list')
       const list = await res.json()
-      const hit = list.find((t) => t.type === 'page' && t.url.endsWith(hashSuffix))
+      const hit = list.find((t) => t.type === 'page' && decodeURI(t.url) === decodeURI(expectedPage + hashSuffix))
       if (hit) return hit
     } catch (e) {
       lastErr = e
@@ -153,16 +158,22 @@ async function waitReady(client) {
 
 // ── 実行 ───────────────────────────────────────────────────────────
 // WHITEBOX_EXE を指せば、組み上げた release の exe をそのまま確かめられる
-const packaged = process.env.WHITEBOX_EXE
-const electron = packaged || path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe')
+const packaged = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : null
+const electron = packaged || createRequire(import.meta.url)('electron')
+const buildRoot = packaged ? path.join(path.dirname(packaged), 'resources', 'app') : ROOT
+const expectedPage = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href
 // userData を隔離しないと、起動中の White Box の single instance lock に当たって無言で終了する
 const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT, '--user-data-dir=' + path.join(DATA, 'userdata')]
 if (!packaged) args.unshift('.')
 console.log('対象: ' + electron)
+const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }
+delete env.VITE_DEV_SERVER_URL
+delete env.ELECTRON_RUN_AS_NODE
 const child = spawn(electron, args, {
   cwd: ROOT,
-  env: Object.assign({}, process.env, { WHITEBOX_DATA_DIR: DATA }),
-  stdio: ['ignore', fs.openSync(path.join(ROOT, 'e2e-app.log'), 'w'), fs.openSync(path.join(ROOT, 'e2e-app.log'), 'a')],
+  env,
+  stdio: ['ignore', fs.openSync(path.join(DATA, 'app.log'), 'w'), fs.openSync(path.join(DATA, 'app.log'), 'a')],
+  windowsHide: true,
 })
 
 let exitCode = 1

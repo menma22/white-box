@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 34 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(34)
+  it('コマンドは 44 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(44)
   })
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
@@ -61,6 +61,16 @@ describe('コマンド契約', () => {
     'task:move': { id: 't1', status: 'todo', index: 0 },
     'task:delete': { id: 't1' },
     'task:hasTime': { id: 't1' },
+    'goal:create': { goal: '目標', reason: '理由', parentId: null },
+    'goal:update': { id: 'g1', patch: { goal: '目標', outcome: { status: 'achieved', result: '決まった' } } },
+    'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+    'goal:hide': { id: 'g1', reason: '休止' },
+    'goal:restore': { id: 'g1' },
+    'goal:ui': { patch: { view: 'map', showHidden: true }, activeHeadId: 'g1' },
+    'goal:import': { data: { version: 1 } },
+    'issue:create': { kind: 'idea', text: '改善', nodeId: 'g1' },
+    'issue:update': { id: 'i1', patch: { resolved: true } },
+    'issue:delete': { id: 'i1' },
     'session:start': { taskId: 't1', minutes: 50 },
     'session:pause': {},
     'session:resume': {},
@@ -107,6 +117,11 @@ describe('コマンド契約', () => {
       parseArgs('session:update', { id: 's1', patch: { exclusions: [{ startedAt: 1, endedAt: 2, why: '離席' }] } }),
     ).toThrow()
     expect(() => parseArgs('session:start', { newTask: { title: 'X', projectid: null } })).toThrow()
+    expect(() => parseArgs('goal:update', { id: 'g1', patch: { outcome: { staus: 'achieved' } } })).toThrow()
+    expect(() => parseArgs('goal:update', { id: 'g1', patch: { outcome: { assessedAt: 1 } } })).toThrow()
+    expect(() => parseArgs('goal:ui', { patch: { showHiden: true } })).toThrow()
+    expect(() => parseArgs('issue:update', { id: 'i1', patch: { resovled: true } })).toThrow()
+    expect(() => parseArgs('issue:create', { kind: 'bug', text: 'x' })).toThrow()
     expect(() =>
       parseArgs('session:review', { sessionId: 's1', changes: [{ taskId: 't1', from: 0, to: 1, markedDone: false, extra: 1 }] }),
     ).toThrow()
@@ -163,6 +178,16 @@ describe('コマンド契約', () => {
         onboardedAt: null,
       },
       dayNotes: { '2026-08-21': 'メモ' },
+      goalMap: {
+        nodes: {
+          g1: { id: 'g1', goal: '目標', reason: '', parentId: null, children: [], hidden: false, hiddenAt: null, hideReason: '' },
+        },
+        heads: ['g1'],
+        activeHeadId: 'g1',
+        issues: [],
+        history: [],
+        ui: { view: 'map', headsOpen: true, doneOpen: false, resolvedOpen: false, showHidden: false },
+      },
       live: null,
       breakTimer: null,
       recovery: null,
