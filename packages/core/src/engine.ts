@@ -114,9 +114,13 @@ export function totalRangeMs(ranges: TimeRange[]): number {
 }
 
 export function segmentFocusMs(session: Session, segment: TaskSegment, now: number): number {
-  const end = Math.min(segment.endedAt ?? sessionEndOrNow(session, now), sessionEndOrNow(session, now))
-  const gross = Math.max(0, end - segment.startedAt)
-  return Math.max(0, gross - pausedMsWithin(session.pauses, segment.startedAt, end, now))
+  const sessionEnd = sessionEndOrNow(session, now)
+  const start = session.segments[0]?.id === segment.id ? session.startedAt : Math.max(segment.startedAt, session.startedAt)
+  const end = session.segments[session.segments.length - 1]?.id === segment.id
+    ? sessionEnd
+    : Math.min(segment.endedAt ?? sessionEnd, sessionEnd)
+  const gross = Math.max(0, end - start)
+  return Math.max(0, gross - pausedMsWithin(session.pauses, start, end, now))
 }
 
 export function remainingMs(session: Session, now: number): number {

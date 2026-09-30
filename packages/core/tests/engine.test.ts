@@ -4,6 +4,7 @@ import {
   dayKey,
   declaredExclusions,
   excludedMs,
+  focusByTask,
   focusMs,
   livePausedMs,
   MINUTE,
@@ -56,6 +57,20 @@ function session(over: Partial<Session> = {}): Session {
     ...over,
   }
 }
+
+it('開始・終了を手で直しても、タスク別実作業はセッション全体と一致する', () => {
+  const segments = [
+    { id: 'seg_a', taskId: 'task_a', startedAt: T0, endedAt: T0 + min(20) },
+    { id: 'seg_b', taskId: 'task_b', startedAt: T0 + min(20), endedAt: T0 + min(60) },
+  ]
+  const shortened = session({ startedAt: T0 + min(30), segments })
+  expect(focusMs(shortened, T0 + min(60))).toBe(min(30))
+  expect([...focusByTask(shortened, T0 + min(60)).values()]).toEqual([0, min(30)])
+
+  const extended = session({ startedAt: T0 - min(10), endedAt: T0 + min(70), segments })
+  expect(focusMs(extended, T0 + min(70))).toBe(min(80))
+  expect([...focusByTask(extended, T0 + min(70)).values()]).toEqual([min(30), min(50)])
+})
 
 describe('除外できる範囲', () => {
   it('一時停止に重なっていない範囲だけを返す', () => {

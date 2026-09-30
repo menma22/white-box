@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { PauseInterval, Session, TimeRange } from '@white-box/core/types'
 import { invoke } from '@/lib/bridge'
+import { changedSessionTimes, toLocalInput } from '@/lib/session-edit'
 import { useData } from '@/stores/app'
 import { candidateTasks, projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Modal } from '@/components/ui'
@@ -125,11 +126,6 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
   )
 }
 
-function toLocalInput(ts: number): string {
-  const d = new Date(ts - new Date(ts).getTimezoneOffset() * 60_000)
-  return d.toISOString().slice(0, 16)
-}
-
 function SessionEditor({ session, onClose }: { session: Session; onClose: () => void }) {
   const state = useData()
   const [startedAt, setStartedAt] = useState(toLocalInput(session.startedAt))
@@ -170,8 +166,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
       await invoke('session:update', {
         id: session.id,
         patch: {
-          startedAt: new Date(startedAt).getTime(),
-          ...(endedAt ? { endedAt: new Date(endedAt).getTime() } : {}),
+          ...changedSessionTimes(session, startedAt, endedAt),
           plannedMs: minutes * MINUTE,
           note,
           // 除外は終了済みのセッションだけのもの。実行中に送ると受け口が拒否する
