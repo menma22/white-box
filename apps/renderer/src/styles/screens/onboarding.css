@@ -1,0 +1,175 @@
+/* ══ 初回オンボーディング ═══════════════════════════ */
+
+.onboard {
+  position: fixed;
+  inset: 0;
+  background: rgba(52, 42, 32, 0.4);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 90;
+  padding: 30px;
+  overflow: auto;
+  animation: pop 0.24s var(--ease-out);
+}
+.onboard-card {
+  width: min(560px, 100%);
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 245, 226, 0.95), transparent 60%),
+    var(--panel);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-3);
+  padding: 36px 40px 28px;
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.3s var(--ease-out);
+}
+/* 縦並びの中身は潰さない（効いていないと高さ 0 になって文字が消える） */
+.onboard-card > * {
+  flex: none;
+}
+
+.onboard-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.onboard-dots i {
+  width: 22px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  transition: background 0.2s var(--ease);
+}
+.onboard-dots i.is-done {
+  background: var(--accent-line);
+}
+.onboard-dots i.is-here {
+  background: var(--accent);
+}
+
+.onboard-title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.005em;
+}
+.onboard-lead {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.9;
+}
+
+.onboard-body {
+  margin-top: 26px;
+}
+.onboard-name {
+  width: 100%;
+  font-size: 15px;
+  font-family: var(--font-serif);
+}
+
+.onboard-keys {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line-soft);
+}
+.onboard-keys > * {
+  flex: none;
+}
+.onboard-key {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--line-soft);
+}
+/* 最後の行に線を残すと、脚の区切り線と 2 本並んで空の行に見える */
+.onboard-key:last-child {
+  border-bottom: none;
+}
+.onboard-key-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.onboard-key-text > * {
+  flex: none;
+}
+.onboard-key-label {
+  font-size: 13.5px;
+  color: var(--text);
+}
+.onboard-key-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+.onboard-key .shortcut {
+  margin-left: auto;
+  flex: none;
+  min-width: 148px;
+}
+.shortcut.is-duplicated {
+  border-color: var(--rose);
+  color: var(--rose);
+}
+.onboard-warn {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--rose);
+}
+
+.onboard-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line-soft);
+}
+.onboard-summary > * {
+  flex: none;
+}
+.onboard-summary li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+.onboard-summary li:last-child {
+  border-bottom: none;
+}
+.onboard-summary-label {
+  color: var(--text-2);
+}
+.onboard-summary .kbd {
+  margin-left: auto;
+}
+.onboard-empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.onboard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+}
+.onboard-back {
+  margin-right: auto;
+}
+.onboard-foot-right {
+  display: flex;
+  gap: 10px;
+}

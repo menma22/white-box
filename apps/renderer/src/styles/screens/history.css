@@ -1,0 +1,76 @@
+/* ══ 記録（履歴） ═══════════════════════════════════ */
+
+.hday {
+  border-radius: var(--r-md);
+  margin-bottom: 2px;
+}
+.hday.is-open {
+  background: var(--surface);
+}
+.hday-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  transition: background 0.16s var(--ease);
+}
+.hday-head:hover {
+  background: var(--surface-2);
+}
+.hday-date {
+  width: 108px;
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+}
+.hday-date i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-3);
+}
+.hday-today {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+}
+.hday-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.hday-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.8;
+  border-radius: 99px;
+}
+.hday-total {
+  width: 64px;
+  text-align: right;
+  font-size: 15px;
+  color: var(--text);
+}
+.hday-count {
+  width: 40px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--text-4);
+}
+.hday-body {
+  padding: 0 8px 14px 24px;
+}
+

@@ -55,12 +55,13 @@
 
 | 場所 | 責務 |
 | --- | --- |
-| `shared/types.ts` | GoalMap・GoalNode・GoalIssue・GoalHistory と Task の追加フィールド |
-| `shared/goal-map.ts` | 木の参照・可視判定・レイアウトと読み込み検証 |
-| `electron/mutations.ts` | 目標と問題の更新、構造履歴の追加、旧データの一括変換 |
-| `electron/main.ts` | IPC コマンド受付、保存と全ウィンドウへの配信 |
-| `electron/store.ts` | 旧White Boxデータの既定値補完、保存・復元・置換前バックアップ |
-| `src/views/GoalMapView.tsx` / `src/views/goals/` | 操作と表示。タイマーや保存の正本は持たない |
+| `packages/core/src/types.ts` | GoalMap・GoalNode・GoalIssue・GoalHistory と Task の追加フィールド |
+| `packages/core/src/goal-map.ts` / `outcome.ts` | 木の参照・可視判定・レイアウトと読み込み検証、成果の判定 |
+| `packages/contracts/src/commands.ts` | `goal:*` / `issue:*` の 10 コマンドの引数・返り値スキーマ |
+| `apps/desktop/src/domain/goal-ops.ts` | 目標と問題の更新、構造履歴の追加、旧データの一括変換（新しい値を返す純関数） |
+| `apps/desktop/src/app/handlers.ts` | IPC コマンド受付、保存と全ウィンドウへの配信 |
+| `apps/desktop/src/infra/store.ts` | 旧White Boxデータの既定値補完、保存・復元・置換前バックアップ |
+| `apps/renderer/src/features/goals/` | 操作と表示。タイマーや保存の正本は持たない |
 
 既存のバージョン1の White Box データは、道標フィールドがなくても空のマップを補って読める。道標データは既存の `data.json` と日次バックアップに含まれ、「設定 → 書き出し」でまとめて移せる。White Box データ全体を読み込む場合は、検証後・置換前のデータを `backups/before-import-*.json` に保存する。
 
@@ -69,9 +70,9 @@
 ## 検証方法
 
 ```sh
-npm run typecheck
-npm test
-npm run build
+pnpm run typecheck
+pnpm run test
+pnpm run build
 node scripts/e2e.mjs
 node scripts/e2e-goals.mjs
 ```
@@ -80,7 +81,7 @@ node scripts/e2e-goals.mjs
 
 `e2e-goals.mjs` は一時データディレクトリと空きポートで実際の Electron を起動し、本物の IPC・UI操作・保存JSON・再起動後の状態を確かめる。結果と画面画像は `.e2e-goals/` に出力する。スクリーンショットは実際に開いて表示・読みやすさも確認する。
 
-配布版では `npm run pack` 後、PowerShell で `$env:WHITEBOX_EXE = (Resolve-Path 'release/White Box/White Box.exe').Path` を設定し、両方の E2E を実行する。ソース版へ戻すときは `Remove-Item Env:WHITEBOX_EXE` で指定を解除する。
+配布版では `pnpm run pack` 後、PowerShell で `$env:WHITEBOX_EXE = (Resolve-Path 'release/White Box/White Box.exe').Path` を設定し、両方の E2E を実行する。ソース版へ戻すときは `Remove-Item Env:WHITEBOX_EXE` で指定を解除する。
 
 ### 2026-09-24 の検証結果
 

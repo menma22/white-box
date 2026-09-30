@@ -64,7 +64,8 @@ const SHOTS = [
   { kind: 'main', w: 1240, h: 820, tab: 3, live: false, name: '04-settings' },
   { kind: 'main', w: 1240, h: 820, tab: 0, live: false, welcome: true, name: '05-welcome' },
   { kind: 'start', w: 660, h: 500, live: false, name: '06-start' },
-  { kind: 'hud', w: 328, h: 132, live: true, name: '07-hud' },
+  { kind: 'hud', w: 248, h: 88, live: true, name: '07-hud' },
+  { kind: 'hud', w: 248, h: 88, live: true, breakActive: true, name: '07b-hud-break' },
   {
     kind: 'expire',
     w: 500,
@@ -116,16 +117,18 @@ function stateFor(shot) {
     live: shot.live
       ? {
           sessionId: liveSession.id,
-          state: shot.breakFinished ? 'paused' : 'running',
+          state: shot.breakFinished || shot.breakActive ? 'paused' : 'running',
           elapsedMs: shot.over ? 53 * MIN : 30 * MIN,
           remainingMs: shot.over ? -3 * MIN : 20 * MIN,
           plannedMs: 50 * MIN,
           activeTaskId: liveTaskId,
         }
       : null,
-    breakTimer: shot.breakFinished
-      ? { startedAt: now - 5 * MIN, endsAt: now, notifiedAt: now }
-      : null,
+    breakTimer: shot.breakActive
+      ? { startedAt: now - MIN, endsAt: now + 4 * MIN, notifiedAt: null }
+      : shot.breakFinished
+        ? { startedAt: now - 5 * MIN, endsAt: now, notifiedAt: now }
+        : null,
     recovery: null,
     pendingReview: shot.review ? { sessionId: db.sessions[0].id, thenStart: false } : null,
   }
@@ -150,9 +153,10 @@ async function main() {
       height: shot.h,
       show: false,
       frame: false,
-      backgroundColor: '#F6F2EA',
+      transparent: shot.kind === 'hud',
+      backgroundColor: shot.kind === 'hud' ? '#00000000' : '#F6F2EA',
       webPreferences: {
-        preload: path.join(ROOT, 'electron', 'preload.cjs'),
+        preload: path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
         contextIsolation: true,
         sandbox: false,
       },
@@ -164,6 +168,9 @@ async function main() {
       log('retry ' + shot.name + ': ' + e)
       await wait(400)
       await win.loadFile(path.join(ROOT, 'dist', 'index.html'), { hash: shot.kind })
+    }
+    if (shot.kind === 'hud') {
+      await win.webContents.insertCSS('html,body,.boot{background:transparent!important}body::before{content:none!important}')
     }
     // 非表示のままだと DOM が変わっても再合成されず、最初のフレームが撮れてしまう。
     // 透明にして表示だけしておくと、画面には出ないまま合成が続く。

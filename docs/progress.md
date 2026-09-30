@@ -9,9 +9,13 @@
 
 ## 現在地
 
-**Phase 1（MVP）に加え、道標の既存機能を統合。**
+**Phase 1（MVP）に加え、道標の既存機能を統合。日常使用中。** 再編と第 1 波（PR #2）を `main` に統合し、道標も新構成へ移した。
 
 2026-09-24 の依頼により、目標マップ・タスク・問題／問い／改善・構造履歴と旧データ取り込みを追加した。[機能対応・保存・検証](michishirube.md)を参照。これは Phase 3 の成果設計の実装ではない。以下のフェーズ表は当初ロードマップの進捗を示す。
+
+**再編（[rebuild-plan.md](rebuild-plan.md) Phase 0–5 / [plans/rebuild-sessions.md](plans/rebuild-sessions.md) S1–S7）は完了。** 再編の各段階では機能を変えずに pnpm monorepo（apps/desktop・apps/renderer・packages/core・packages/contracts）へ移した。PR #2 には、その後の第 1 波と `main` の PR #3〜#5 の機能も統合した。下表「実装場所」列は新しいパスを示す。実装の詳細は [architecture.md](architecture.md) を参照。
+
+**実使用起点の第 1 波（2026-08-31 まひろ指示・09-01 完了）**: 実使用 11 日で溜まったアプリ内 todo から優先 3 件を選び、ai-org-os の並列セッション 3 本で開発・統合した。T3（記録の事後修正。決定 017/018）・T4（セッション中ミニカード。決定 020）・T5（初回オンボーディング。決定 019）。
 
 ```
 Phase 1  ████████████████████  完了（1-26 を除く）
@@ -29,31 +33,31 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 
 | # | 項目 | 状態 | 実装場所 |
 | --- | --- | --- | --- |
-| 1-1 | Windows Desktop 基盤 | 済 | `electron/main.ts`, `electron/windows.ts` |
-| 1-2 | Project 管理 | 済 | `electron/mutations.ts`, `src/views/SettingsView.tsx`, `src/views/BoardView.tsx` |
-| 1-3 | Task Kanban | 済 | `src/views/BoardView.tsx` |
-| 1-4 | Task Tree | 済 | `src/views/BoardView.tsx`, `src/views/TaskDetail.tsx` |
-| 1-5 | Task Progress | 済 | `src/views/TaskDetail.tsx`, `src/routes/ReviewWindow.tsx` |
-| 1-6 | Start UI | 済 | `src/routes/StartWindow.tsx` |
+| 1-1 | Windows Desktop 基盤 | 済 | `apps/desktop/src/presentation/main.ts`, `apps/desktop/src/infra/windows.ts` |
+| 1-2 | Project 管理 | 済 | `apps/desktop/src/domain/task-ops.ts`, `apps/renderer/src/features/settings/SettingsView.tsx`, `apps/renderer/src/features/board/BoardView.tsx` |
+| 1-3 | Task Kanban | 済 | `apps/renderer/src/features/board/BoardView.tsx` |
+| 1-4 | Task Tree | 済 | `apps/renderer/src/features/board/BoardView.tsx`, `apps/renderer/src/features/board/TaskDetail.tsx` |
+| 1-5 | Task Progress | 済 | `apps/renderer/src/features/board/TaskDetail.tsx`, `apps/renderer/src/pages/ReviewWindow.tsx` |
+| 1-6 | Start UI | 済 | `apps/renderer/src/pages/StartWindow.tsx` |
 | 1-7 | Session Duration | 済 | 既定 50 分。開始画面で 25 / 50 / 90 / 任意 |
-| 1-8 | Session Start | 済 | `shared/session-ops.ts` |
-| 1-9 | Pause | 済 | ショートカット / HUD / 現在の仕事 |
-| 1-10 | Pause UI | 済 | `src/routes/HudWindow.tsx`。× で閉じても計測は続く |
+| 1-8 | Session Start | 済 | `apps/desktop/src/domain/session-ops.ts` |
+| 1-9 | Pause | 済 | ショートカット / 現在の仕事 |
+| 1-10 | Pause UI | 済 | `apps/renderer/src/pages/HudWindow.tsx` は表示専用ミニカード。操作は「現在の仕事」画面から行う |
 | 1-11 | End | 済 | End 後に Review へ |
-| 1-12 | Timer 満了 Popup | 済 | `src/routes/ExpireWindow.tsx`。End / Extend / 時間指定の Break。休憩後は手動再開 |
+| 1-12 | Timer 満了 Popup | 済 | `apps/renderer/src/pages/ExpireWindow.tsx`。End / Extend / 時間指定の Break。休憩後は手動再開 |
 | 1-13 | Next Task 導線 | 済 | 満了 Popup の「次のタスクへ」 |
-| 1-14 | Current Work 画面 | 済 | `src/routes/CurrentWorkWindow.tsx` |
+| 1-14 | Current Work 画面 | 済 | `apps/renderer/src/pages/CurrentWorkWindow.tsx` |
 | 1-15 | Current Work からの操作 | 済 | 切替 / 分解 / 新規作成 / 追加 |
-| 1-16 | Task 切替（Segment） | 済 | `shared/session-ops.ts` の `switchTask` |
+| 1-16 | Task 切替（Segment） | 済 | `apps/desktop/src/domain/session-ops.ts` の `switchTask` |
 | 1-17 | 1 Task = 1 Session 運用 | 済 | どちらも許可。強制なし |
 | 1-18 | Session Event Log | 済 | セッション行を開くと見える |
-| 1-19 | 終了 Review | 済 | `src/routes/ReviewWindow.tsx` |
+| 1-19 | 終了 Review | 済 | `apps/renderer/src/pages/ReviewWindow.tsx` |
 | 1-20 | Review 内容 | 済 | タスク別時間 / 進捗 / 完了 / 生まれたタスクの整理 |
-| 1-21 | Session 永続保存 | 済 | `electron/store.ts` |
-| 1-22 | 過去 Session 編集 | 済 | `src/views/SessionRow.tsx` |
+| 1-21 | Session 永続保存 | 済 | `apps/desktop/src/infra/store.ts` |
+| 1-22 | 過去 Session 編集 | 済 | `apps/renderer/src/features/sessions/SessionRow.tsx` |
 | 1-23 | Session 削除 | 済 | 確認あり |
-| 1-24 | 最低限 Today 表示 | 済 | `src/views/TodayView.tsx` |
-| 1-25 | Welcome 画面 | 済 | `src/views/WelcomeOverlay.tsx` |
+| 1-24 | 最低限 Today 表示 | 済 | `apps/renderer/src/features/today/TodayView.tsx` |
+| 1-25 | Welcome 画面 | 済 | `apps/renderer/src/features/welcome/WelcomeOverlay.tsx` |
 | 1-26 | Welcome の後続拡張 | **未着手** | 自分へのメッセージ・Reminder・名言など |
 
 ## 仕様の Phase 1 に無いが入れたもの
@@ -68,6 +72,9 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | データの書き出し／読み込み | §19（長期データ保全）の最小形。PC 移行の逃げ道を最初から用意しておく |
 | 日次バックアップ（30日ぶん） | 同上 |
 | 呼びかけの名前の設定 | Welcome の文面に必要。既定は空 |
+| 記録の事後修正（除外の申告） | 止め忘れ・満了後放置が実作業に化けると §2「歪みなく記録する」が成立しない。実使用で顕在化（下の課題 1 件目）。決定 017/018 |
+| 初回オンボーディング（ショートカット自己割り当て） | 既定キーの衝突懸念（§23 の問い）への答え。決定 019 |
+| セッション中ミニカード（HUD 刷新） | §1-10 Pause UI の置き換え。表示専用・透過・クリック素通り。決定 020 |
 
 ---
 
@@ -79,9 +86,10 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 
 ### 実使用で出た課題
 
-まだ無し。使い始めたらここに追記する。
-
 書くときは「いつ・何をしようとして・何が起きて・何が困ったか」を1行で。原因や解決案は後で考える。
+
+- 08-27 タイマー満了に気づかず離席し、戻って終了したら放置していた時間がそのまま実作業に足されていた（アプリ内 todo 起点）→ **対処済み**（T3・決定 017/018）
+- 08-21 既定ショートカット Control+Alt+S/W/D が他アプリと衝突しうる（§23 の問いと同件）→ **対処済み**（T5・決定 019）
 
 ### 実使用で答えを出したい問い
 
