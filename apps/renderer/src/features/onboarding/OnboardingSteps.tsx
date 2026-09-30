@@ -163,7 +163,14 @@ export function ShortcutsStep({
   )
 }
 
-export function DoneStep({ name, shortcuts, onFinish }: { name: string; shortcuts: Shortcuts; onFinish: () => void }) {
+export function DoneStep({ name, shortcuts, saving, error, onBack, onFinish }: {
+  name: string
+  shortcuts: Shortcuts
+  saving: boolean
+  error: string | null
+  onBack: () => void
+  onFinish: () => void
+}) {
   const assigned = SHORTCUT_FIELDS.filter((f) => shortcuts[f.id] !== '')
 
   return (
@@ -172,12 +179,16 @@ export function DoneStep({ name, shortcuts, onFinish }: { name: string; shortcut
       title={name.trim() ? `よろしく、${name.trim()}。` : '準備できた。'}
       lead="あとから設定画面でいつでも変えられる。"
       foot={
-        <button type="button" className="btn btn-primary btn-lg" onClick={onFinish}>
-          使いはじめる
-        </button>
+        <>
+          {error && <button type="button" className="btn btn-quiet btn-md onboard-back" onClick={onBack}>キーを選び直す</button>}
+          <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={onFinish}>
+            {saving ? '保存中…' : '使いはじめる'}
+          </button>
+        </>
       }
     >
       <div className="onboard-body">
+        {error && <p className="onboard-warn" role="alert">{error}</p>}
         {assigned.length === 0 ? (
           <p className="onboard-empty">ショートカットは割り当てていない。</p>
         ) : (

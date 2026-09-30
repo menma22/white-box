@@ -71,6 +71,29 @@ describe('ユースケースの網羅（34 コマンド）', () => {
   })
 })
 
+it('初回設定のショートカットが登録できなければ保存せず元の割り当てに戻す', async () => {
+  const ctx = fakeCtx()
+  let attempts = 0
+  ctx.system.applyShortcuts = () => {
+    attempts++
+    return attempts === 1 ? ['Control+Alt+S'] : []
+  }
+  const handlers = createHandlers(ctx)
+
+  await expect(dispatch(handlers, 'settings:update', {
+    patch: {
+      displayName: 'まひろ',
+      onboardedAt: ctx.now(),
+      shortcuts: { startPause: 'Control+Alt+S', currentWork: '', dashboard: '' },
+    },
+  })).rejects.toThrow('Control+Alt+S')
+
+  expect(ctx.store.data.settings.displayName).toBe('')
+  expect(ctx.store.data.settings.onboardedAt).toBeNull()
+  expect(ctx.store.data.settings.shortcuts.startPause).toBe('')
+  expect(attempts).toBe(2)
+})
+
 describe('セッションの一連の流れ（Electron なし）', () => {
   it('開始→一時停止→再開→切替→終了→レビューで、実作業と進捗が正しく残る', async () => {
     const db = emptyDb()

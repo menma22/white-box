@@ -94,7 +94,10 @@ export function fakeCtx(initial: Database = emptyDb()): FakeCtx {
       stop: () => calls.push('ticker:stop'),
     },
     system: {
-      applyShortcuts: () => calls.push('applyShortcuts'),
+      applyShortcuts: () => {
+        calls.push('applyShortcuts')
+        return []
+      },
       applyLoginItem: () => calls.push('applyLoginItem'),
       quit: () => calls.push('quit'),
     },

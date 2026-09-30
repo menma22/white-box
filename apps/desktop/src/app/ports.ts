@@ -29,7 +29,7 @@ export interface TickerPort {
 }
 
 export interface SystemPort {
-  applyShortcuts(): void
+  applyShortcuts(): string[]
   applyLoginItem(): void
   quit(): void
 }

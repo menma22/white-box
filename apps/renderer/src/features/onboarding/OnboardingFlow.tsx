@@ -12,12 +12,23 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState(settings.displayName)
   const [shortcuts, setShortcuts] = useState<Shortcuts>({ ...settings.shortcuts })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function finish() {
-    void invoke('settings:update', {
-      patch: { displayName: name.trim(), shortcuts, onboardedAt: Date.now() },
-    })
-    onDone()
+  async function finish() {
+    if (saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      await invoke('settings:update', {
+        patch: { displayName: name.trim(), shortcuts, onboardedAt: Date.now() },
+      })
+      onDone()
+    } catch (err) {
+      setError(String(err).replace(/^(Error:\s*)+/, ''))
+    } finally {
+      setSaving(false)
+    }
   }
 
   switch (step) {
@@ -39,6 +50,6 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
         />
       )
     default:
-      return <DoneStep name={name} shortcuts={shortcuts} onFinish={finish} />
+      return <DoneStep name={name} shortcuts={shortcuts} saving={saving} error={error} onBack={() => { setError(null); setStep(2) }} onFinish={finish} />
   }
 }

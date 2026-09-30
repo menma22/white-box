@@ -242,8 +242,18 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
 
     'settings:update': (a) => {
+      const previous = { ...db().settings }
       Object.assign(db().settings, a.patch)
-      ctx.system.applyShortcuts()
+      if (a.patch.shortcuts) {
+        try {
+          const unavailable = ctx.system.applyShortcuts()
+          if (unavailable.length > 0) throw new Error(`ショートカットを登録できません: ${unavailable.join(', ')}`)
+        } catch (err) {
+          Object.assign(db().settings, previous)
+          ctx.system.applyShortcuts()
+          throw err
+        }
+      }
       ctx.system.applyLoginItem()
       ctx.publish()
       return null

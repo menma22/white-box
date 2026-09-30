@@ -13,9 +13,13 @@ export function SettingsView() {
   const [renameValue, setRenameValue] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
-  const patch = (p: Partial<Settings>) => void invoke('settings:update', { patch: p })
+  const patch = (p: Partial<Settings>) => {
+    setError(null)
+    void invoke('settings:update', { patch: p }).catch((err) => setError(String(err).replace(/^(Error:\s*)+/, '')))
+  }
 
   return (
     <div className="view settings">
@@ -25,6 +29,7 @@ export function SettingsView() {
           <h1 className="view-title">この道具の調整</h1>
         </div>
       </header>
+      {error && <p className="set-error" role="alert">{error}</p>}
 
       <section className="set-block">
         <h2 className="set-title">あなたのこと</h2>

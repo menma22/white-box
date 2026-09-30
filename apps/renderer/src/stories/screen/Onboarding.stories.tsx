@@ -65,11 +65,27 @@ export const Done: Story = {
     <DoneStep
       name="まひろ"
       shortcuts={{ startPause: 'Control+Alt+S', currentWork: 'Control+Alt+W', dashboard: 'Control+Alt+D' }}
+      saving={false}
+      error={null}
+      onBack={noop}
       onFinish={noop}
     />
   ),
 }
 
 export const DoneSkipped: Story = {
-  render: () => <DoneStep name="" shortcuts={{ startPause: '', currentWork: '', dashboard: '' }} onFinish={noop} />,
+  render: () => <DoneStep name="" shortcuts={{ startPause: '', currentWork: '', dashboard: '' }} saving={false} error={null} onBack={noop} onFinish={noop} />,
+}
+
+export const ShortcutUnavailable: Story = {
+  render: () => (
+    <DoneStep
+      name="まひろ"
+      shortcuts={{ startPause: 'Control+Alt+S', currentWork: '', dashboard: '' }}
+      saving={false}
+      error="ショートカットを登録できません: Control+Alt+S"
+      onBack={noop}
+      onFinish={noop}
+    />
+  ),
 }
