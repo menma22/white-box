@@ -1,79 +1,69 @@
+import { useState } from 'react'
 import type { Session } from '@white-box/core/types'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
-import { formatClock, formatDuration, HOUR } from '@white-box/core/engine'
+import { formatClock, formatDuration, MINUTE } from '@white-box/core/engine'
+import { ribbonRows, type RibbonItem } from '@/lib/day-ribbon'
 
-/** 1 日を 1 本の帯にする。実作業＝色の付いた区間、一時停止＝抜けた区間。 */
+function dateTime(at: number): string {
+  return `${new Date(at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })} ${formatClock(at)}`
+}
+
+function duration(ms: number): string {
+  return ms < MINUTE ? `${Math.floor(ms / 1000)}s` : formatDuration(ms, 'compact')
+}
+
 export function DayRibbon({ sessions, now }: { sessions: Session[]; now: number }) {
   const state = useData()
-  if (sessions.length === 0) return null
-
-  const first = Math.min(...sessions.map((s) => s.startedAt))
-  const last = Math.max(...sessions.map((s) => s.endedAt ?? now))
-  const start = Math.floor(first / HOUR) * HOUR
-  const end = Math.max(Math.ceil(last / HOUR) * HOUR, start + 4 * HOUR)
-  const span = end - start
-  const pct = (t: number) => ((t - start) / span) * 100
-
-  const hours: number[] = []
-  for (let t = start; t <= end; t += HOUR) hours.push(t)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const rows = ribbonRows(sessions, now)
+  if (!rows.length) return null
+  const selected = rows.flatMap((row) => row.items).find((item) => item.key === selectedKey)
+  const project = (item: RibbonItem) => projectById(state, taskById(state, item.taskId)?.projectId ?? null)
+  const label = (item: RibbonItem) => item.kind === 'work' ? taskTitle(state, item.taskId!) : item.kind === 'excluded' ? '除外（後から申告）' : '一時停止'
+  const summary = (item: RibbonItem) => `${label(item)}｜${dateTime(item.startedAt)}–${dateTime(item.endedAt)}｜${item.kind === 'work' ? '実作業' : '長さ'} ${duration(item.kind === 'work' ? item.focusMs : item.endedAt - item.startedAt)}`
 
   return (
-    <section className="ribbon">
-      <div className="ribbon-rail">
-        {hours.map((t) => (
-          <div key={t} className="ribbon-grid" style={{ left: `${pct(t)}%` }} />
-        ))}
-
-        {sessions.map((session) => {
-          const sEnd = session.endedAt ?? now
-          return (
-            <div
-              key={session.id}
-              className={`ribbon-band ${session.endedAt ? '' : 'is-live'}`}
-              style={{ left: `${pct(session.startedAt)}%`, width: `${Math.max(0.4, pct(sEnd) - pct(session.startedAt))}%` }}
-            >
-              {session.segments.map((seg) => {
-                const task = taskById(state, seg.taskId)
-                const project = projectById(state, task?.projectId ?? null)
-                const segEnd = Math.min(seg.endedAt ?? sEnd, sEnd)
-                const left = ((seg.startedAt - session.startedAt) / (sEnd - session.startedAt)) * 100
-                const width = ((segEnd - seg.startedAt) / (sEnd - session.startedAt)) * 100
-                return (
-                  <div
-                    key={seg.id}
-                    className="ribbon-seg"
-                    style={{ left: `${left}%`, width: `${Math.max(0.5, width)}%`, background: projectColor(project) }}
-                    title={`${taskTitle(state, seg.taskId)}｜${formatClock(seg.startedAt)}–${formatClock(segEnd)}`}
-                  />
-                )
-              })}
-              {session.pauses.map((p, i) => {
-                const pEnd = Math.min(p.endedAt ?? sEnd, sEnd)
-                const left = ((p.startedAt - session.startedAt) / (sEnd - session.startedAt)) * 100
-                const width = ((pEnd - p.startedAt) / (sEnd - session.startedAt)) * 100
-                return (
-                  <div
-                    key={i}
-                    className="ribbon-pause"
-                    style={{ left: `${left}%`, width: `${Math.max(0.4, width)}%` }}
-                    title={`一時停止 ${formatDuration(pEnd - p.startedAt, 'compact')}`}
-                  />
-                )
-              })}
+    <section className="ribbon" aria-label="今日のタイムライン">
+      {rows.map((row) => {
+        const pct = (at: number) => ((at - row.startedAt) / (row.endedAt - row.startedAt)) * 100
+        return (
+          <div className="ribbon-row" key={row.startedAt}>
+            <div className="ribbon-range num">{dateTime(row.startedAt)} – {dateTime(row.endedAt)}</div>
+            <div className="ribbon-rail">
+              {row.hours.map((at) => <div key={at} className="ribbon-grid" style={{ left: `${pct(at)}%` }} />)}
+              {row.items.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`ribbon-item ribbon-${item.kind}${item.live ? ' is-live' : ''}${selectedKey === item.key ? ' is-selected' : ''}`}
+                  style={{ left: `${pct(item.startedAt)}%`, width: `${pct(item.endedAt) - pct(item.startedAt)}%`, ...(item.kind === 'work' ? { background: projectColor(project(item)) } : {}) }}
+                  aria-label={summary(item)}
+                  aria-describedby="ribbon-detail"
+                  onMouseEnter={() => setSelectedKey(item.key)}
+                  onFocus={() => setSelectedKey(item.key)}
+                  onClick={() => setSelectedKey(item.key)}
+                />
+              ))}
+              {now >= row.startedAt && now < row.endedAt && <div className="ribbon-now" style={{ left: `${pct(now)}%` }} />}
             </div>
-          )
-        })}
-
-        <div className="ribbon-now" style={{ left: `${Math.min(100, Math.max(0, pct(now)))}%` }} />
-      </div>
-
-      <div className="ribbon-axis">
-        {hours.map((t) => (
-          <span key={t} className="num ribbon-hour" style={{ left: `${pct(t)}%` }}>
-            {new Date(t).getHours()}
-          </span>
-        ))}
+            <div className="ribbon-axis">
+              {row.hours.map((at) => <span key={at} className="num ribbon-hour" style={{ left: `${pct(at)}%` }}>{formatClock(at)}</span>)}
+            </div>
+          </div>
+        )
+      })}
+      <div id="ribbon-detail" className="ribbon-detail" aria-live="polite">
+        {selected ? (
+          <>
+            <div className="ribbon-detail-heading"><strong>{label(selected)}</strong><span>{project(selected)?.name ?? (selected.kind === 'work' ? 'プロジェクトなし' : '')}</span></div>
+            <div className="ribbon-detail-meta num">
+              <span>{dateTime(selected.startedAt)} – {dateTime(selected.endedAt)}</span>
+              <span>{selected.kind === 'work' ? '実作業' : '長さ'} {duration(selected.kind === 'work' ? selected.focusMs : selected.endedAt - selected.startedAt)}</span>
+              {selected.live && <span>進行中</span>}
+            </div>
+          </>
+        ) : <p className="ribbon-hint">帯にカーソルを合わせると詳細が見える。Tabキーでも選べる。</p>}
       </div>
     </section>
   )

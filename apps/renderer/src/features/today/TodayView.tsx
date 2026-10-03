@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useApp, useData } from '@/stores/app'
 import { sessionsForDay, todayKey } from '@/lib/selectors'
 import { BigDuration, Empty } from '@/components/ui'
-import { focusMs, formatDuration, pausedMs } from '@white-box/core/engine'
+import { excludedMs, focusMs, formatDuration, livePausedMs } from '@white-box/core/engine'
 import { SessionRow } from '@/features/sessions/SessionRow'
 import { DayRibbon } from './DayRibbon'
 
@@ -13,7 +13,8 @@ export function TodayView() {
   const sessions = useMemo(() => sessionsForDay(state, key), [state.sessions, key])
 
   const total = sessions.reduce((sum, s) => sum + focusMs(s, now), 0)
-  const paused = sessions.reduce((sum, s) => sum + pausedMs(s, now), 0)
+  const paused = sessions.reduce((sum, s) => sum + livePausedMs(s, now), 0)
+  const excluded = sessions.reduce((sum, s) => sum + excludedMs(s, now), 0)
 
   return (
     <div className="view today">
@@ -33,6 +34,7 @@ export function TodayView() {
       <div className="today-strip">
         <Metric label="セッション" value={`${sessions.length}`} />
         <Metric label="一時停止" value={paused > 0 ? formatDuration(paused, 'compact') : '—'} />
+        {excluded > 0 && <Metric label="除外" value={formatDuration(excluded, 'compact')} />}
         <Metric
           label="平均の長さ"
           value={sessions.length ? formatDuration(total / sessions.length, 'compact') : '—'}
