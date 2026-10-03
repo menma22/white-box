@@ -16,7 +16,8 @@
 
 .today-strip {
   display: flex;
-  gap: 46px;
+  flex-wrap: wrap;
+  gap: 16px 46px;
   padding: 0 0 30px;
 }
 .metric {
@@ -50,7 +51,7 @@
 /* ── 一日の帯 ── */
 .ribbon {
   margin: 8px 0 10px;
-  padding: 18px 20px 8px;
+  padding: 18px 28px 12px;
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1px solid var(--line-soft);
@@ -67,35 +68,48 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(213, 200, 180, 0.6);
+  background: var(--line-strong);
+  pointer-events: none;
 }
-.ribbon-band {
+.ribbon-row + .ribbon-row {
+  margin-top: 16px;
+}
+.ribbon-range {
+  margin-bottom: 7px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.ribbon-item {
   position: absolute;
   top: 10px;
   height: 32px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--surface-3);
-  box-shadow: var(--shadow-1);
+  border-radius: 3px;
+  padding: 0;
+  min-width: 1px;
+  cursor: pointer;
 }
-.ribbon-band.is-live {
-  box-shadow: 0 0 0 2px var(--accent-line);
+.ribbon-item.is-live {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
-.ribbon-seg {
-  position: absolute;
-  top: 0;
-  bottom: 0;
+.ribbon-work {
   opacity: 0.9;
+  border-right: 1px solid var(--surface);
 }
 .ribbon-pause {
-  position: absolute;
-  top: 0;
-  bottom: 0;
   background: repeating-linear-gradient(
     -45deg,
-    rgba(250, 246, 238, 0.95) 0 3px,
-    rgba(233, 225, 211, 0.95) 3px 6px
+    var(--surface) 0 3px,
+    var(--surface-3) 3px 6px
   );
+}
+.ribbon-excluded {
+  background: var(--surface-2);
+  border: 1px dashed var(--amber);
+}
+.ribbon-item.is-selected,
+.ribbon-item:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: -2px;
 }
 .ribbon-now {
   position: absolute;
@@ -104,6 +118,7 @@
   width: 2px;
   background: var(--accent);
   border-radius: 99px;
+  pointer-events: none;
 }
 .ribbon-axis {
   position: relative;
@@ -114,7 +129,36 @@
   position: absolute;
   transform: translateX(-50%);
   font-size: 10px;
-  color: var(--text-4);
+  color: var(--text-3);
+}
+.ribbon-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  min-height: 64px;
+  border-top: 1px solid var(--line);
+}
+.ribbon-detail-heading,
+.ribbon-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+}
+.ribbon-detail-heading strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ribbon-detail-heading span,
+.ribbon-detail-meta,
+.ribbon-hint {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.ribbon-detail-meta {
+  margin-top: 6px;
+}
+.ribbon-hint {
+  margin: 0;
 }
 
 /* ── セッション行 ── */
