@@ -48,9 +48,11 @@ export function ribbonRows(sessions: Session[], now: number): RibbonRow[] {
         })
       }
     }
-    for (const segment of session.segments) {
-      add(segment.id, segment.startedAt, segment.endedAt ?? end, 'work', segment.taskId)
-    }
+    session.segments.forEach((segment, index) => {
+      const from = index === 0 ? session.startedAt : segment.startedAt
+      const to = index === session.segments.length - 1 ? end : segment.endedAt ?? end
+      add(segment.id, from, to, 'work', segment.taskId)
+    })
     session.pauses.forEach((pause, index) => {
       add(`pause-${index}`, pause.startedAt, pause.endedAt ?? end, pause.reason === 'excluded' ? 'excluded' : 'pause', null)
     })

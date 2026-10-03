@@ -40,6 +40,33 @@ describe('2行のタイムライン', () => {
     expect(items[0]?.focusMs).toBe(29 * MINUTE)
   })
 
+  it('開始・終了を広げた編集後の帯と集計を一致させる', () => {
+    const s = session({ startedAt: T0 - HOUR, endedAt: T0 + 5 * HOUR })
+    const items = ribbonRows([s], T0).flatMap((r) => r.items)
+    expect(items[0]?.startedAt).toBe(s.startedAt)
+    expect(items.at(-1)?.endedAt).toBe(s.endedAt)
+    expect(items.reduce((sum, i) => sum + i.focusMs, 0)).toBe(focusMs(s, T0))
+  })
+
+  it('編集で広げた境界を最初と最後のタスクへ割り当て、停止を差し引く', () => {
+    const s = session({
+      startedAt: T0 - HOUR, endedAt: T0 + 5 * HOUR,
+      segments: [
+        { id: 'first', taskId: 'a', startedAt: T0, endedAt: T0 + 2 * HOUR },
+        { id: 'last', taskId: 'b', startedAt: T0 + 2 * HOUR, endedAt: T0 + 4 * HOUR },
+      ],
+      pauses: [
+        { startedAt: T0 - 30 * MINUTE, endedAt: T0, reason: 'manual' },
+        { startedAt: T0 + 4 * HOUR, endedAt: T0 + 270 * MINUTE, reason: 'excluded' },
+      ],
+    })
+    const items = ribbonRows([s], T0).flatMap((r) => r.items)
+    for (const taskId of ['a', 'b']) {
+      expect(items.filter((i) => i.kind === 'work' && i.taskId === taskId).reduce((sum, i) => sum + i.focusMs, 0)).toBe(150 * MINUTE)
+    }
+    expect(items.reduce((sum, i) => sum + i.focusMs, 0)).toBe(focusMs(s, T0))
+  })
+
   it('開始直後の0秒の記録で無限値や架空の作業区間を作らない', () => {
     const rows = ribbonRows([session({ endedAt: null })], T0)
     expect(rows).toHaveLength(2)

@@ -12,12 +12,12 @@ const RUN = fs.mkdtempSync(path.join(ROOT, '.e2e', 'timeline-'))
 const DATA = path.join(RUN, 'data')
 fs.mkdirSync(DATA)
 const now = Date.now()
-const date = new Date(now)
+const HOUR = 3600000
+const day = new Date(now - 4 * HOUR)
+const date = new Date(day)
 date.setHours(9, 0, 0, 0)
 const start = date.getTime()
-const HOUR = 3600000
 const at = (hours) => start + hours * HOUR
-const day = new Date(now - 4 * HOUR)
 const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
 const task = (id, title) => ({ id, title, projectId: 'p', parentId: null, notes: '', status: 'todo', progress: 0, priority: 'normal', order: 0, createdAt: start, updatedAt: start, doneAt: null, createdInSessionId: null })
 fs.writeFileSync(path.join(DATA, 'data.json'), JSON.stringify({
@@ -128,7 +128,16 @@ try {
   assert.deepEqual(errors, [])
   const saved = JSON.parse(fs.readFileSync(path.join(DATA, 'data.json'), 'utf8'))
   assert.equal(saved.sessions[0].editedAt, null)
-  console.log('PASS: two rows, crossing pause, hover detail, keyboard navigation, exclusion, deleted task, narrow layout, no renderer errors, unchanged records')
+  const edited = await evaluate(`window.whitebox.call('session:update', ${JSON.stringify({ id: 'session', patch: { startedAt: at(-1), endedAt: at(11) } })})`)
+  assert.equal(edited.ok, true, JSON.stringify(edited))
+  await until(() => evaluate('document.querySelector(".ribbon-work").getAttribute("aria-label").includes("08:00")'))
+  await evaluate('document.querySelector(".ribbon-work").focus()')
+  assert.match(await evaluate('document.querySelector(".ribbon-detail").textContent'), /08:00.*12:00.*実作業 4h/)
+  await evaluate('Array.from(document.querySelectorAll(".ribbon-work")).at(-1).focus()')
+  assert.match(await evaluate('document.querySelector(".ribbon-detail").textContent'), /18:00.*20:00.*実作業 2h/)
+  assert.deepEqual(errors, [])
+  await shots('04-edited-boundaries.png')
+  console.log('PASS: two rows, crossing pause, hover detail, keyboard navigation, exclusion, deleted task, narrow layout, no renderer errors, unchanged records before editing, expanded session boundaries')
   console.log(`Screenshots: ${RUN}`)
 } finally {
   ws?.close()
