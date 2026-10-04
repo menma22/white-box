@@ -41,7 +41,7 @@ export const COMMANDS = {
     }),
   },
   'agent:applyPlan': {
-    args: z.strictObject({ requestId: z.string().min(1).max(200), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
+    args: z.strictObject({ requestId: z.string().min(1).max(200).refine((id) => id !== '__proto__', 'requestIdが不正です'), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
     result: z.array(TaskSchema),
   },
   'agent:propose': {
