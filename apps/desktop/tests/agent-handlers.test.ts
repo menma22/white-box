@@ -20,6 +20,14 @@ function context() {
 }
 
 describe('AIタスク登録', () => {
+  it('保存時に履歴が消えるrequestIdを登録前に拒否する', () => {
+    const { ctx, handlers } = context()
+    const before = JSON.stringify(ctx.store.data)
+    expect(() => handlers['agent:applyPlan'](parseArgs('agent:applyPlan', { requestId: '__proto__', tasks: [{ title: '重複させない' }] }))).toThrow()
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+    expect(ctx.calls).toEqual([])
+  })
+
   it('親子・既存親・プロジェクト・目標・期限・優先度・メモをInboxへ一括保存する', () => {
     const { ctx, handlers } = context()
     const result = handlers['agent:applyPlan'](parseArgs('agent:applyPlan', { requestId: 'plan-1', tasks: [
