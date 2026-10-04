@@ -66,10 +66,9 @@ export function MainWindow() {
       <div className="main-titlebar drag">
         <span className="brand">
           <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden>
-            <rect x="1.3" y="1.3" width="21.4" height="21.4" rx="6.2" fill="none" stroke="var(--accent-deep)" strokeWidth="2.6" />
-            <rect x="6.3" y="7.3" width="11.4" height="2.5" rx="1.25" fill="var(--accent)" />
-            <rect x="6.3" y="11.6" width="7.6" height="2.5" rx="1.25" fill="var(--accent-deep)" />
-            <rect x="6.3" y="15.9" width="4.2" height="2.5" rx="1.25" fill="var(--amber)" />
+            <path d="M12 2.5 20.5 7.3V16.7L12 21.5 3.5 16.7V7.3Z" fill="var(--panel)" />
+            <path d="M12 12 20.5 7.3V16.7L12 21.5Z" fill="var(--amber)" />
+            <path d="M12 2.5 20.5 7.3V16.7L12 21.5 3.5 16.7V7.3Z M3.5 7.3 12 12 20.5 7.3 M12 12V21.5" fill="none" stroke="var(--accent-deep)" strokeWidth="1.25" strokeLinejoin="round" strokeLinecap="round" />
           </svg>
           <span className="brand-name disp">White Box</span>
         </span>
