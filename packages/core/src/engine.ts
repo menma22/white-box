@@ -49,7 +49,7 @@ export function focusMs(session: Session, now: number): number {
 
 function focusEndOrNow(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
-  if (session.endedAt !== null || session.expiredNotifiedAt !== null) return end
+  if (session.endedAt !== null) return end
   return plannedReachedAt(session, now) ?? end
 }
 
