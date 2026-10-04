@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseArgs } from '../src/index.js'
-import { GoalCriteriaSchema, GoalCriterionSchema } from '../src/goal-criteria.js'
+import { parseArgs, GoalCriteriaSchema, GoalCriterionSchema } from '../src/index.js'
 
 const numeric = { id: 'readers', title: '協力者が読む', evidence: '', kind: 'number', target: 10, current: null, unit: '人', comparison: 'at-least' }
 
