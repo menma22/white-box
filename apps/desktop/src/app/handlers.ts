@@ -147,18 +147,20 @@ export function createHandlers(ctx: Ctx): Handlers {
       const minutes = a.minutes || db().settings.defaultSessionMinutes
       const session = ops.createSession({ taskId, taskTitle: taskTitle(db(), taskId), plannedMs: minutes * MINUTE, now })
       db().sessions.push(session)
+      if (ctx.runtime.currentWorkOpen) replaceSession(db(), ops.pauseSession(session, now, 'task-management'))
       db().tasks = taskOps.updateTask(db(), taskId, { status: 'doing' })
       ctx.publish()
       ctx.windows.open('hud', false)
       ctx.ticker.start()
       ctx.windows.closeLater('start')
-      return session
+      return liveSession(db())
     },
     'session:pause': (a) => {
       const s = currentSession()
-      // 既に止まっているなら窓も出し直さない（スリープは lock-screen と suspend を続けて撃つ）
-      if (!s || isPaused(s)) return null
-      replaceSession(db(), ops.pauseSession(s, ctx.now(), a.reason ?? 'manual'))
+      if (!s) return null
+      const next = ops.pauseSession(s, ctx.now(), a.reason ?? 'manual')
+      if (next === s) return null
+      replaceSession(db(), next)
       ctx.publish()
       ctx.windows.open('hud', false)
       return null
@@ -228,7 +230,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       ctx.runtime.pendingReview = { sessionId: ended.id, thenStart: Boolean(a.thenStart) }
       ctx.publish()
       ctx.windows.open('review')
-      ctx.windows.closeLater('expire', 'hud')
+      ctx.windows.closeLater('expire', 'hud', 'current')
       return null
     },
     'session:review': (a) => {
@@ -301,7 +303,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'window:close': (a) => {
-      ctx.windows.close(a.kind)
+      ctx.windows.closeLater(a.kind)
       return null
     },
     'window:toggle': (a) => {

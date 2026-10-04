@@ -8,6 +8,8 @@ import { buildBreakTimer, liveSession, replaceSession } from './state.js'
 
 /**
  * 異常終了で開いたままのセッションの扱いを決める。
+ * 整理中は最後の生存・操作記録（現在時刻が上限）で整理区間を閉じる。
+ * 他の停止は維持し、無ければその時刻で停止して復旧を聞く。
  * 休憩中は復旧確認を出さず、満了監視を再開する。
  * それ以外は、最後の生存記録と最新の操作記録のうち新しい時刻からの空白が
  * crashGapMs より長ければ「PC が落ちていた」とみなし、
@@ -16,6 +18,17 @@ import { buildBreakTimer, liveSession, replaceSession } from './state.js'
 export function restoreOpenSession(ctx: Ctx, crashGapMs: number): void {
   const s = liveSession(ctx.store.data)
   if (!s) return
+  if (s.pauses.some((p) => p.endedAt === null && p.reason === 'task-management')) {
+    const recordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
+    const lastKnownAt = Math.min(ctx.now(), Math.max(ctx.store.readLastAlive() ?? recordedAt, recordedAt))
+    const closed = ops.finishTaskManagement(s, lastKnownAt)
+    const restored = ops.pauseSession(closed, lastKnownAt, 'suspend')
+    replaceSession(ctx.store.data, restored)
+    if (!isPaused(closed)) ctx.runtime.recovery = { sessionId: s.id, lastKnownAt }
+    ctx.store.save()
+    ctx.ticker.start()
+    return
+  }
   if (buildBreakTimer(ctx.store.data)) {
     ctx.ticker.start()
     return
@@ -51,4 +64,17 @@ export function checkExpire(ctx: Ctx): void {
     ctx.publish()
     ctx.windows.open('expire')
   }
+}
+
+export function setCurrentWorkOpen(ctx: Ctx, open: boolean): void {
+  if (ctx.runtime.quitting || ctx.runtime.currentWorkOpen === open) return
+  if (open) checkExpire(ctx)
+  ctx.runtime.currentWorkOpen = open
+  const session = liveSession(ctx.store.data)
+  if (!session) return
+  replaceSession(ctx.store.data, open
+    ? ops.pauseSession(session, ctx.now(), 'task-management')
+    : ops.finishTaskManagement(session, ctx.now()))
+  ctx.publish()
+  if (!open) checkExpire(ctx)
 }

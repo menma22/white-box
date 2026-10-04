@@ -11,6 +11,7 @@ import {
   formatClock,
   formatDuration,
   livePausedMs,
+  managementMs,
   overrunRanges,
   totalRangeMs,
 } from '@white-box/core/engine'
@@ -56,6 +57,7 @@ export function ReviewWindow() {
   const excluded = excludedMs(session, end)
   const overrun = overrunRanges(session, end)
   const overrunMs = totalRangeMs(overrun)
+  const managingMs = managementMs(session, end)
 
   async function excludeOverrun() {
     await invoke('session:update', {
@@ -83,8 +85,9 @@ export function ReviewWindow() {
       <div className="review-body">
         <section className="review-summary">
           <Stat label="実作業" node={<BigDuration ms={focusMs(session, end)} size={38} />} />
-          <Stat label="一時停止" value={formatDuration(livePausedMs(session, end), 'compact')} />
+          <Stat label="一時停止" value={formatDuration(Math.max(0, livePausedMs(session, end) - managingMs), 'compact')} />
           {excluded > 0 && <Stat label="除外" value={formatDuration(excluded, 'compact')} />}
+          <Stat label="タスク整理" value={formatDuration(managingMs, 'compact')} />
           <Stat label="予定" value={formatDuration(session.plannedMs, 'compact')} />
           <Stat label="タスク" value={`${drafts.length}`} />
         </section>

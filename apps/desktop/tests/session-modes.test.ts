@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { focusByTask, focusMs, MINUTE } from '@white-box/core/engine'
+import { focusByTask, focusMs, MINUTE, pausedMsWithin } from '@white-box/core/engine'
 import { createHandlers, dispatch } from '../src/app/handlers.js'
-import { restoreOpenSession } from '../src/app/lifecycle.js'
-import { liveSession } from '../src/app/state.js'
+import { restoreOpenSession, setCurrentWorkOpen } from '../src/app/lifecycle.js'
+import { liveSession, newRuntime } from '../src/app/state.js'
 import { createSession, endSession, extendSession, markExpired, pauseSession, resumeSession, startBreak } from '../src/domain/session-ops.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
@@ -73,4 +73,76 @@ describe('タイマーの満了', () => {
     expect(closed.pauses.find((p) => p.reason === 'expired')).toMatchObject({ startedAt: T0 + minute(25), endedAt: T0 + minute(40) })
   })
 
+})
+
+describe('現在の仕事の管理時間', () => {
+  it('開くと除外し、閉じると元の実行中だけを再開する', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    await dispatch(createHandlers(ctx), 'session:start', { taskId: 'a', minutes: 500 })
+    ctx.advance(minute(10))
+    setCurrentWorkOpen(ctx, true)
+    setCurrentWorkOpen(ctx, true)
+    ctx.advance(minute(5))
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(10))
+    setCurrentWorkOpen(ctx, false)
+    ctx.advance(minute(3))
+    const session = liveSession(ctx.store.data)!
+    expect(session.state).toBe('running')
+    expect(session.pauses).toHaveLength(1)
+    expect(session.pauses[0]?.reason).toBe('task-management')
+    expect(focusMs(session, ctx.now())).toBe(minute(13))
+  })
+
+  it('元の手動停止を保持し、重なる管理時間を二度引かない', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', minutes: 500 })
+    ctx.advance(minute(10))
+    await dispatch(h, 'session:pause', {})
+    ctx.advance(minute(2))
+    setCurrentWorkOpen(ctx, true)
+    ctx.advance(minute(5))
+    setCurrentWorkOpen(ctx, false)
+    ctx.advance(minute(3))
+    const s = liveSession(ctx.store.data)!
+    expect(s.state).toBe('paused')
+    expect(focusMs(s, ctx.now())).toBe(minute(10))
+    expect(pausedMsWithin(s.pauses, s.startedAt, ctx.now(), ctx.now())).toBe(minute(10))
+    expect(s.pauses.find((p) => p.reason === 'manual')?.endedAt).toBeNull()
+  })
+
+  it('管理中に手動停止した場合は、閉じてもその停止を保つ', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', minutes: 500 })
+    setCurrentWorkOpen(ctx, true)
+    await dispatch(h, 'session:pause', {})
+    setCurrentWorkOpen(ctx, false)
+    expect(liveSession(ctx.store.data)?.state).toBe('paused')
+  })
+
+  it('管理窓を開いたままの再起動は、停止区間を閉じても空白を実作業にしない', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    await dispatch(createHandlers(ctx), 'session:start', { taskId: 'a', minutes: 500 })
+    ctx.advance(minute(10))
+    setCurrentWorkOpen(ctx, true)
+    ctx.advance(minute(3))
+    ctx.setLastAlive(ctx.now())
+    ctx.advance(minute(60))
+    ctx.runtime = newRuntime()
+    restoreOpenSession(ctx, 90_000)
+    const s = liveSession(ctx.store.data)!
+    expect(s.pauses.find((p) => p.reason === 'task-management')?.endedAt).toBe(T0 + minute(13))
+    expect(s.pauses.at(-1)).toMatchObject({ reason: 'suspend', endedAt: null })
+    expect(focusMs(s, ctx.now())).toBe(minute(10))
+    expect(ctx.runtime.recovery).not.toBeNull()
+  })
 })

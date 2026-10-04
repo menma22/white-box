@@ -63,18 +63,19 @@ export function createSession(opts: {
 }
 
 export function pauseSession(session: Session, now: number, reason: PauseInterval['reason'] = 'manual'): Session {
-  if (session.endedAt || isPaused(session)) return session
+  if (session.endedAt !== null || session.pauses.some((p) => p.endedAt === null && p.reason === reason)) return session
+  if (isPaused(session) && reason !== 'task-management' && session.pauses.some((p) => p.endedAt === null && p.reason !== 'task-management')) return session
   const next = clone(session)
   next.pauses.push({ startedAt: now, endedAt: null, reason })
   next.state = 'paused'
-  const label = reason === 'manual' ? '一時停止' : reason === 'suspend' ? '一時停止（スリープ）' : '一時停止（ロック）'
+  const label = reason === 'task-management' ? 'タスク整理を開始' : reason === 'expired' ? '満了により停止' : reason === 'manual' ? '一時停止' : reason === 'suspend' ? '一時停止（スリープ）' : '一時停止（ロック）'
   pushEvent(next, now, 'paused', label)
   return next
 }
 
 export function startBreak(session: Session, minutes: number, now: number): Session {
   if (session.endedAt !== null || !Number.isFinite(minutes) || minutes <= 0) return session
-  if (session.pauses.some((p) => p.endedAt === null && p.reason !== 'expired')) return session
+  if (session.pauses.some((p) => p.endedAt === null && p.reason !== 'expired' && p.reason !== 'task-management')) return session
   const next = clone(session)
   for (const p of next.pauses) if (p.endedAt === null && p.reason === 'expired') p.endedAt = now
   next.pauses.push({
@@ -105,12 +106,24 @@ export function markBreakExpired(session: Session, now: number): Session {
 
 export function resumeSession(session: Session, now: number): Session {
   if (session.endedAt || !isPaused(session) || session.expiredNotifiedAt !== null) return session
+  if (!session.pauses.some((p) => p.endedAt === null && p.reason !== 'task-management')) return session
   const next = clone(session)
   for (const p of next.pauses) {
-    if (p.endedAt === null) p.endedAt = now
+    if (p.endedAt === null && p.reason !== 'task-management') p.endedAt = Math.max(now, p.startedAt)
   }
-  next.state = 'running'
-  pushEvent(next, now, 'resumed', '再開')
+  next.state = isPaused(next) ? 'paused' : 'running'
+  pushEvent(next, now, next.state === 'running' ? 'resumed' : 'paused', next.state === 'running' ? '再開' : 'タスク整理後の再開を指定')
+  return next
+}
+
+export function finishTaskManagement(session: Session, now: number): Session {
+  if (!session.pauses.some((p) => p.endedAt === null && p.reason === 'task-management')) return session
+  const next = clone(session)
+  for (const p of next.pauses) {
+    if (p.endedAt === null && p.reason === 'task-management') p.endedAt = Math.max(now, p.startedAt)
+  }
+  next.state = next.endedAt !== null ? 'ended' : isPaused(next) ? 'paused' : 'running'
+  pushEvent(next, now, next.state === 'running' ? 'resumed' : 'paused', next.state === 'running' ? 'タスク整理を終えて再開' : 'タスク整理を終了（停止を維持）')
   return next
 }
 

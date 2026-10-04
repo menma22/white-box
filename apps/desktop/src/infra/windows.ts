@@ -15,6 +15,11 @@ const ICON = path.join(APP_ROOT, 'assets', 'icon.png')
 const DEV_URL = process.env['VITE_DEV_SERVER_URL']
 
 const windows = new Map<WindowKind, BrowserWindow>()
+let onCurrentWorkOpen: (open: boolean) => void = () => undefined
+
+export function observeCurrentWorkWindow(callback: (open: boolean) => void): void {
+  onCurrentWorkOpen = callback
+}
 
 const BG = '#F6F2EA'
 /** 透過窓の地。不透明な色を渡すと窓ごと塗り潰されて裏が見えない */
@@ -216,8 +221,12 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
     return { action: 'deny' }
   })
 
-  win.on('closed', () => windows.delete(kind))
+  win.on('closed', () => {
+    windows.delete(kind)
+    if (kind === 'current') onCurrentWorkOpen(false)
+  })
   windows.set(kind, win)
+  if (kind === 'current') onCurrentWorkOpen(true)
   return win
 }
 

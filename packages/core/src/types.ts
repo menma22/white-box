@@ -109,7 +109,7 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | 'expired' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | 'expired' | 'task-management' | null
   plannedEndAt?: number
   notifiedAt?: number | null
 }

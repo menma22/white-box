@@ -4,7 +4,7 @@ import { useApp, useData } from '@/stores/app'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '@/lib/selectors'
 import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui'
-import { formatDuration } from '@white-box/core/engine'
+import { formatDuration, pausedMsWithin } from '@white-box/core/engine'
 import { remainingLabel } from '@/lib/format'
 
 export function CurrentWorkWindow() {
@@ -23,6 +23,12 @@ export function CurrentWorkWindow() {
   const others = candidateTasks(state).filter((t) => t.id !== current?.id)
   const subtasks = current ? childrenOf(state, current.id) : []
   const timer = tick ? liveTimerPresentation(tick, state.breakTimer, now) : null
+  const session = state.sessions.find((s) => s.id === tick?.sessionId)
+  const managementPauses = session?.pauses.filter((p) => p.reason === 'task-management') ?? []
+  const managing = managementPauses.some((p) => p.endedAt === null)
+  const originallyPaused = session?.pauses.some((p) => p.endedAt === null && p.reason !== 'task-management') ?? false
+  const expired = session?.expiredNotifiedAt != null
+  const managementMs = session ? pausedMsWithin(managementPauses, session.startedAt, now, now) : 0
 
   async function addTask() {
     const title = draft.trim()
@@ -54,6 +60,7 @@ export function CurrentWorkWindow() {
       <TitleBar title="現在の仕事" onClose={() => void cmd.closeSelf()} />
 
       <div className="current-body">
+        {managing && <p className="current-management">タスク整理 {formatDuration(managementMs, 'compact')} · 実作業から除外中。{originallyPaused ? '閉じても一時停止を保つ。' : '閉じると作業を再開する。'}</p>}
         {tick && current && timer ? (
           <section className="current-focus">
             <Ring elapsedMs={timer.elapsedMs} plannedMs={timer.plannedMs} size={96} thickness={5} paused={timer.isPaused}>
@@ -80,9 +87,9 @@ export function CurrentWorkWindow() {
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
-                  onClick={() => void invoke(tick.state === 'paused' ? 'session:resume' : 'session:pause')}
+                  onClick={() => void invoke(originallyPaused ? 'session:resume' : 'session:pause')}
                 >
-                  {timer.isBreak ? '休憩を終える' : tick.state === 'paused' ? '再開' : '一時停止'}
+                  {expired ? '延長を選ぶ' : timer.isBreak ? '休憩を終える' : originallyPaused ? '閉じたら再開する' : '閉じても一時停止'}
                 </button>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('session:end')}>
                   セッション終了

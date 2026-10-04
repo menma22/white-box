@@ -73,6 +73,11 @@ export function livePausedMs(session: Session, now: number): number {
   return pausedMsWithin(observed, session.startedAt, end, now)
 }
 
+export function managementMs(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  return pausedMsWithin(session.pauses.filter((p) => p.reason === 'task-management'), session.startedAt, end, now)
+}
+
 /** 申告として記録されている除外区間。 */
 export function declaredExclusions(session: Session): TimeRange[] {
   return session.pauses.flatMap((p) =>
