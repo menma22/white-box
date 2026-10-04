@@ -13,7 +13,9 @@
 | 境界 | `pnpm run lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
 | 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物の IPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
-| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて両方の E2E を実行 | 組み上げた exe の中で同じことが起きるか |
+| 開始通知 | `node scripts/e2e-start-reminder.mjs` | 実設定UI・保存・再起動・監視helperの起動と終了。WHITEBOX_EXE経路も対応 |
+| Windows入力監視 | `node scripts/verify-input-activity.mjs` | 実GetAsyncKeyState helperの数値出力と停止。入力文字・生の回数は証拠に保存しない |
+| 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて各 E2E を実行 | 組み上げた exe の中で同じことが起きるか |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
 | UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
 

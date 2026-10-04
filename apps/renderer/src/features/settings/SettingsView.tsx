@@ -191,6 +191,18 @@ export function SettingsView() {
       </section>
 
       <section className="set-block">
+        <h2 className="set-title">開始忘れ</h2>
+        <div className="set-rows">
+          <Row label="入力が続いたら開始を思い出す" hint="押下回数だけを端末内で数える。入力した文字は取得しない。セッションがある間は通知しない。">
+            <Toggle value={s.remindToStart ?? false} onChange={(v) => patch({ remindToStart: v })} />
+          </Row>
+          <Row label="通知までの入力時間" hint="無視した通知は30分間繰り返さない。">
+            <input className="input num set-num" type="number" min={1} max={60} value={s.startReminderMinutes ?? 3} onChange={(e) => patch({ startReminderMinutes: Math.max(1, Math.min(60, Number(e.target.value) || 3)) })} /><span className="set-unit">分</span>
+          </Row>
+        </div>
+      </section>
+
+      <section className="set-block">
         <h2 className="set-title">データ</h2>
         <p className="set-note">
           記録はこの PC の中だけにある。書き出しておけば、PC を移しても続きから使える。

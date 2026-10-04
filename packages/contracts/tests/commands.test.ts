@@ -7,6 +7,11 @@ describe('コマンド契約', () => {
     expect(Object.keys(COMMANDS)).toHaveLength(45)
   })
 
+  it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
+    expect(parseArgs('settings:update', { patch: { remindToStart: true, startReminderMinutes: 3 } })).toEqual({ patch: { remindToStart: true, startReminderMinutes: 3 } })
+    for (const startReminderMinutes of [0, 1.5, 61, Infinity]) expect(() => parseArgs('settings:update', { patch: { startReminderMinutes } })).toThrow()
+  })
+
   it('全コマンドが args と result の両スキーマを持つ', () => {
     for (const [name, def] of Object.entries(COMMANDS)) {
       expect(typeof def.args.parse, name).toBe('function')

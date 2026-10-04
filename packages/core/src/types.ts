@@ -190,6 +190,8 @@ export interface Settings {
   showSessionCard: boolean
   /** 初回オンボーディングを終えた時刻。null は未完了。 */
   onboardedAt: number | null
+  remindToStart?: boolean
+  startReminderMinutes?: number
 }
 
 export interface Database {
