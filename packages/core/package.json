@@ -17,9 +17,25 @@
       "types": "./dist/goal-map.d.ts",
       "default": "./dist/goal-map.js"
     },
+    "./agent": {
+      "types": "./dist/agent.d.ts",
+      "default": "./dist/agent.js"
+    },
     "./outcome": {
       "types": "./dist/outcome.d.ts",
       "default": "./dist/outcome.js"
+    },
+    "./goal-criteria": {
+      "types": "./dist/goal-criteria.d.ts",
+      "default": "./dist/goal-criteria.js"
+    },
+    "./presence": {
+      "types": "./dist/presence.d.ts",
+      "default": "./dist/presence.js"
+    },
+    "./notes": {
+      "types": "./dist/notes.d.ts",
+      "default": "./dist/notes.js"
     }
   },
   "scripts": {

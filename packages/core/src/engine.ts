@@ -1,7 +1,8 @@
 /**
  * セッションの時間計算。副作用を持たない純関数だけを置く（テスト対象）。
  *
- * 実作業時間 = 経過時間 − 一時停止の重なり。開いたままの区間は now で閉じて数える。
+ * 実作業時間 = 対象範囲の経過時間 − 一時停止の重なり。
+ * 未終了のタイマー／ポモドーロは、満了処理前でも予定到達時刻を上限にする。
  */
 import type { PauseInterval, Session, TaskSegment, TimeRange, ID } from './types.js'
 
@@ -41,9 +42,15 @@ export function sessionEndOrNow(session: Session, now: number): number {
 
 /** セッション全体の実作業時間。 */
 export function focusMs(session: Session, now: number): number {
-  const end = sessionEndOrNow(session, now)
+  const end = focusEndOrNow(session, now)
   const gross = Math.max(0, end - session.startedAt)
   return Math.max(0, gross - pausedMsWithin(session.pauses, session.startedAt, end, now))
+}
+
+function focusEndOrNow(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  if (session.endedAt !== null || session.mode === 'stopwatch') return end
+  return plannedReachedAt(session, now) ?? end
 }
 
 /** セッション全体の一時停止時間。 */
@@ -64,6 +71,11 @@ export function livePausedMs(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
   const observed = session.pauses.filter((p) => p.reason !== 'excluded')
   return pausedMsWithin(observed, session.startedAt, end, now)
+}
+
+export function managementMs(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  return pausedMsWithin(session.pauses.filter((p) => p.reason === 'task-management'), session.startedAt, end, now)
 }
 
 /** 申告として記録されている除外区間。 */
@@ -104,6 +116,7 @@ export function plannedReachedAt(session: Session, now: number): number | null {
 
 /** 予定に達してから終了までの、まだ止まっていない範囲（＝満了後に放置していた分）。 */
 export function overrunRanges(session: Session, now: number): TimeRange[] {
+  if (session.mode === 'stopwatch') return []
   const from = plannedReachedAt(session, now)
   if (from === null) return []
   return unpausedRanges(session.pauses, from, sessionEndOrNow(session, now), now)
@@ -114,7 +127,7 @@ export function totalRangeMs(ranges: TimeRange[]): number {
 }
 
 export function segmentFocusMs(session: Session, segment: TaskSegment, now: number): number {
-  const sessionEnd = sessionEndOrNow(session, now)
+  const sessionEnd = focusEndOrNow(session, now)
   const start = session.segments[0]?.id === segment.id ? session.startedAt : Math.max(segment.startedAt, session.startedAt)
   const end = session.segments[session.segments.length - 1]?.id === segment.id
     ? sessionEnd

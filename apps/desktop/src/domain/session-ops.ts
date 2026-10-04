@@ -3,7 +3,7 @@
  *
  * 終了済み（endedAt != null）のセッションは遷移させない — 記録を後から動かさないため。
  */
-import type { ID, Session, SessionEvent, SessionEventType, PauseInterval, TimeRange } from '@white-box/core/types'
+import type { ID, Session, SessionMode, SessionEvent, SessionEventType, PauseInterval, TimeRange } from '@white-box/core/types'
 import {
   activeSegment,
   declaredExclusions,
@@ -12,6 +12,7 @@ import {
   formatDuration,
   isPaused,
   MINUTE,
+  plannedReachedAt,
   totalRangeMs,
 } from '@white-box/core/engine'
 
@@ -38,6 +39,9 @@ export function createSession(opts: {
   taskId: ID
   taskTitle: string
   plannedMs: number
+  mode?: SessionMode
+  pomodoroBreakMs?: number
+  pomodoroAutoResume?: boolean
   now: number
 }): Session {
   const { taskId, taskTitle, plannedMs, now } = opts
@@ -55,25 +59,34 @@ export function createSession(opts: {
     expiredNotifiedAt: null,
     editedAt: null,
     createdAt: now,
+    mode: opts.mode ?? 'timer',
+    ...(opts.mode === 'pomodoro' ? {
+      pomodoroWorkMs: plannedMs,
+      pomodoroBreakMs: opts.pomodoroBreakMs ?? 5 * MINUTE,
+      pomodoroAutoResume: opts.pomodoroAutoResume ?? false,
+    } : {}),
   }
-  pushEvent(session, now, 'session_started', `セッション開始（${Math.round(plannedMs / MINUTE)}分）`)
+  pushEvent(session, now, 'session_started', opts.mode === 'stopwatch' ? 'ストップウォッチ開始' : `セッション開始（${Math.round(plannedMs / MINUTE)}分）`)
   pushEvent(session, now, 'task_started', taskTitle, { taskId })
   return session
 }
 
 export function pauseSession(session: Session, now: number, reason: PauseInterval['reason'] = 'manual'): Session {
-  if (session.endedAt || isPaused(session)) return session
+  if (session.endedAt !== null || session.pauses.some((p) => p.endedAt === null && p.reason === reason)) return session
+  if (isPaused(session) && reason !== 'task-management' && session.pauses.some((p) => p.endedAt === null && p.reason !== 'break' && p.reason !== 'task-management')) return session
   const next = clone(session)
   next.pauses.push({ startedAt: now, endedAt: null, reason })
   next.state = 'paused'
-  const label = reason === 'manual' ? '一時停止' : reason === 'suspend' ? '一時停止（スリープ）' : '一時停止（ロック）'
+  const label = reason === 'task-management' ? 'タスク整理を開始' : reason === 'expired' ? '満了により停止' : reason === 'manual' ? '一時停止' : reason === 'suspend' ? '一時停止（スリープ）' : '一時停止（ロック）'
   pushEvent(next, now, 'paused', label)
   return next
 }
 
 export function startBreak(session: Session, minutes: number, now: number): Session {
-  if (session.endedAt || isPaused(session) || !Number.isFinite(minutes) || minutes <= 0) return session
+  if (session.endedAt !== null || !Number.isFinite(minutes) || minutes <= 0) return session
+  if (session.pauses.some((p) => p.endedAt === null && p.reason !== 'expired' && p.reason !== 'task-management')) return session
   const next = clone(session)
+  for (const p of next.pauses) if (p.endedAt === null && p.reason === 'expired') p.endedAt = now
   next.pauses.push({
     startedAt: now,
     endedAt: null,
@@ -101,13 +114,30 @@ export function markBreakExpired(session: Session, now: number): Session {
 }
 
 export function resumeSession(session: Session, now: number): Session {
-  if (session.endedAt || !isPaused(session)) return session
+  if (session.endedAt || !isPaused(session) || ((session.mode ?? 'timer') === 'timer' && session.expiredNotifiedAt !== null)) return session
+  if (!session.pauses.some((p) => p.endedAt === null && p.reason !== 'task-management')) return session
+  const next = clone(session)
+  const resumingCycle = next.mode === 'pomodoro' && next.expiredNotifiedAt !== null && next.pauses.some((p) => p.endedAt === null && p.reason === 'break')
+  for (const p of next.pauses) {
+    if (p.endedAt === null && p.reason !== 'task-management') p.endedAt = Math.max(now, p.startedAt)
+  }
+  if (resumingCycle) {
+    next.plannedMs += next.pomodoroWorkMs ?? 25 * MINUTE
+    next.expiredNotifiedAt = null
+  }
+  next.state = isPaused(next) ? 'paused' : 'running'
+  pushEvent(next, now, next.state === 'running' ? 'resumed' : 'paused', next.state === 'running' ? '再開' : 'タスク整理後の再開を指定')
+  return next
+}
+
+export function finishTaskManagement(session: Session, now: number): Session {
+  if (!session.pauses.some((p) => p.endedAt === null && p.reason === 'task-management')) return session
   const next = clone(session)
   for (const p of next.pauses) {
-    if (p.endedAt === null) p.endedAt = now
+    if (p.endedAt === null && p.reason === 'task-management') p.endedAt = Math.max(now, p.startedAt)
   }
-  next.state = 'running'
-  pushEvent(next, now, 'resumed', '再開')
+  next.state = next.endedAt !== null ? 'ended' : isPaused(next) ? 'paused' : 'running'
+  pushEvent(next, now, next.state === 'running' ? 'resumed' : 'paused', next.state === 'running' ? 'タスク整理を終えて再開' : 'タスク整理を終了（停止を維持）')
   return next
 }
 
@@ -124,25 +154,43 @@ export function switchTask(session: Session, taskId: ID, taskTitle: string, now:
 }
 
 export function extendSession(session: Session, minutes: number, now: number): Session {
-  if (session.endedAt) return session
+  if (session.endedAt !== null || !Number.isFinite(minutes) || minutes <= 0) return session
   const next = clone(session)
   next.plannedMs += minutes * MINUTE
   next.expiredNotifiedAt = null
+  for (const p of next.pauses) {
+    if (p.endedAt === null && (p.reason === 'expired' || ((session.mode ?? 'timer') === 'timer' && session.expiredNotifiedAt !== null && p.reason === 'break'))) p.endedAt = now
+  }
+  next.state = isPaused(next) ? 'paused' : 'running'
   pushEvent(next, now, 'extended', `延長 +${minutes}分`, { minutes })
   return next
 }
 
 export function markExpired(session: Session, now: number): Session {
-  if (session.endedAt || session.expiredNotifiedAt !== null) return session
+  if (session.endedAt !== null || session.mode === 'stopwatch') return session
+  const reachedAt = plannedReachedAt(session, now)
+  if (reachedAt === null) return session
+  if (session.expiredNotifiedAt !== null && session.pauses.some((p) =>
+    (p.reason === 'expired' || p.reason === 'break') && p.startedAt <= reachedAt && (p.endedAt === null || p.endedAt > reachedAt),
+  )) return session
   const next = clone(session)
-  next.expiredNotifiedAt = now
-  pushEvent(next, now, 'timer_expired', '予定時間に到達')
+  next.expiredNotifiedAt ??= now
+  if (session.expiredNotifiedAt === null) pushEvent(next, reachedAt, 'timer_expired', '予定時間に到達')
+  next.pauses.push({ startedAt: reachedAt, endedAt: null, reason: 'expired' })
+  next.state = 'paused'
+  if (next.mode === 'pomodoro') {
+    const pause = next.pauses[next.pauses.length - 1]!
+    pause.reason = 'break'
+    pause.plannedEndAt = reachedAt + (next.pomodoroBreakMs ?? 5 * MINUTE)
+    pause.notifiedAt = null
+    pushEvent(next, reachedAt, 'paused', `休憩（${(next.pomodoroBreakMs ?? 5 * MINUTE) / MINUTE}分）`)
+  }
   return next
 }
 
 export function endSession(session: Session, now: number): Session {
   if (session.endedAt) return session
-  const next = clone(session)
+  const next = clone(markExpired(session, now))
   for (const p of next.pauses) {
     if (p.endedAt === null) p.endedAt = now
   }
@@ -197,8 +245,9 @@ export function editSession(session: Session, edit: SessionEdit, now: number): S
   if (typeof edit.endedAt === 'number') next.endedAt = edit.endedAt
   if (typeof edit.plannedMs === 'number') next.plannedMs = edit.plannedMs
   if (typeof edit.note === 'string') next.note = edit.note
-  if (edit.segmentTaskId && next.segments[0]) {
-    for (const seg of next.segments) seg.taskId = edit.segmentTaskId
+  if (edit.segmentTaskId) {
+    if (next.segments.length === 0) next.segments.push({ id: newId('seg'), taskId: edit.segmentTaskId, startedAt: next.startedAt, endedAt: next.endedAt })
+    else for (const seg of next.segments) seg.taskId = edit.segmentTaskId
   }
   if (next.endedAt !== null && next.startedAt > next.endedAt) next.endedAt = next.startedAt
   if (edit.exclusions) replaceExclusions(next, edit.exclusions)
@@ -241,7 +290,7 @@ function editLabel(before: TimeRange[], after: TimeRange[]): string {
  */
 export function closeAtLastKnown(session: Session, lastKnownAt: number): Session {
   const at = Math.max(lastKnownAt, session.startedAt)
-  const next = clone(session)
+  const next = clone(markExpired(session, at))
   for (const p of next.pauses) {
     if (p.endedAt === null) p.endedAt = Math.min(at, p.startedAt > at ? p.startedAt : at)
   }

@@ -1,10 +1,9 @@
 /**
- * アプリ／トレイのアイコンを生成する（build/*.png と assets/icon.ico）。
+ * アプリ／トレイのアイコンを生成する（assets/*.png と assets/icon.ico）。
  * 画像ライブラリを入れずに済ませるため、PNG と ICO を直接組み立てている。
  *
- * 意匠「White Box」: 上から覗いた開いた箱。四隅の斜めの筋が箱の角、
- * 内側の明るい面が中身で、長さの違う 3 本の帯が積み上がった記録。
- * 一番下の短いキャラメルの帯が「まだ書き終えていない今日」。
+ * 意匠「White Box」: 細い稜線の立方体。中心から3本の線が面を分け、右面だけamberにする。
+ * ヘッダーのSVGと同じ24単位の座標を使う。
  */
 import zlib from 'node:zlib'
 import fs from 'node:fs'
@@ -59,92 +58,54 @@ function encodePng(size, pixels) {
 }
 
 // ── 図形 ─────────────────────────────────────────────────────────
-/** 角丸長方形の内側なら負、外なら正の距離。 */
-function sdRoundRect(px, py, cx, cy, halfW, halfH, r) {
-  const qx = Math.abs(px - cx) - (halfW - r)
-  const qy = Math.abs(py - cy) - (halfH - r)
-  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r
+const GREEN = [30, 57, 50]
+const CREAM = [255, 254, 251]
+const AMBER = [184, 129, 58]
+const OUTLINE = [[12, 2.5], [20.5, 7.3], [20.5, 16.7], [12, 21.5], [3.5, 16.7], [3.5, 7.3]]
+const RIGHT_FACE = [[12, 12], [20.5, 7.3], [20.5, 16.7], [12, 21.5]]
+const CENTER = [12, 12]
+const EDGES = [
+  ...OUTLINE.map((point, index) => [point, OUTLINE[(index + 1) % OUTLINE.length]]),
+  [CENTER, OUTLINE[1]], [CENTER, OUTLINE[3]], [CENTER, OUTLINE[5]],
+]
+
+function insidePolygon(x, y, points) {
+  return points.every(([ax, ay], index) => {
+    const [bx, by] = points[(index + 1) % points.length]
+    return (bx - ax) * (y - ay) - (by - ay) * (x - ax) >= 0
+  })
 }
 
-const GREEN = [30, 57, 50]
-const APRON = [0, 112, 74]
-const CREAM = [251, 248, 242]
-const CARAMEL = [192, 138, 62]
-const SEAM = [74, 106, 95]
+function distanceToEdge(x, y, [[ax, ay], [bx, by]]) {
+  const dx = bx - ax
+  const dy = by - ay
+  const position = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+  return Math.hypot(x - ax - position * dx, y - ay - position * dy)
+}
 
 function draw(S) {
   const px = Buffer.alloc(S * S * 4)
   const SS = 4
-  const c = S / 2
-  const half = S / 2 - S * 0.065
-  const radius = S * 0.215
-  const rim = S * 0.1
-  const ih = half - rim
-  const innerRadius = Math.max(1, S * 0.085)
-
-  // 内側の面に置く記録。長さが違うほど「積み上がってきた」ことが伝わる
-  const barH = S * 0.105
-  const gap = S * 0.075
-  const inset = ih * 0.16
-  const bars = [
-    { w: 0.92, color: APRON },
-    { w: 0.62, color: GREEN },
-    { w: 0.34, color: CARAMEL },
-  ]
-  const stackH = bars.length * barH + (bars.length - 1) * gap
-  const stackTop = c - stackH / 2
-  const barLeft = c - ih + inset
-  const usable = ih * 2 - inset * 2
-
-  const put = (i, color, alpha) => {
-    if (alpha <= 0) return
-    const a = px[i + 3] / 255
-    const na = alpha + a * (1 - alpha)
-    for (let k = 0; k < 3; k++) {
-      px[i + k] = Math.round((color[k] * alpha + px[i + k] * a * (1 - alpha)) / na)
-    }
-    px[i + 3] = Math.round(na * 255)
-  }
 
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
-      let outer = 0
-      let inner = 0
-      let seam = 0
-      const hits = bars.map(() => 0)
-
+      let hits = 0
+      const sum = [0, 0, 0]
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
-          const fx = x + (sx + 0.5) / SS
-          const fy = y + (sy + 0.5) / SS
-          if (sdRoundRect(fx, fy, c, c, half, half, radius) > 0) continue
-          outer++
-
-          if (sdRoundRect(fx, fy, c, c, ih, ih, innerRadius) <= 0) {
-            inner++
-            for (let b = 0; b < bars.length; b++) {
-              const top = stackTop + b * (barH + gap)
-              const w = usable * bars[b].w
-              if (sdRoundRect(fx, fy, barLeft + w / 2, top + barH / 2, w / 2, barH / 2, barH / 2) <= 0) hits[b]++
-            }
-            continue
-          }
-
-          // 四隅へ走る斜めの筋＝箱の角の稜線
-          const dx = Math.abs(fx - c)
-          const dy = Math.abs(fy - c)
-          if (Math.abs(dx - dy) < S * 0.026 && Math.min(dx, dy) > ih * 0.78) seam++
+          const fx = (x + (sx + 0.5) / SS) * 24 / S
+          const fy = (y + (sy + 0.5) / SS) * 24 / S
+          const edge = EDGES.some((line) => distanceToEdge(fx, fy, line) <= 1.25 / 2)
+          if (!edge && !insidePolygon(fx, fy, OUTLINE)) continue
+          const color = edge ? GREEN : insidePolygon(fx, fy, RIGHT_FACE) ? AMBER : CREAM
+          hits++
+          for (let k = 0; k < 3; k++) sum[k] += color[k]
         }
       }
-
-      const total = SS * SS
+      if (hits === 0) continue
       const i = (y * S + x) * 4
-      if (outer === 0) continue
-
-      put(i, GREEN, outer / total)
-      put(i, SEAM, seam / total)
-      put(i, CREAM, inner / total)
-      for (let b = 0; b < bars.length; b++) if (hits[b] > 0) put(i, bars[b].color, hits[b] / total)
+      for (let k = 0; k < 3; k++) px[i + k] = Math.round(sum[k] / hits)
+      px[i + 3] = Math.round(hits / (SS * SS) * 255)
     }
   }
   return px

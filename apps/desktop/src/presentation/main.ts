@@ -5,19 +5,23 @@
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
 import { app, BrowserWindow, powerMonitor } from 'electron'
+import path from 'node:path'
 import { dayKey } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
 import { createHandlers, dispatch, type Handlers } from '../app/handlers.js'
-import { checkExpire, restoreOpenSession } from '../app/lifecycle.js'
+import { checkExpire, restoreOpenSession, setCurrentWorkOpen } from '../app/lifecycle.js'
 import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
+import { createStartReminderService } from '../infra/start-reminder-service.js'
+import { createNoteReminders } from '../infra/note-reminders.js'
 import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
 import { createTicker } from '../infra/ticker.js'
-import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow } from '../infra/windows.js'
+import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow, observeCurrentWorkWindow } from '../infra/windows.js'
 import { registerIpc } from './ipc.js'
+import { createAgentService } from '../infra/agent-service.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000
 /** これより長く記録が途切れていたら、PC が落ちていたとみなす。 */
@@ -34,7 +38,9 @@ if (!app.requestSingleInstanceLock()) {
     const store = new Store()
     const runtime = newRuntime()
     let handlers: Handlers
+    let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
+    let startReminderService: ReturnType<typeof createStartReminderService> | null = null
 
     const tray = createTray({
       getDb: () => store.data,
@@ -49,13 +55,13 @@ if (!app.requestSingleInstanceLock()) {
         return
       }
       const now = Date.now()
+      checkExpire(ctx)
       broadcast('whitebox:tick', buildTick(store.data, now))
       tray.update()
       if (now - lastAliveWrite > ALIVE_WRITE_INTERVAL_MS) {
         lastAliveWrite = now
         store.markAlive()
       }
-      checkExpire(ctx)
     })
 
     const ctx: Ctx = {
@@ -69,6 +75,7 @@ if (!app.requestSingleInstanceLock()) {
       },
       ticker,
       system: {
+        agentConfig: () => JSON.stringify({ mcpServers: { 'white-box': { command: process.execPath, args: [path.join(APP_ROOT, 'scripts', 'white-box-mcp.mjs')], env: { ELECTRON_RUN_AS_NODE: '1', WHITEBOX_AGENT_CONFIG: path.join(store.dir, 'agent-connection.json') } } } }, null, 2),
         applyShortcuts: () =>
           applyShortcuts(store.data.settings.shortcuts, () => void dispatch(handlers, 'session:toggle', {})),
         applyLoginItem: () => {
@@ -85,11 +92,17 @@ if (!app.requestSingleInstanceLock()) {
         store.save()
         broadcast('whitebox:state', buildState(store.data, runtime, Date.now()))
         tray.update()
+        startReminderService?.refresh()
+        agentService?.refresh()
       },
     }
 
     handlers = createHandlers(ctx)
+    observeCurrentWorkWindow((open) => setCurrentWorkOpen(ctx, open))
+    agentService = createAgentService(ctx, store.dir, handlers)
     registerIpc(handlers)
+    startReminderService = createStartReminderService(ctx)
+    const noteReminders = createNoteReminders(ctx)
 
     restoreOpenSession(ctx, CRASH_GAP_MS)
     ctx.system.applyShortcuts()
@@ -125,6 +138,10 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     app.on('before-quit', () => {
+      runtime.quitting = true
+      startReminderService?.stop()
+      agentService?.stop()
+      noteReminders.stop()
       store.markAlive()
       store.save()
     })

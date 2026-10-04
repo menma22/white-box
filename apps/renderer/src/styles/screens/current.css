@@ -9,6 +9,7 @@
   overflow-y: auto;
   padding: 22px 26px 28px;
 }
+.current-management { margin: 0 0 16px; padding: 10px 14px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent-deep); font-size: 12px; line-height: 1.6; }
 .current-focus {
   display: flex;
   align-items: center;
@@ -57,6 +58,7 @@
 }
 .current-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .current-idle {

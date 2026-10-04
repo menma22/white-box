@@ -1,0 +1,12 @@
+.presence-error { color: var(--rose); font-size: 12px; margin: 0; }
+.presence-candidates { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.presence-candidates > * { flex: none; }
+.presence-candidates h3 { font-size: 14px; margin: 0; }
+.presence-candidates h3 span { margin-left: 8px; color: var(--text-3); font-size: 11px; font-weight: 400; }
+.presence-note, .presence-reviewed p { font-size: 12px; color: var(--text-2); margin: 0; line-height: 1.7; }
+.presence-candidate { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: 12px; }
+.presence-candidate strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+.presence-candidate p { font-size: 12px; color: var(--text-2); margin: 6px 0; line-height: 1.6; }
+.presence-candidate-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.presence-reviewed summary { font-size: 11px; color: var(--text-3); cursor: pointer; }
+.presence-reviewed p { margin-top: 5px; }

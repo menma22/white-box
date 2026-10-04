@@ -1,2 +1,6 @@
 export * from './schemas.js'
 export * from './commands.js'
+export * from './goal-criteria.js'
+export * from './presence.js'
+export * from './agent.js'
+export * from './notes.js'

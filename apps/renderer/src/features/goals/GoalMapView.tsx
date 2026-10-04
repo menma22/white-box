@@ -10,6 +10,7 @@ import { GoalHistory } from './GoalHistory'
 import { GoalText, type GoalRun } from './GoalFields'
 import { GoalImport } from './GoalImport'
 import { GoalOutcome } from './GoalOutcome'
+import { GoalCriteria } from './GoalCriteria'
 
 type GoalDialog = { type: 'head' | 'child' | 'merge' | 'promote' | 'hide'; ids: string[] }
 
@@ -124,6 +125,7 @@ function GoalDetail({ node, run, onJump, onClose, onDialog, onGoTasks, onGoIssue
     <div className="gm-section-heading"><h2>{!node.parentId ? '最上位の目標' : '目標の詳細'}</h2><Button size="sm" title="目標の詳細を閉じる" onClick={onClose}>閉じる</Button></div>
     <Field label="目標"><GoalText value={node.goal} label="目標" multiline onSave={(goal) => void run('goal:update', { id: node.id, patch: { goal } })} /></Field>
     <Field label="この目標を目指す理由"><GoalText value={node.reason} label="この目標を目指す理由" multiline onSave={(reason) => void run('goal:update', { id: node.id, patch: { reason } })} /></Field>
+    <GoalCriteria key={node.id} node={node} run={run} />
     <GoalOutcome key={node.id} node={node} run={run} />
     {hidden && <div className="gm-hidden-note"><strong>非表示の枝</strong>{hiddenAncestor && <>
       <p>{hiddenAncestor.hideReason || '理由の記録なし'}</p>{hiddenAncestor.hiddenAt && <time>{new Date(hiddenAncestor.hiddenAt).toLocaleString('ja-JP')}</time>}

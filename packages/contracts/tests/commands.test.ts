@@ -3,9 +3,24 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 44 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(44)
+  it('コマンドは 54 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(54)
   })
+
+  it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
+    expect(parseArgs('settings:update', { patch: { remindToStart: true, startReminderMinutes: 3 } })).toEqual({ patch: { remindToStart: true, startReminderMinutes: 3 } })
+    for (const startReminderMinutes of [0, 1.5, 61, Infinity]) expect(() => parseArgs('settings:update', { patch: { startReminderMinutes } })).toThrow()
+  })
+
+  it('方式と休憩設定の開始引数を受け取る', () => {
+    const args = { taskId: 't1', mode: 'pomodoro' as const, minutes: 25, breakMinutes: 5, autoResume: false }
+    expect(parseArgs('session:start', args)).toEqual(args)
+  })
+
+  it.each([{ mode: 'other' }, { minutes: 0 }, { minutes: 1441 }, { minutes: NaN }, { breakMinutes: 0 }, { autoResume: 'yes' }])('不正な方式や開始時間は受け付けない: %j', (args) => {
+    expect(() => parseArgs('session:start', args)).toThrow()
+  })
+
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
     for (const [name, def] of Object.entries(COMMANDS)) {
@@ -52,6 +67,16 @@ describe('コマンド契約', () => {
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
   const sample: { [N in CommandName]: ArgsOf<N> } = {
+    'presence:resolve': { id: 'candidate', decision: 'dismiss' },
+    'agent:config': {},
+    'agent:context': {},
+    'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
+    'agent:propose': { sessionId: 's1', taskId: 't1', reason: '本人の依頼' },
+    'agent:resolve': { id: 'suggestion', accept: false },
+    'note:create': { title: 'N' },
+    'note:update': { id: 'n1', patch: { pinned: true } },
+    'note:archive': { id: 'n1', archived: true },
+    'note:markReminded': { id: 'n1', remindAt: 1000 },
     'state:get': {},
     'project:create': { name: 'P' },
     'project:update': { id: 'p1', patch: { name: 'P2' } },

@@ -5,6 +5,11 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { GoalCriterion } from './goal-criteria.js'
+import type { PresenceCandidate } from './presence.js'
+import type { AgentRequestRecord, TaskSuggestion } from './agent.js'
+import type { Note } from './notes.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
@@ -59,6 +64,7 @@ export interface GoalNode {
   hiddenAt: number | null
   hideReason: string
   outcome?: OutcomeRecord
+  criteria?: GoalCriterion[]
 }
 
 export interface GoalIssue {
@@ -96,6 +102,7 @@ export interface GoalMap {
 }
 
 export type SessionState = 'running' | 'paused' | 'ended'
+export type SessionMode = 'timer' | 'stopwatch' | 'pomodoro'
 
 /** 同一瞬間に開いている区間は 1 つだけ（Foreground Task は常に 1 つ）。 */
 export interface TaskSegment {
@@ -109,7 +116,7 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | 'expired' | 'task-management' | null
   plannedEndAt?: number
   notifiedAt?: number | null
 }
@@ -151,8 +158,12 @@ export interface Session {
   id: ID
   startedAt: number
   endedAt: number | null
-  /** 「今から何分やるか」。タスク全体の所要見積もりとしては使わない。 */
+  /** 作業時間の予定。ポモドーロでは周期ごとの累積、ストップウォッチでは満了に使わない。タスク全体の見積もりではない。 */
   plannedMs: number
+  mode?: SessionMode
+  pomodoroBreakMs?: number
+  pomodoroWorkMs?: number
+  pomodoroAutoResume?: boolean
   state: SessionState
   segments: TaskSegment[]
   pauses: PauseInterval[]
@@ -168,6 +179,9 @@ export interface Settings {
   /** 呼びかけに使う名前。 */
   displayName: string
   defaultSessionMinutes: number
+  defaultSessionMode?: SessionMode
+  pomodoroBreakMinutes?: number
+  pomodoroAutoResume?: boolean
   defaultExtendMinutes: number
   extendOptions: number[]
   shortcuts: {
@@ -186,6 +200,9 @@ export interface Settings {
   showSessionCard: boolean
   /** 初回オンボーディングを終えた時刻。null は未完了。 */
   onboardedAt: number | null
+  remindToStart?: boolean
+  startReminderMinutes?: number
+  enableAgentApi?: boolean
 }
 
 export interface Database {
@@ -195,7 +212,11 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
+  agentRequests?: Record<string, AgentRequestRecord>
+  notes?: Note[]
   goalMap: GoalMap
+  presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
 }
 
@@ -204,9 +225,10 @@ export interface LiveTick {
   sessionId: ID
   state: Exclude<SessionState, 'ended'>
   elapsedMs: number
-  /** 満了後はマイナスになり、超過時間を表す。 */
+  /** 予定時間−実作業時間。タイマー／ポモドーロは満了で通常0に止まり、旧記録の超過やストップウォッチでは負値になり得る。ストップウォッチの満了判定には使わない。 */
   remainingMs: number
   plannedMs: number
+  mode?: SessionMode
   activeTaskId: ID | null
 }
 
@@ -217,10 +239,13 @@ export interface AppState {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
+  notes?: Note[]
   goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
+  presenceCandidates?: PresenceCandidate[]
   pendingReview: { sessionId: ID; thenStart: boolean } | null
 }
 

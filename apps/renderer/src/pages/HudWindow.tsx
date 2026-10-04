@@ -18,13 +18,13 @@ export function HudWindow() {
       <div className={`hud-card ${timer.isPaused ? 'is-paused' : ''} ${timer.isOver ? 'is-over' : ''}`}>
         <span className="hud-dot" />
         <span className="hud-slot">
-          <span className="hud-slot-label label">経過</span>
-          <span className="hud-slot-value num">{formatDuration(timer.elapsedMs, 'compact')}</span>
+          <span className="hud-slot-label label">{tick.mode === 'stopwatch' && !timer.isBreak ? 'ストップウォッチ' : '経過'}</span>
+          <span className="hud-slot-value num">{formatDuration(timer.elapsedMs, tick.mode === 'stopwatch' && !timer.isBreak ? 'hms' : 'compact')}</span>
         </span>
         <span className="hud-sep" />
         <span className="hud-slot">
           <span className="hud-slot-label label">{timer.label}</span>
-          <span className="hud-slot-value num is-remaining">{remainingLabel(timer.remainingMs)}</span>
+          <span className="hud-slot-value num is-remaining">{tick.mode === 'stopwatch' && !timer.isBreak ? timer.isPaused ? '停止中' : '計測中' : remainingLabel(timer.remainingMs)}</span>
         </span>
       </div>
     </div>

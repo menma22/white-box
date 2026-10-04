@@ -6,6 +6,10 @@
  * args を緩い object にすると、綴り違いのキーが zod に黙って捨てられ、無反応のまま成功が返る。
  */
 import { z } from 'zod'
+import { GoalCriteriaSchema } from './goal-criteria.js'
+import { PRESENCE_COMMANDS } from './presence.js'
+import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
+import { NOTE_COMMANDS } from './notes.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -19,6 +23,7 @@ import {
   ProgressChangeSchema,
   ProjectSchema,
   SessionSchema,
+  SessionModeSchema,
   SettingsSchema,
   TaskSchema,
   TaskStatusSchema,
@@ -29,6 +34,27 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...PRESENCE_COMMANDS,
+  'agent:config': { args: NoArgs, result: z.string() },
+  'agent:context': {
+    args: z.strictObject({ projectId: z.string().optional() }),
+    result: z.object({
+      projects: z.array(ProjectSchema),
+      tasks: z.array(TaskSchema),
+      goals: z.array(GoalNodeSchema),
+      sessions: z.array(z.object({ id: z.string(), startedAt: z.number(), endedAt: z.number().nullable(), taskIds: z.array(z.string()), focusMs: z.number() })),
+    }),
+  },
+  'agent:applyPlan': {
+    args: z.strictObject({ requestId: z.string().min(1).max(200).refine((id) => id !== '__proto__', 'requestIdが不正です'), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
+    result: z.array(TaskSchema),
+  },
+  'agent:propose': {
+    args: z.strictObject({ sessionId: z.string(), taskId: z.string().nullable().optional(), title: z.string().trim().min(1).max(500).optional(), reason: z.string().trim().min(1).max(2000), markDone: z.boolean().optional() }),
+    result: TaskSuggestionSchema,
+  },
+  'agent:resolve': { args: z.strictObject({ id: z.string(), accept: z.boolean() }), result: z.null() },
+  ...NOTE_COMMANDS,
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project
@@ -69,7 +95,7 @@ export const COMMANDS = {
 
   // ── 道標（目標・問題・改善）
   'goal:create': {
-    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional() }),
+    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional(), criteria: GoalCriteriaSchema.optional() }),
     result: GoalNodeSchema,
   },
   'goal:update': {
@@ -78,6 +104,7 @@ export const COMMANDS = {
       patch: z.strictObject({
         goal: z.string().optional(),
         reason: z.string().optional(),
+        criteria: GoalCriteriaSchema.optional(),
         outcome: OutcomeRecordSchema.omit({ assessedAt: true }).partial().strict().optional(),
       }),
     }),
@@ -121,7 +148,10 @@ export const COMMANDS = {
     args: z.strictObject({
       taskId: IdSchema.optional(),
       newTask: z.strictObject({ title: z.string(), projectId: IdSchema.nullable().optional() }).optional(),
-      minutes: z.number().optional(),
+      minutes: z.number().finite().min(1).max(1440).optional(),
+      mode: SessionModeSchema.optional(),
+      breakMinutes: z.number().int().min(1).max(180).optional(),
+      autoResume: z.boolean().optional(),
     }),
     result: SessionSchema.nullable(),
   },

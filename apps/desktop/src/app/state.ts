@@ -10,10 +10,12 @@ export interface RuntimeState {
   recovery: { sessionId: ID; lastKnownAt: number } | null
   /** 配信のたびに増える通し番号。 */
   revision: number
+  currentWorkOpen: boolean
+  quitting: boolean
 }
 
 export function newRuntime(): RuntimeState {
-  return { pendingReview: null, recovery: null, revision: 0 }
+  return { pendingReview: null, recovery: null, revision: 0, currentWorkOpen: false, quitting: false }
 }
 
 export function liveSession(db: Database): Session | null {
@@ -40,6 +42,7 @@ export function buildTick(db: Database, now: number): LiveTick | null {
     remainingMs: remainingMs(s, now),
     plannedMs: s.plannedMs,
     activeTaskId: activeTaskId(s),
+    mode: s.mode ?? 'timer',
   }
 }
 
@@ -60,10 +63,13 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     sessions: db.sessions,
     settings: db.settings,
     dayNotes: db.dayNotes,
+    taskSuggestions: db.taskSuggestions ?? [],
+    notes: db.notes ?? [],
     goalMap: db.goalMap,
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),
     recovery: runtime.recovery,
+    presenceCandidates: db.presenceCandidates ?? [],
     pendingReview: runtime.pendingReview,
   }
 }

@@ -72,15 +72,16 @@ async function connect(url) {
     if (message.error) request.reject(new Error(JSON.stringify(message.error)))
     else request.resolve(message.result)
   })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, timeoutMs = 10000) => new Promise((resolve, reject) => {
     if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
     const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 10000)
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, timeoutMs)
     pending.set(id, { resolve, reject, timer })
     ws.send(JSON.stringify({ id, method, params }))
   })
   await send('Runtime.enable')
   await send('Log.enable')
+  await send('Page.enable')
   return {
     send,
     close: () => ws.close(),
@@ -108,7 +109,7 @@ async function launch(label) {
   delete env.VITE_DEV_SERVER_URL
   delete env.ELECTRON_RUN_AS_NODE
   const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
-  const args = ['--hidden', '--open=main', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
+  const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
   if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   console.log(`Electron PID: ${child.pid}`)
@@ -129,20 +130,59 @@ async function launch(label) {
 }
 
 async function stop() {
-  if (!child || child.exitCode !== null) { page?.close(); return }
-  const exited = new Promise((resolve) => child.once('exit', resolve))
-  try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch { child.kill() }
-  page?.close()
-  if (!await Promise.race([exited.then(() => true), wait(15000).then(() => false)])) {
-    console.log(`Cleanup: terminating owned Electron PID ${child.pid} after quit timeout`)
-    child.kill('SIGKILL')
-    await Promise.race([exited, wait(5000).then(() => { throw new Error('Owned Electron did not exit after cleanup') })])
+  const owned = child
+  if (!owned) { page?.close(); page = undefined; return }
+  let exitEventObserved = false
+  let quitRequested = false
+  let quitError = null
+  let forcedKill = false
+  let killAccepted = null
+  const onExit = () => { exitEventObserved = true }
+  owned.on('exit', onExit)
+  const pidAlive = () => {
+    if (!owned.pid) return false
+    try { process.kill(owned.pid, 0); return true } catch (error) {
+      if (error.code === 'ESRCH') return false
+      throw error
+    }
+  }
+  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null || !pidAlive()
+  const waitForExit = async (timeout) => {
+    const deadline = Date.now() + timeout
+    while (!exited()) {
+      if (Date.now() >= deadline) return false
+      await wait(100)
+    }
+    return true
+  }
+  try {
+    if (exited()) return
+    quitRequested = Boolean(page)
+    try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
+    page?.close()
+    if (await waitForExit(15000)) return
+    forcedKill = true
+    console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
+    killAccepted = owned.kill('SIGKILL')
+    if (!await waitForExit(5000)) throw new Error('Owned Electron did not exit after cleanup')
+    throw new Error('Owned Electron required forced cleanup instead of exiting after app:quit')
+  } finally {
+    page?.close()
+    owned.off('exit', onExit)
+    const alive = pidAlive()
+    const observation = { pid: owned.pid, quitRequested, quitError, forcedKill, killAccepted,
+      exitEventObserved, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: alive,
+      confirmedBy: exitEventObserved || owned.exitCode !== null || owned.signalCode !== null ? 'child exit state' : !alive ? 'PID absent' : null }
+    fs.writeFileSync(path.join(RUN, `shutdown-${owned.pid ?? 'unspawned'}.json`), JSON.stringify(observation, null, 2))
+    console.log(`Cleanup: ${JSON.stringify(observation)}`)
+    if (exited()) { child = undefined; page = undefined }
   }
 }
 
 async function screenshot(name) {
+  await page.send('Page.bringToFront')
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 
@@ -152,7 +192,8 @@ async function key(key, code, modifiers = 0) {
 }
 
 async function click(selector) {
-  const point = await until(() => page.evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), selector)
+  await page.send('Page.bringToFront')
+  const point = await until(() => page.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), selector)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
@@ -160,7 +201,8 @@ async function click(selector) {
 }
 
 async function button(text, scope = 'body') {
-  const point = await until(() => page.evaluate(`(async () => { const el = [...document.querySelectorAll(${JSON.stringify(scope + ' button')})].find(el => el.textContent.trim() === ${JSON.stringify(text)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), `button ${text}`)
+  await page.send('Page.bringToFront')
+  const point = await until(() => page.evaluate(`(() => { const el = [...document.querySelectorAll(${JSON.stringify(scope + ' button')})].find(el => el.textContent.trim() === ${JSON.stringify(text)}); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), `button ${text}`)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
@@ -264,6 +306,9 @@ async function verifyImport() {
   }
   const before = read()
   await key('5', 'Digit5', 2)
+  const visibility = await page.evaluate('({ visibility: document.visibilityState, hidden: document.hidden, focused: document.hasFocus(), width: innerWidth, height: innerHeight })')
+  fs.writeFileSync(path.join(RUN, 'before-import-ui.json'), JSON.stringify(visibility, null, 2))
+  console.log(`Before import UI: ${JSON.stringify(visibility)}`)
   await click('[aria-label="その他の操作"]')
   await button('道標のデータを取り込む')
   await fill('.gm-import-json', JSON.stringify(legacy))
@@ -316,6 +361,25 @@ async function verifyUi() {
   await button('作成する')
   const node = await until(() => Object.values(read().goalMap.nodes).find((n) => n.goal === '画面で作る子目標'), 'UI child persisted')
   check('UI creates a head and a linked child', node.parentId === head.id && read().goalMap.nodes[head.id].children.includes(node.id))
+  check('A goal without criteria is explicitly unconfigured', await page.evaluate('document.querySelector(".gm-criteria-missing").textContent.includes("未設定")'))
+  async function criterionField(label, value) {
+    await page.evaluate(`(() => { const label = [...document.querySelectorAll('.gm-criterion-editor label')].find(el=>el.querySelector('span')?.textContent===${JSON.stringify(label)}); const el=label?.querySelector('input,textarea'); if(!el) throw Error('Missing criterion field'); document.querySelector('[data-criterion-input]')?.removeAttribute('data-criterion-input'); el.setAttribute('data-criterion-input','true'); })()`)
+    await fill('[data-criterion-input]', value)
+  }
+  await button('＋ 成功条件を追加', '.gm-criteria')
+  await criterionField('具体的な成功条件', '新しい利用者に試してもらう')
+  await criterionField('目標値', '100')
+  await criterionField('単位', '人')
+  await criterionField('確認できる証拠', '利用者ヒアリングの集計')
+  await button('条件を保存', '.gm-criteria')
+  await until(() => read().goalMap.nodes[node.id].criteria?.length === 1, 'numeric criterion saved')
+  check('Unmeasured numerical criteria retain null instead of inventing zero', read().goalMap.nodes[node.id].criteria[0].current === null && await page.evaluate('document.querySelector(".gm-criterion").textContent.includes("未測定")'))
+  await button('編集', '.gm-criteria')
+  await criterionField('現在値（未測定なら空欄）', '100')
+  await button('条件を保存', '.gm-criteria')
+  await until(() => read().goalMap.nodes[node.id].criteria?.[0].current === 100, 'measured criterion saved')
+  check('Reaching a numerical condition does not declare the whole goal achieved', read().goalMap.nodes[node.id].outcome.status === 'pending' && await page.evaluate('document.querySelector(".gm-criterion").textContent.includes("数値に到達")'))
+  await screenshot('12-goal-criteria')
   const historyCount = read().goalMap.history.length
   await fill('[aria-label="目標"]', '画面で編集した子目標')
   await fill('[aria-label="この目標を目指す理由"]', '実画面から編集した理由')

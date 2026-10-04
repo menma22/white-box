@@ -5,16 +5,22 @@
  * 直接 fs.writeFile で data.json を上書きしないこと。
  */
 import { app } from 'electron'
+import { PresenceCandidatesSchema } from '@white-box/contracts'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
+import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
+import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 
 const DB_VERSION = 1
 
 export const DEFAULT_SETTINGS: Settings = {
   displayName: '',
   defaultSessionMinutes: 50,
+  defaultSessionMode: 'timer',
+  pomodoroBreakMinutes: 5,
+  pomodoroAutoResume: false,
   defaultExtendMinutes: 15,
   extendOptions: [5, 10, 15, 25, 50],
   // 既定値を埋めると他アプリのショートカットと衝突する。初回オンボーディングで本人に割り当ててもらう
@@ -31,6 +37,9 @@ export const DEFAULT_SETTINGS: Settings = {
   stallWarningDays: 3,
   showSessionCard: true,
   onboardedAt: null,
+  remindToStart: false,
+  startReminderMinutes: 3,
+  enableAgentApi: false,
 }
 
 function emptyDb(): Database {
@@ -54,7 +63,11 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     sessions: parsed.sessions ?? [],
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     dayNotes: parsed.dayNotes ?? {},
+    agentRequests: AgentRequestsSchema.parse(parsed.agentRequests ?? {}),
+    taskSuggestions: TaskSuggestionSchema.array().parse(parsed.taskSuggestions ?? []),
+    notes: NoteSchema.array().parse(parsed.notes ?? []),
     goalMap,
+    presenceCandidates: PresenceCandidatesSchema.parse(parsed.presenceCandidates ?? []),
     goalMapImports: parsed.goalMapImports ?? [],
   }
 }

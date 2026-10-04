@@ -4,6 +4,7 @@ import { dayKeysWithSessions, dayTotalMs, sessionsForDay, todayKey } from '@/lib
 import { BigDuration, Empty } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import { SessionRow } from '@/features/sessions/SessionRow'
+import { PresenceCandidates } from '@/features/presence/PresenceCandidates'
 
 export function HistoryView() {
   const state = useData()
@@ -25,6 +26,7 @@ export function HistoryView() {
             <h1 className="view-title">これまで</h1>
           </div>
         </header>
+        <PresenceCandidates />
         <Empty title="まだ記録がない" hint="セッションを終えると、ここに一日ずつ積み上がっていく。" />
       </div>
     )
@@ -44,6 +46,7 @@ export function HistoryView() {
       </header>
 
       <div className="history-days">
+        <PresenceCandidates />
         {keys.map((key, i) => {
           const total = totals[i] ?? 0
           const sessions = sessionsForDay(state, key)

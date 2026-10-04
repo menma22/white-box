@@ -13,6 +13,7 @@ import {
   formatClock,
   formatDuration,
   livePausedMs,
+  managementMs,
   MINUTE,
   plannedReachedAt,
   unpausedRanges,
@@ -61,9 +62,10 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
           </span>
 
           <span className="srow-right">
-            {livePausedMs(session, end) > 0 && (
+            {managementMs(session, end) > 0 && <span className="num srow-pause" title="タスクの選択・整理をしていた時間">{formatDuration(managementMs(session, end), 'compact')} タスク操作</span>}
+            {livePausedMs(session, end) - managementMs(session, end) > 0 && (
               <span className="num srow-pause" title="一時停止">
-                {formatDuration(livePausedMs(session, end), 'compact')} 停止
+                {formatDuration(livePausedMs(session, end) - managementMs(session, end), 'compact')} 停止
               </span>
             )}
             {excludedMs(session, end) > 0 && (
