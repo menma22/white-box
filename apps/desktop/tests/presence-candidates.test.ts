@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { declaredExclusions, focusMs } from '@white-box/core/engine'
 import type { Session } from '@white-box/core/types'
 import { resolvePresenceCandidate } from '../src/domain/presence-ops.js'
@@ -23,6 +23,21 @@ function setup() {
 }
 
 describe('本人による離席候補の確認', () => {
+  it.each(['accept', 'dismiss'] as const)('保存失敗を候補と記録へ残さず、同じ確認を再試行できる（%s）', (decision) => {
+    const { db } = setup()
+    const ctx = fakeCtx(db)
+    const resolve = createPresenceHandlers(ctx)['presence:resolve']
+    const before = JSON.stringify(db)
+    vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('保存失敗') })
+    expect(() => resolve({ id: 'candidate', decision })).toThrow('保存失敗')
+    expect(JSON.stringify(db)).toBe(before)
+    resolve({ id: 'candidate', decision })
+    expect(db.presenceCandidates![0]!.status).toBe(decision === 'accept' ? 'accepted' : 'dismissed')
+    const resolved = JSON.stringify(db)
+    resolve({ id: 'candidate', decision })
+    expect(JSON.stringify(db)).toBe(resolved)
+  })
+
   it('未確認・見送りでは時間を変えず、確認後は停止済みの重なりを二重に引かない', () => {
     const { db, session } = setup()
     const original = JSON.stringify(db)
