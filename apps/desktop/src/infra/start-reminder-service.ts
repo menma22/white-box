@@ -21,6 +21,7 @@ export function createStartReminderService(ctx: Ctx) {
   }
   const refresh = () => {
     if (stopped) return
+    if (liveSession(ctx.store.data) !== null) activity = { ...emptyInputActivity(), lastReminderAt: activity.lastReminderAt }
     if (ctx.store.data.settings.remindToStart && !stopInput) {
       const watching = ++generation
       const active = () => !stopped && watching === generation && ctx.store.data.settings.remindToStart
