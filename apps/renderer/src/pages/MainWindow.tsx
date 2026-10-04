@@ -133,7 +133,7 @@ export function MainWindow() {
 
         <main className="main-content" ref={contentRef}>
           {state.recovery && <RecoveryBanner />}
-          {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} />}
+          {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} sessions={state.sessions} />}
           {tab === 'today' && <TodayView />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
