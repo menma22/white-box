@@ -45,6 +45,7 @@ async function handle(message) {
   if (message.method === 'tools/call') {
     const command = typeof params.name === 'string' && Object.hasOwn(commands, params.name) ? commands[params.name] : null
     if (!command) throw Object.assign(new Error('Unknown tool'), { code: -32602 })
+    if (params.arguments !== undefined && (!params.arguments || typeof params.arguments !== 'object' || Array.isArray(params.arguments))) throw Object.assign(new Error('Invalid tool arguments'), { code: -32602 })
     try {
       const config = JSON.parse(await fs.readFile(CONFIG, 'utf8'))
       if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535 || typeof config.token !== 'string') throw new Error('AI連携の接続情報が不正です')

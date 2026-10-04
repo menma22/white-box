@@ -22,7 +22,7 @@ export async function startAgentServer(directory: string, handlers: Handlers) {
     const expected = Buffer.from(token)
     if (received.length !== expected.length || !timingSafeEqual(received, expected)) return reply(401, { error: '認証が必要です' })
     if (request.method !== 'POST' || request.url !== '/command') return reply(404, { error: '見つかりません' })
-    if (!request.headers['content-type']?.startsWith('application/json')) return reply(415, { error: 'application/jsonで送信してください' })
+    if (request.headers['content-type']?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return reply(415, { error: 'application/jsonで送信してください' })
     const chunks: Buffer[] = []
     let size = 0
     let rejected = false
