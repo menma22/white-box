@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { AppState } from '@white-box/core/types'
 import { noteTitle, selectNotes, type Note } from '@white-box/core/notes'
 import { Button } from '@/components/ui'
 import { invoke } from '@/lib/bridge'
 import { NoteEditor, type NoteEditorHandle } from './NoteEditor'
 
-export function NotesView({ data, initialNoteId, onJumpHandled }: {
+export interface NotesViewHandle { flush(): Promise<boolean> }
+
+export const NotesView = forwardRef<NotesViewHandle, {
   data: AppState; initialNoteId?: string | null; onJumpHandled?: () => void
-}) {
+}>(function NotesView({ data, initialNoteId, onJumpHandled }, ref) {
   const [query, setQuery] = useState('')
   const [project, setProject] = useState('all')
   const [pinned, setPinned] = useState(false)
@@ -19,6 +21,7 @@ export function NotesView({ data, initialNoteId, onJumpHandled }: {
   const busy = useRef(false)
   const handledJump = useRef<string | null>(null)
   const editor = useRef<NoteEditorHandle | null>(null)
+  useImperativeHandle(ref, () => ({ flush: () => editor.current?.flush() ?? Promise.resolve(true) }), [])
   const notes = selectNotes(data.notes, { query, archived, pinnedOnly: pinned, projectId: project === 'all' ? undefined : project === 'none' ? null : project })
   const selected = data.notes?.find((note) => note.id === selectedId) ?? (createdNote?.id === selectedId ? createdNote : null)
 
@@ -88,4 +91,4 @@ export function NotesView({ data, initialNoteId, onJumpHandled }: {
       {selected ? <NoteEditor key={selected.id} ref={editor} note={selected} projects={data.projects} tasks={data.tasks} onArchive={(value) => void archive(value)} /> : <div className="notes-empty-editor"><h2>続きへ戻る場所</h2><p>ノートを選ぶか、新しく書き始めよう。</p><Button variant="primary" disabled={creating} onClick={() => void create()}>ノートを書く</Button></div>}
     </div>
   </div>
-}
+})

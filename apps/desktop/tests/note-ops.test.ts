@@ -4,6 +4,24 @@ import { createNoteHandlers } from '../src/app/note-handlers.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
 describe('ノートの変更', () => {
+  it('保存失敗では作成・更新・アーカイブのメモリ変更を戻し、同じ入力で再送できる', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.notes = createNote(ctx.store.data, { body: '保存された本文' }, 100, 'n').notes
+    const original = ctx.store.data.notes
+    const handlers = createNoteHandlers(ctx)
+    ctx.publish = () => { throw new Error('disk failed') }
+    expect(() => handlers['note:create']({ body: '未保存の新規' })).toThrow('disk failed')
+    expect(ctx.store.data.notes).toEqual(original)
+    expect(() => handlers['note:update']({ id: 'n', patch: { body: '書きかけ' } })).toThrow('disk failed')
+    expect(ctx.store.data.notes).toEqual(original)
+    expect(() => handlers['note:archive']({ id: 'n', archived: true })).toThrow('disk failed')
+    expect(ctx.store.data.notes).toEqual(original)
+    ctx.publish = () => { ctx.calls.push('publish') }
+    handlers['note:update']({ id: 'n', patch: { body: '書きかけ' } })
+    expect(ctx.store.data.notes?.[0]!.body).toBe('書きかけ')
+    expect(ctx.calls).toEqual(['publish'])
+  })
+
   it('古いデータを変更せず新規ノートを作れる', () => {
     const db = emptyDb()
     const result = createNote(db, { body: '考えたこと' }, 100, 'n')

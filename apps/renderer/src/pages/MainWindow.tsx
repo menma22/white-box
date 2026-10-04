@@ -13,7 +13,7 @@ import { GoalIssuesView } from '@/features/goals/GoalIssues'
 import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
-import { NotesView } from '@/features/notes/NotesView'
+import { NotesView, type NotesViewHandle } from '@/features/notes/NotesView'
 
 type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
@@ -32,15 +32,20 @@ export function MainWindow() {
   const tick = useApp((s) => s.tick)
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
+  const notes = useRef<NotesViewHandle | null>(null)
+  const navigate = useCallback(async (destination: Tab) => {
+    if (tab === 'notes' && destination !== 'notes' && await notes.current?.flush() === false) return
+    setTab(destination)
+  }, [tab])
   const contentRef = useRef<HTMLElement>(null)
   useEffect(() => { if (contentRef.current) contentRef.current.scrollTop = 0 }, [tab])
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
   const [boardView, setBoardView] = useState<'board' | 'list'>('board')
-  const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); setTab('goals') }, [])
-  const goTasks = useCallback((id?: string) => { setSelectedTask(id ?? null); setBoardView('list'); setTab('board') }, [])
-  const goIssues = useCallback(() => setTab('issues'), [])
+  const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); void navigate('goals') }, [navigate])
+  const goTasks = useCallback((id?: string) => { setSelectedTask(id ?? null); setBoardView('list'); void navigate('board') }, [navigate])
+  const goIssues = useCallback(() => { void navigate('issues') }, [navigate])
   const jumpHandled = useCallback(() => setSelectedGoal(null), [])
   const taskJumpHandled = useCallback(() => setSelectedTask(null), [])
   // onboardedAt の条件を外すと、初回にオンボーディングと毎日の挨拶が 2 枚重なる
@@ -54,12 +59,12 @@ export function MainWindow() {
       const destination = TABS.find((item) => item.shortcut === e.key)
       if (destination) {
         e.preventDefault()
-        setTab(destination.id)
+        void navigate(destination.id)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [navigate])
 
   const liveTask = taskById(state, tick?.activeTaskId ?? null)
   const liveProject = projectById(state, liveTask?.projectId ?? null)
@@ -114,7 +119,7 @@ export function MainWindow() {
 
           <div className="rail-tabs">
             {TABS.map((t) => (
-              <button key={t.id} type="button" className={`rail-tab ${tab === t.id ? 'is-active' : ''}`} onClick={() => setTab(t.id)}>
+              <button key={t.id} type="button" className={`rail-tab ${tab === t.id ? 'is-active' : ''}`} onClick={() => void navigate(t.id)}>
                 <span className="rail-tab-glyph" aria-hidden>
                   {t.glyph}
                 </span>
@@ -140,12 +145,12 @@ export function MainWindow() {
           {tab === 'settings' && <SettingsView />}
           {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}
           {tab === 'issues' && <GoalIssuesView onJump={jumpGoal} />}
-          {tab === 'notes' && <NotesView data={state} />}
+          {tab === 'notes' && <NotesView ref={notes} data={state} />}
         </main>
       </div>
 
       {onboarding && <OnboardingFlow onDone={() => setOnboarding(false)} />}
-      {welcomeOpen && <WelcomeOverlay onClose={() => setWelcomeOpen(false)} onGoBoard={() => setTab('board')} />}
+      {welcomeOpen && <WelcomeOverlay onClose={() => setWelcomeOpen(false)} onGoBoard={() => void navigate('board')} />}
     </div>
   )
 }
