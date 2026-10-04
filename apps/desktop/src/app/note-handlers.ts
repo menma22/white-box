@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { ArgsOf, ResultOf } from '@white-box/contracts'
 import type { NOTE_COMMANDS } from '@white-box/contracts'
+import { commitChanges } from './commit.js'
 import * as ops from '../domain/note-ops.js'
 import type { Ctx } from './ports.js'
 
@@ -11,18 +12,15 @@ export function createNoteHandlers(ctx: Ctx): NoteHandlers {
   return {
     'note:create': (args) => {
       const result = ops.createNote(db(), args, ctx.now(), randomUUID())
-      db().notes = result.notes
-      ctx.publish()
+      commitChanges(ctx, { notes: result.notes })
       return result.note
     },
     'note:update': (args) => {
-      db().notes = ops.updateNote(db(), args.id, args.patch, ctx.now())
-      ctx.publish()
+      commitChanges(ctx, { notes: ops.updateNote(db(), args.id, args.patch, ctx.now()) })
       return null
     },
     'note:archive': (args) => {
-      db().notes = ops.archiveNote(db(), args.id, args.archived, ctx.now())
-      ctx.publish()
+      commitChanges(ctx, { notes: ops.archiveNote(db(), args.id, args.archived, ctx.now()) })
       return null
     },
     'note:markReminded': (args) => {
