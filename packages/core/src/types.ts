@@ -5,7 +5,7 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
-import type { AgentRequestRecord } from './agent.js'
+import type { AgentRequestRecord, TaskSuggestion } from './agent.js'
 
 export type ID = string
 
@@ -198,6 +198,7 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
   agentRequests?: Record<string, AgentRequestRecord>
   goalMap: GoalMap
   goalMapImports?: string[]
@@ -221,6 +222,7 @@ export interface AppState {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
   goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null

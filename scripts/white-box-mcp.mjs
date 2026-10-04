@@ -8,13 +8,15 @@ const instructions = `White Boxは本人の目標・タスク・実行記録を�
 タスク登録を頼まれたときは、音声の書き起こしも含め、本人の意図を保持し、具体的な行動単位に整理してください。
 分解は親を先に並べ、子のparentIndexで参照します。登録したタスク案はInboxに入ります。
 同じ登録依頼の再送には同じrequestIdを使い、異なる依頼には新しいrequestIdを使ってください。
+作業の割当や完了を推測したときはwhite_box_propose_recordで根拠を添えて提案してください。本人の確認前に記録や完了を変更しません。
 本人が依頼していない登録・監視を行わず、ここで得た内容を外部に送信しないでください。`
 
 const tools = [
   { name: 'white_box_context', description: '目標・プロジェクト・タスクと直近100セッションの作業時間を確認する。', inputSchema: { type: 'object', properties: { projectId: { type: 'string' } }, additionalProperties: false }, annotations: { readOnlyHint: true } },
   { name: 'white_box_register_tasks', description: '本人が依頼したタスクを親子構造でInboxへ一括登録する。同じrequestIdの再送は重複しない。', inputSchema: { type: 'object', properties: { requestId: { type: 'string', minLength: 1 }, tasks: { type: 'array', minItems: 1, maxItems: 100, items: { type: 'object', properties: { title: { type: 'string', minLength: 1 }, notes: { type: 'string' }, projectId: { type: ['string', 'null'] }, parentId: { type: ['string', 'null'] }, parentIndex: { type: 'integer', minimum: 0 }, goalNodeId: { type: ['string', 'null'] }, priority: { type: 'string', enum: ['low', 'normal', 'high'] }, due: { type: ['string', 'null'], description: '期限の日付 YYYY-MM-DD' } }, required: ['title'], additionalProperties: false } } }, required: ['requestId', 'tasks'], additionalProperties: false }, annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true } },
+  { name: 'white_box_propose_record', description: '終了したセッションのタスク割当・完了を根拠つきで提案する。記録の変更には本人の承認が必要。', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' }, taskId: { type: ['string', 'null'] }, title: { type: 'string' }, reason: { type: 'string' }, markDone: { type: 'boolean' } }, required: ['sessionId', 'reason'], additionalProperties: false }, annotations: { readOnlyHint: false, destructiveHint: false } },
 ]
-const commands = { white_box_context: 'agent:context', white_box_register_tasks: 'agent:applyPlan' }
+const commands = { white_box_context: 'agent:context', white_box_register_tasks: 'agent:applyPlan', white_box_propose_record: 'agent:propose' }
 const supported = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']
 let initialized = false
 let ready = false

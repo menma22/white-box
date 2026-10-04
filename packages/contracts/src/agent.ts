@@ -13,3 +13,14 @@ export const AgentPlanEntrySchema = z.strictObject({
   due: z.string().nullable().optional(),
 }).refine((entry) => entry.parentIndex === undefined || entry.parentId == null, '親はIDまたは案の番号のどちらかで指定する')
 
+export const TaskSuggestionSchema = z.object({
+  id: z.string(),
+  sessionId: z.string(),
+  taskId: z.string().nullable(),
+  title: z.string(),
+  reason: z.string(),
+  markDone: z.boolean(),
+  status: z.enum(['pending', 'accepted', 'dismissed']),
+  createdAt: z.number(),
+  resolvedAt: z.number().nullable(),
+})

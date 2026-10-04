@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseArgs } from '@white-box/contracts'
 import type { Session } from '@white-box/core/types'
+import { focusMs } from '@white-box/core/engine'
 import { createAgentHandlers } from '../src/app/agent-handlers.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
@@ -71,6 +72,99 @@ describe('AIタスク登録', () => {
     const before = JSON.stringify(ctx.store.data)
     expect(() => handlers['agent:applyPlan'](args)).toThrow('削除')
     expect(JSON.stringify(ctx.store.data)).toBe(before)
+  })
+})
+
+describe('AIの実績提案', () => {
+  it.each([false, true])('空区間の未割当記録を本人確認で割り当て、時刻・停止・除外・メモを保持する（完了=%s）', (markDone) => {
+    const { ctx, handlers } = context()
+    const session = ctx.store.data.sessions[0]!
+    session.segments = []
+    session.pauses.push({ startedAt: 700000, endedAt: 800000, reason: 'excluded' })
+    const before = structuredClone(session)
+    const workMs = focusMs(session, ctx.now())
+    const proposed = handlers['agent:propose']({ sessionId: session.id, title: '未割当だった調査', reason: '本人のメモ', markDone })
+    expect(ctx.store.data.sessions[0]).toEqual(before)
+    handlers['agent:resolve']({ id: proposed.id, accept: true })
+    const assigned = ctx.store.data.sessions[0]!
+    const created = ctx.store.data.tasks.find((item) => item.title === '未割当だった調査')!
+    expect(assigned.segments).toHaveLength(1)
+    expect(assigned.segments[0]).toMatchObject({ taskId: created.id, startedAt: before.startedAt, endedAt: before.endedAt })
+    expect(assigned).toMatchObject({ startedAt: before.startedAt, endedAt: before.endedAt, pauses: before.pauses, note: before.note, plannedMs: before.plannedMs })
+    expect(focusMs(assigned, ctx.now())).toBe(workMs)
+    expect(created.status).toBe(markDone ? 'done' : 'todo')
+    expect(created.progress).toBe(markDone ? 100 : 0)
+    expect(ctx.store.data.taskSuggestions![0]!.status).toBe('accepted')
+  })
+
+  it('確認前に既存タスクが消えたときはセッションと未確認提案を変更しない', () => {
+    const { ctx, handlers } = context()
+    const proposed = handlers['agent:propose']({ sessionId: 's', taskId: 'existing', reason: '本人のメモ', markDone: true })
+    ctx.store.data.tasks = []
+    const before = JSON.stringify(ctx.store.data)
+    expect(() => handlers['agent:resolve']({ id: proposed.id, accept: true })).toThrow('見つかりません')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+  })
+
+  it('未知の作業は提案だけを保存し、本人の確認後にタスクを作成・割当・完了する', () => {
+    const { ctx, handlers } = context()
+    const sessionBefore = structuredClone(ctx.store.data.sessions[0]!)
+    const tasksBefore = structuredClone(ctx.store.data.tasks)
+    const proposed = handlers['agent:propose'](parseArgs('agent:propose', { sessionId: 's', title: '実際に調べた作業', reason: '本人が残した実行メモ', markDone: true }))
+    expect(ctx.store.data.sessions[0]).toEqual(sessionBefore)
+    expect(ctx.store.data.tasks).toEqual(tasksBefore)
+    expect(proposed).toMatchObject({ status: 'pending', taskId: null, markDone: true, resolvedAt: null })
+    expect(handlers['agent:propose'](parseArgs('agent:propose', { sessionId: 's', title: '再送', reason: '再送' })).id).toBe(proposed.id)
+    expect(ctx.store.data.taskSuggestions).toHaveLength(1)
+    handlers['agent:resolve']({ id: proposed.id, accept: true })
+    const newTask = ctx.store.data.tasks.find((item) => item.title === '実際に調べた作業')!
+    expect(newTask).toMatchObject({ status: 'done', progress: 100 })
+    expect(newTask.doneAt).not.toBeNull()
+    expect(ctx.store.data.sessions[0]).toMatchObject({ startedAt: sessionBefore.startedAt, endedAt: sessionBefore.endedAt, pauses: sessionBefore.pauses, note: sessionBefore.note, editedAt: ctx.now() })
+    expect(ctx.store.data.sessions[0]!.segments[0]!.taskId).toBe(newTask.id)
+    expect(ctx.store.data.taskSuggestions![0]).toMatchObject({ status: 'accepted', resolvedAt: ctx.now() })
+    const accepted = JSON.stringify(ctx.store.data)
+    handlers['agent:resolve']({ id: proposed.id, accept: true })
+    expect(JSON.stringify(ctx.store.data)).toBe(accepted)
+  })
+
+  it('既存タスクへの割当だけを確認し、完了提案がないときは状態を変えない', () => {
+    const { ctx, handlers } = context()
+    const proposed = handlers['agent:propose']({ sessionId: 's', taskId: 'existing', reason: '本人の記録' })
+    handlers['agent:resolve']({ id: proposed.id, accept: true })
+    expect(ctx.store.data.tasks).toHaveLength(1)
+    expect(ctx.store.data.tasks[0]).toMatchObject({ id: 'existing', status: 'todo', progress: 0, doneAt: null })
+    expect(ctx.store.data.sessions[0]!.segments[0]!.taskId).toBe('existing')
+  })
+
+  it('却下はタスクとセッションを変えず、提案だけを解決する', () => {
+    const { ctx, handlers } = context()
+    const proposed = handlers['agent:propose']({ sessionId: 's', title: '採用しない', reason: '根拠', markDone: true })
+    const tasksBefore = structuredClone(ctx.store.data.tasks), sessionsBefore = structuredClone(ctx.store.data.sessions)
+    handlers['agent:resolve']({ id: proposed.id, accept: false })
+    expect(ctx.store.data.tasks).toEqual(tasksBefore)
+    expect(ctx.store.data.sessions).toEqual(sessionsBefore)
+    expect(ctx.store.data.taskSuggestions![0]).toMatchObject({ status: 'dismissed', resolvedAt: ctx.now() })
+  })
+
+  it('複数区間の記録を一括上書きせず、タスクと提案も変更しない', () => {
+    const { ctx, handlers } = context()
+    ctx.store.data.sessions[0]!.segments.push({ id: 'second', taskId: 'existing', startedAt: 600000, endedAt: 1200000 })
+    const proposed = handlers['agent:propose']({ sessionId: 's', title: '一括上書きは禁止', reason: '複数区間', markDone: true })
+    const before = JSON.stringify(ctx.store.data)
+    expect(() => handlers['agent:resolve']({ id: proposed.id, accept: true })).toThrow('タスク切替')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+  })
+
+  it('消えた関連先・終了していない記録・名前のない未知作業を拒否する', () => {
+    const { ctx, handlers } = context()
+    const before = JSON.stringify(ctx.store.data)
+    expect(() => handlers['agent:propose']({ sessionId: 'missing', title: '名称', reason: '根拠' })).toThrow('終了')
+    expect(() => handlers['agent:propose']({ sessionId: 's', taskId: 'missing', reason: '根拠' })).toThrow('タスク')
+    expect(() => handlers['agent:propose']({ sessionId: 's', reason: '根拠' })).toThrow('未知')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+    ctx.store.data.sessions[0]!.state = 'running'
+    expect(() => handlers['agent:propose']({ sessionId: 's', taskId: 'existing', reason: '根拠' })).toThrow('終了')
   })
 })
 

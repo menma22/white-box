@@ -1,8 +1,11 @@
 import type { ArgsOf, ResultOf } from '@white-box/contracts'
 import { focusMs } from '@white-box/core/engine'
 import type { Task } from '@white-box/core/types'
+import type { TaskSuggestion } from '@white-box/core/agent'
 import * as taskOps from '../domain/task-ops.js'
+import * as sessionOps from '../domain/session-ops.js'
 import type { Ctx } from './ports.js'
+import { replaceSession } from './state.js'
 
 export function createAgentHandlers(ctx: Ctx) {
   const db = () => ctx.store.data
@@ -51,6 +54,43 @@ export function createAgentHandlers(ctx: Ctx) {
       db().agentRequests = { ...requests, [args.requestId]: { fingerprint, taskIds: created.map((task) => task.id) } }
       ctx.publish()
       return created
+    },
+    'agent:propose': (args: ArgsOf<'agent:propose'>): ResultOf<'agent:propose'> => {
+      const session = db().sessions.find((item) => item.id === args.sessionId)
+      if (!session || session.state !== 'ended') throw new Error('終了したセッションを指定してください')
+      const task = args.taskId ? db().tasks.find((item) => item.id === args.taskId) : null
+      if (args.taskId && !task) throw new Error('タスクが見つかりません')
+      if (!task && !args.title) throw new Error('未知の作業はタスク名を提案してください')
+      const pending = (db().taskSuggestions ?? []).find((item) => item.sessionId === session.id && item.status === 'pending')
+      if (pending) return pending
+      const suggestion: TaskSuggestion = {
+        id: sessionOps.newId('sug'), sessionId: session.id, taskId: task?.id ?? null,
+        title: task?.title ?? args.title!, reason: args.reason, markDone: args.markDone ?? false,
+        status: 'pending', createdAt: ctx.now(), resolvedAt: null,
+      }
+      db().taskSuggestions = [...(db().taskSuggestions ?? []), suggestion]
+      ctx.publish()
+      return suggestion
+    },
+    'agent:resolve': (args: ArgsOf<'agent:resolve'>): null => {
+      const suggestion = (db().taskSuggestions ?? []).find((item) => item.id === args.id)
+      if (!suggestion || suggestion.status !== 'pending') return null
+      if (args.accept) {
+        const session = db().sessions.find((item) => item.id === suggestion.sessionId)
+        if (!session || session.state !== 'ended') throw new Error('対象セッションを確認できません')
+        if (session.segments.length > 1) throw new Error('タスク切替を含む記録は、記録画面で区間を確認して割り当ててください')
+        const created = suggestion.taskId === null ? taskOps.createTask(db(), { title: suggestion.title, status: 'todo' }) : null
+        const taskId = suggestion.taskId ?? created!.task.id
+        const staged = { ...db(), tasks: created?.tasks ?? db().tasks }
+        if (!staged.tasks.some((task) => task.id === taskId)) throw new Error('提案されたタスクが見つかりません')
+        const updated = sessionOps.editSession(session, { segmentTaskId: taskId }, ctx.now())
+        const tasks = suggestion.markDone ? taskOps.updateTask(staged, taskId, { status: 'done' }) : staged.tasks
+        db().tasks = tasks
+        replaceSession(db(), updated)
+      }
+      db().taskSuggestions = (db().taskSuggestions ?? []).map((item) => item.id === suggestion.id ? { ...item, status: args.accept ? 'accepted' : 'dismissed', resolvedAt: ctx.now() } : item)
+      ctx.publish()
+      return null
     },
   }
 }

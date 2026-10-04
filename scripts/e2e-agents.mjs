@@ -65,15 +65,16 @@ async function connect(url) {
     if (message.error) request.reject(new Error(JSON.stringify(message.error)))
     else request.resolve(message.result)
   })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, timeoutMs = 10000) => new Promise((resolve, reject) => {
     if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
     const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 10000)
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, timeoutMs)
     pending.set(id, { resolve, reject, timer })
     ws.send(JSON.stringify({ id, method, params }))
   })
   await send('Runtime.enable')
   await send('Log.enable')
+  await send('Page.enable')
   return {
     send, close: () => ws.close(),
     async evaluate(expression) {
@@ -98,7 +99,7 @@ async function launch(label) {
   delete env.VITE_DEV_SERVER_URL
   delete env.ELECTRON_RUN_AS_NODE
   const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
-  const args = ['--hidden', '--open=main', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
+  const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
   if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   fs.closeSync(log)
@@ -129,8 +130,12 @@ async function stop() {
 }
 
 async function screenshot(name) {
+  await page.send('Page.bringToFront')
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  const state = await page.evaluate('({ visibility: document.visibilityState, hidden: document.hidden, focused: document.hasFocus(), width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio })')
+  fs.writeFileSync(path.join(RUN, `${name}-state.json`), JSON.stringify(state, null, 2))
+  console.log(`Screenshot state: ${name} ${JSON.stringify(state)}`)
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 
@@ -217,7 +222,7 @@ const now = Date.now()
 const day = new Date(now - 4 * 3600000)
 const today = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
 const oldTask = { id: 'original-task', projectId: 'p', parentId: null, title: '既存の仕事', notes: '本人が書いた内容', status: 'todo', progress: 30, priority: 'normal', order: 0, createdAt: now - 1000, updatedAt: now - 1000, doneAt: null, createdInSessionId: null }
-const session = (id) => ({ id, startedAt: now - 1200000, endedAt: now - 600000, plannedMs: 600000, state: 'ended', segments: [{ id: `${id}-segment`, taskId: 'unknown', startedAt: now - 1200000, endedAt: now - 600000 }], pauses: [], events: [], progressChanges: [], note: '本人の実行メモ', expiredNotifiedAt: null, editedAt: null, createdAt: now - 1200000 })
+const session = (id) => ({ id, startedAt: now - 1200000, endedAt: now - 600000, plannedMs: 600000, state: 'ended', segments: [], pauses: [{ startedAt: now - 1100000, endedAt: now - 1000000, reason: 'manual' }, { startedAt: now - 900000, endedAt: now - 850000, reason: 'excluded' }], events: [], progressChanges: [], note: '本人の実行メモ', expiredNotifiedAt: null, editedAt: null, createdAt: now - 1200000 })
 const seed = {
   version: 1,
   projects: [{ id: 'p', name: 'MCP検証プロジェクト', hue: 150, archived: false, order: 0, createdAt: now, updatedAt: now }],
@@ -244,10 +249,10 @@ async function verify() {
   const premature = await rpc('tools/list')
   check('MCP rejects tools before initialization', premature.error?.code === -32000)
   const initialized = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'white-box-e2e', version: '1' } })
-  check('Real stdio MCP initializes with embedded task planning instructions', initialized.result.serverInfo.name === 'white-box' && initialized.result.instructions.includes('親を先に'))
+  check('Real stdio MCP initializes with embedded task planning instructions', initialized.result.serverInfo.name === 'white-box' && initialized.result.instructions.includes('親を先に') && initialized.result.instructions.includes('本人の確認前'))
   mcp.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n')
   const listed = await rpc('tools/list')
-  check('MCP exposes context and task registration', isDeepStrictEqual(listed.result.tools.map((tool) => tool.name).sort(), ['white_box_context', 'white_box_register_tasks'].sort()))
+  check('MCP exposes context, task registration and record proposals', isDeepStrictEqual(listed.result.tools.map((tool) => tool.name).sort(), ['white_box_context', 'white_box_propose_record', 'white_box_register_tasks'].sort()))
   const taskTool = listed.result.tools.find((tool) => tool.name === 'white_box_register_tasks')
   check('MCP advertises deadlines in the task registration schema', Object.hasOwn(taskTool.inputSchema.properties.tasks.items.properties, 'due'))
   const prompt = await rpc('prompts/get', { name: 'white-box-task-planning' })
@@ -268,6 +273,34 @@ async function verify() {
   check('Changed retry is rejected without any storage mutation', changed.result.isError === true && isDeepStrictEqual(read(), beforeRetry))
   const badPlan = await mcpTool('white_box_register_tasks', { requestId: 'mcp-atomic-failure', tasks: [{ title: '途中まで保存しない' }, { title: '不正日付', due: '2026-02-30' }] })
   check('Invalid deadline rejects the entire MCP batch', badPlan.result.isError === true && isDeepStrictEqual(read(), beforeRetry))
+  const beforeProposal = read()
+  const proposed = toolData(await mcpTool('white_box_propose_record', { sessionId: 'unknown-session', title: '本人が確認した調査', reason: '本人の実行メモに基づく提案', markDone: true }))
+  check('MCP proposal preserves tasks and timing until the user confirms', proposed.status === 'pending' && isDeepStrictEqual(read().tasks, beforeProposal.tasks) && isDeepStrictEqual(read().sessions, beforeProposal.sessions))
+  await key('1', 'Digit1', 2)
+  await until(() => page.evaluate('Boolean(document.querySelector(".task-suggestions"))'), 'record proposal UI')
+  await until(() => page.evaluate(`(() => { const r=document.querySelector('.task-suggestion')?.getBoundingClientRect(); return r && r.top>=0 && r.bottom<=innerHeight; })()`), 'proposal visible after switching from scrolled settings')
+  await screenshot('02-proposal')
+  const layout = await page.evaluate(`(() => { const el=document.querySelector('.task-suggestion'); const r=el.getBoundingClientRect(); return {width:r.width,height:r.height,top:r.top,bottom:r.bottom,viewport:innerHeight,text:el.textContent.includes('本人の実行メモ'),actions:[...el.querySelectorAll('button')].map(button=>({width:button.getBoundingClientRect().width,height:button.getBoundingClientRect().height}))}; })()`)
+  check('Proposal and both confirmation actions are visible with usable dimensions', layout.width >= 300 && layout.height >= 50 && layout.top>=0 && layout.bottom<=layout.viewport && layout.text && layout.actions.length === 2 && layout.actions.every((action) => action.width > 20 && action.height >= 24), layout)
+  await button('確認して記録', '.task-suggestions')
+  await until(() => read().taskSuggestions.find((item) => item.id === proposed.id)?.status === 'accepted', 'user confirmation persisted')
+  const acceptedTask = read().tasks.find((task) => task.title === '本人が確認した調査')
+  const acceptedSession = read().sessions.find((item) => item.id === 'unknown-session')
+  check('User confirmation creates the unknown task, assigns its record and marks it done', acceptedTask?.status === 'done' && acceptedTask.progress === 100 && acceptedTask.doneAt !== null && acceptedSession.segments[0].taskId === acceptedTask.id && acceptedSession.startedAt === seed.sessions[0].startedAt && acceptedSession.endedAt === seed.sessions[0].endedAt && acceptedSession.segments.length === 1 && acceptedSession.segments[0].startedAt === seed.sessions[0].startedAt && acceptedSession.segments[0].endedAt === seed.sessions[0].endedAt && isDeepStrictEqual(acceptedSession.pauses, seed.sessions[0].pauses) && acceptedSession.note === seed.sessions[0].note)
+  const beforeDismiss = read()
+  const dismiss = toolData(await mcpTool('white_box_propose_record', { sessionId: 'dismiss-session', taskId: 'original-task', reason: '本人が却下する提案', markDone: true }))
+  await until(() => page.evaluate('Boolean(document.querySelector(".task-suggestions"))'), 'second proposal UI')
+  await button('違う', '.task-suggestions')
+  await until(() => read().taskSuggestions.find((item) => item.id === dismiss.id)?.status === 'dismissed', 'dismissal persisted')
+  check('User dismissal keeps every task and timing record unchanged', isDeepStrictEqual(read().tasks, beforeDismiss.tasks) && isDeepStrictEqual(read().sessions, beforeDismiss.sessions))
+  await key('3', 'Digit3', 2)
+  await until(() => page.evaluate('Boolean(document.querySelector(".history-days"))'), 'history view')
+  if (await page.evaluate('Boolean(document.querySelector(".hday:not(.is-open) .hday-head"))')) {
+    await click('.hday:not(.is-open) .hday-head')
+  }
+  const recordVisible = await until(() => page.evaluate(`(() => { const el=[...document.querySelectorAll('.srow')].find(row=>row.textContent.includes('本人が確認した調査')); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); return r.height>20 && r.top>=0 && r.bottom<=innerHeight; })()`), 'confirmed record shown in the actual session list')
+  check('The confirmed task appears in the actual session record UI', recordVisible)
+  await screenshot('03-confirmed-record')
   check('Original task content and daily notes remain unchanged', isDeepStrictEqual(read().tasks.find((task) => task.id === 'original-task'), oldTask) && isDeepStrictEqual(read().dayNotes, seed.dayNotes))
 }
 
@@ -282,7 +315,7 @@ try {
   await stop()
   await launch('restart')
   const restarted = await call('state:get')
-  check('Restart preserves Inbox tasks and execution records', isDeepStrictEqual(restarted.tasks, persisted.tasks) && isDeepStrictEqual(restarted.sessions, persisted.sessions))
+  check('Restart preserves Inbox tasks and accepted/dismissed record suggestions', isDeepStrictEqual(restarted.tasks, persisted.tasks) && isDeepStrictEqual(restarted.sessions, persisted.sessions) && isDeepStrictEqual(restarted.taskSuggestions, persisted.taskSuggestions))
   await until(() => fs.existsSync(path.join(DATA, 'agent-connection.json')), 'API restarted')
   await startMcp(await call('agent:config'))
   await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'white-box-e2e', version: '1' } })

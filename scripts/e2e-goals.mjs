@@ -72,15 +72,16 @@ async function connect(url) {
     if (message.error) request.reject(new Error(JSON.stringify(message.error)))
     else request.resolve(message.result)
   })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, timeoutMs = 10000) => new Promise((resolve, reject) => {
     if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
     const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 10000)
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, timeoutMs)
     pending.set(id, { resolve, reject, timer })
     ws.send(JSON.stringify({ id, method, params }))
   })
   await send('Runtime.enable')
   await send('Log.enable')
+  await send('Page.enable')
   return {
     send,
     close: () => ws.close(),
@@ -108,7 +109,7 @@ async function launch(label) {
   delete env.VITE_DEV_SERVER_URL
   delete env.ELECTRON_RUN_AS_NODE
   const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
-  const args = ['--hidden', '--open=main', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
+  const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
   if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   console.log(`Electron PID: ${child.pid}`)
@@ -141,8 +142,9 @@ async function stop() {
 }
 
 async function screenshot(name) {
+  await page.send('Page.bringToFront')
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 
@@ -152,6 +154,7 @@ async function key(key, code, modifiers = 0) {
 }
 
 async function click(selector) {
+  await page.send('Page.bringToFront')
   const point = await until(() => page.evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), selector)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
@@ -160,6 +163,7 @@ async function click(selector) {
 }
 
 async function button(text, scope = 'body') {
+  await page.send('Page.bringToFront')
   const point = await until(() => page.evaluate(`(async () => { const el = [...document.querySelectorAll(${JSON.stringify(scope + ' button')})].find(el => el.textContent.trim() === ${JSON.stringify(text)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), `button ${text}`)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
@@ -264,6 +268,9 @@ async function verifyImport() {
   }
   const before = read()
   await key('5', 'Digit5', 2)
+  const visibility = await page.evaluate('({ visibility: document.visibilityState, hidden: document.hidden, focused: document.hasFocus(), width: innerWidth, height: innerHeight })')
+  fs.writeFileSync(path.join(RUN, 'before-import-ui.json'), JSON.stringify(visibility, null, 2))
+  console.log(`Before import UI: ${JSON.stringify(visibility)}`)
   await click('[aria-label="その他の操作"]')
   await button('道標のデータを取り込む')
   await fill('.gm-import-json', JSON.stringify(legacy))

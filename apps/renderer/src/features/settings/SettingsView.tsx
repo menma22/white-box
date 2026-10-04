@@ -193,7 +193,7 @@ export function SettingsView() {
       <section className="set-block">
         <h2 className="set-title">AI連携</h2>
         <div className="set-rows">
-          <Row label="ローカルのAIエージェントからつなぐ" hint="接続したエージェントが目標・タスクを参照し、依頼したタスクを登録できる。本人が依頼したタスクだけをInboxへ登録する。">
+          <Row label="ローカルのAIエージェントからつなぐ" hint="接続したエージェントが目標・タスクを参照し、依頼したタスクを登録できる。記録・完了の判定は確認待ちの提案になる。">
             <Toggle value={s.enableAgentApi ?? false} onChange={(v) => patch({ enableAgentApi: v })} />
           </Row>
         </div>

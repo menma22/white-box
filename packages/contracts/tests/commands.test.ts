@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 47 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(47)
+  it('コマンドは 49 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(49)
   })
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
@@ -55,6 +55,8 @@ describe('コマンド契約', () => {
     'agent:config': {},
     'agent:context': {},
     'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
+    'agent:propose': { sessionId: 's1', taskId: 't1', reason: '本人の依頼' },
+    'agent:resolve': { id: 'suggestion', accept: false },
     'state:get': {},
     'project:create': { name: 'P' },
     'project:update': { id: 'p1', patch: { name: 'P2' } },

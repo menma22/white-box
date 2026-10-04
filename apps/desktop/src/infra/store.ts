@@ -9,7 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
-import { AgentRequestsSchema } from '@white-box/contracts'
+import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 
 const DB_VERSION = 1
 
@@ -57,6 +57,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     dayNotes: parsed.dayNotes ?? {},
     agentRequests: AgentRequestsSchema.parse(parsed.agentRequests ?? {}),
+    taskSuggestions: TaskSuggestionSchema.array().parse(parsed.taskSuggestions ?? []),
     goalMap,
     goalMapImports: parsed.goalMapImports ?? [],
   }

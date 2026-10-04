@@ -5,7 +5,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto'
 import type { Handlers } from '../app/handlers.js'
 import { receive } from '../app/receive.js'
 
-const ALLOWED = new Set(['agent:context', 'agent:applyPlan'])
+const ALLOWED = new Set(['agent:context', 'agent:applyPlan', 'agent:propose'])
 const MAX_BODY = 64 * 1024
 
 export async function startAgentServer(directory: string, handlers: Handlers) {
