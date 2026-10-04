@@ -18,12 +18,17 @@ const commands = { white_box_context: 'agent:context', white_box_register_tasks:
 const supported = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']
 let initialized = false
 let ready = false
+const validId = (id) => typeof id === 'string' || typeof id === 'number' && Number.isInteger(id)
 
 async function handle(message) {
-  if (message.jsonrpc !== '2.0' || typeof message.method !== 'string') throw Object.assign(new Error('Invalid Request'), { code: -32600 })
+  if (!message || typeof message !== 'object' || Array.isArray(message) || message.jsonrpc !== '2.0' || typeof message.method !== 'string' || message.id !== undefined && !validId(message.id) || message.params !== undefined && (!message.params || typeof message.params !== 'object' || Array.isArray(message.params))) throw Object.assign(new Error('Invalid Request'), { code: -32600 })
+  if (message.id === undefined && !message.method.startsWith('notifications/')) return
+  if (message.id !== undefined && message.method.startsWith('notifications/')) throw Object.assign(new Error('Invalid Request'), { code: -32600 })
   const params = message.params || {}
   if (message.method === 'initialize') {
+    if (typeof params.protocolVersion !== 'string' || !params.capabilities || typeof params.capabilities !== 'object' || Array.isArray(params.capabilities) || typeof params.clientInfo?.name !== 'string' || typeof params.clientInfo?.version !== 'string') throw Object.assign(new Error('Invalid initialize params'), { code: -32602 })
     initialized = true
+    ready = false
     return { protocolVersion: supported.includes(params.protocolVersion) ? params.protocolVersion : supported[0], capabilities: { tools: {}, prompts: {} }, serverInfo: { name: 'white-box', version: '0.1.0' }, instructions }
   }
   if (message.method === 'notifications/initialized') { ready = initialized; return }
@@ -36,7 +41,7 @@ async function handle(message) {
     return { messages: [{ role: 'user', content: { type: 'text', text: instructions } }] }
   }
   if (message.method === 'tools/call') {
-    const command = Object.hasOwn(commands, params.name) ? commands[params.name] : null
+    const command = typeof params.name === 'string' && Object.hasOwn(commands, params.name) ? commands[params.name] : null
     if (!command) throw Object.assign(new Error('Unknown tool'), { code: -32602 })
     try {
       const config = JSON.parse(await fs.readFile(CONFIG, 'utf8'))
@@ -59,6 +64,6 @@ for await (const line of input) {
     const result = await handle(message)
     if (message.id !== undefined) process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, result }) + '\n')
   } catch (error) {
-    if (!message || message.id !== undefined) process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: message?.id ?? null, error: { code: error.code || -32700, message: error.message } }) + '\n')
+    if (error.code === -32600 || !message || message.id !== undefined) process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: validId(message?.id) ? message.id : null, error: { code: error.code || -32700, message: error.message } }) + '\n')
   }
 }
