@@ -11,6 +11,7 @@ import type { Ctx } from './ports.js'
 import { createPresenceHandlers } from './presence-handlers.js'
 import { buildState, liveSession, replaceSession, taskTitle } from './state.js'
 import { checkExpire } from './lifecycle.js'
+import { commitChanges } from './commit.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -76,13 +77,11 @@ export function createHandlers(ctx: Ctx): Handlers {
     // ── 道標
     'goal:create': (a) => {
       const r = goalOps.createGoal(db(), a)
-      db().goalMap = r.goalMap
-      ctx.publish()
+      commitChanges(ctx, { goalMap: r.goalMap })
       return r.goal
     },
     'goal:update': (a) => {
-      db().goalMap = goalOps.updateGoal(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.updateGoal(db(), a.id, a.patch) })
       return null
     },
     'goal:merge': (a) => {
