@@ -212,7 +212,7 @@ export interface LiveTick {
   sessionId: ID
   state: Exclude<SessionState, 'ended'>
   elapsedMs: number
-  /** 予定時間−実作業時間。負値は旧記録の超過。満了停止により通常0で止まる。 */
+  /** 予定時間−実作業時間。タイマー／ポモドーロは満了で通常0に止まり、旧記録の超過やストップウォッチでは負値になり得る。ストップウォッチの満了判定には使わない。 */
   remainingMs: number
   plannedMs: number
   mode?: SessionMode
