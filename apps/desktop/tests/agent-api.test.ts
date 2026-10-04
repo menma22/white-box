@@ -28,7 +28,7 @@ describe('本物のローカルHTTP', () => {
     expect(connection.pid).toBe(process.pid)
     expect(typeof connection.token).toBe('string')
     expect(connection.token.length).toBe(64)
-    const response = await fetch(url(), { method: 'POST', headers: headers(), body: JSON.stringify({ name: 'agent:context', args: {} }) })
+    const response = await fetch(url(), { method: 'POST', headers: { ...headers(), 'Content-Type': 'Application/JSON; charset=utf-8' }, body: JSON.stringify({ name: 'agent:context', args: {} }) })
     expect(response.status).toBe(200)
     expect(response.headers.get('cache-control')).toBe('no-store')
     expect(await response.json()).toEqual({ ok: true, data: { projects: [], tasks: [], goals: [], sessions: [] } })
@@ -64,7 +64,9 @@ describe('本物のローカルHTTP', () => {
 
   it('不正JSON・異なる形式・大きすぎる本文を拒否する', async () => {
     expect((await fetch(url(), { method: 'POST', headers: headers(), body: '{' })).status).toBe(400)
-    expect((await fetch(url(), { method: 'POST', headers: { ...headers(), 'Content-Type': 'text/plain' }, body: '{}' })).status).toBe(415)
+    for (const contentType of ['text/plain', 'application/jsonp', 'application/json-invalid']) {
+      expect((await fetch(url(), { method: 'POST', headers: { ...headers(), 'Content-Type': contentType }, body: '{}' })).status).toBe(415)
+    }
     expect((await fetch(url(), { method: 'POST', headers: headers(), body: ' '.repeat(65537) })).status).toBe(413)
     expect((await fetch(url(), { method: 'GET', headers: headers() })).status).toBe(404)
   })
