@@ -159,6 +159,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       const s = currentSession()
       if (!s) return null
       const next = ops.pauseSession(s, ctx.now(), a.reason ?? 'manual')
+      // スリープは lock-screen と suspend が続くため、停止を追加しない場合は窓も出し直さない。
       if (next === s) return null
       replaceSession(db(), next)
       ctx.publish()
