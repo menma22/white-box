@@ -27,7 +27,7 @@ export function CurrentWorkWindow() {
   const managementPauses = session?.pauses.filter((p) => p.reason === 'task-management') ?? []
   const managing = managementPauses.some((p) => p.endedAt === null)
   const originallyPaused = session?.pauses.some((p) => p.endedAt === null && p.reason !== 'task-management') ?? false
-  const expired = session?.expiredNotifiedAt != null
+  const expired = (session?.mode ?? 'timer') === 'timer' && session?.expiredNotifiedAt != null
   const managementMs = session ? pausedMsWithin(managementPauses, session.startedAt, now, now) : 0
 
   async function addTask() {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { focusByTask, focusMs, MINUTE, pausedMsWithin } from '@white-box/core/engine'
 import { createHandlers, dispatch } from '../src/app/handlers.js'
-import { restoreOpenSession, setCurrentWorkOpen } from '../src/app/lifecycle.js'
-import { liveSession, newRuntime } from '../src/app/state.js'
+import { checkExpire, restoreOpenSession, setCurrentWorkOpen } from '../src/app/lifecycle.js'
+import { buildState, liveSession, newRuntime } from '../src/app/state.js'
 import { createSession, endSession, extendSession, markExpired, pauseSession, resumeSession, startBreak } from '../src/domain/session-ops.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
@@ -144,5 +144,117 @@ describe('現在の仕事の管理時間', () => {
     expect(s.pauses.at(-1)).toMatchObject({ reason: 'suspend', endedAt: null })
     expect(focusMs(s, ctx.now())).toBe(minute(10))
     expect(ctx.runtime.recovery).not.toBeNull()
+  })
+})
+
+describe('計測方式', () => {
+  it('ストップウォッチには満了がなく、超過除外も発生しない', () => {
+    const running = createSession({ taskId: 'a', taskTitle: 'A', plannedMs: minute(25), mode: 'stopwatch', now: T0 })
+    expect(markExpired(running, T0 + minute(90))).toBe(running)
+    expect(focusMs(endSession(running, T0 + minute(90)), T0 + minute(90))).toBe(minute(90))
+  })
+  it('設定の方式を省略時の既定値として使う', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    ctx.store.data.settings.defaultSessionMode = 'pomodoro'
+    ctx.store.data.settings.pomodoroBreakMinutes = 7
+    ctx.store.data.settings.pomodoroAutoResume = true
+    const s = await dispatch(createHandlers(ctx), 'session:start', { taskId: 'a' })
+    expect(s).toMatchObject({ mode: 'pomodoro', pomodoroBreakMs: minute(7), pomodoroAutoResume: true })
+  })
+})
+
+describe('ポモドーロ', () => {
+  it.each(['manual', 'lock', 'suspend'] as const)('自動休憩中の%sは、休憩終了後も明示再開まで保つ', async (reason) => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', mode: 'pomodoro', minutes: 25, breakMinutes: 5, autoResume: true })
+    ctx.advance(minute(25))
+    checkExpire(ctx)
+    ctx.advance(minute(1))
+    await dispatch(h, 'session:pause', { reason })
+    ctx.advance(minute(10))
+    checkExpire(ctx)
+    const stopped = liveSession(ctx.store.data)!
+    expect(stopped.state).toBe('paused')
+    expect(stopped.pauses.find((p) => p.reason === reason)?.endedAt).toBeNull()
+    expect(focusMs(stopped, ctx.now())).toBe(minute(25))
+    await dispatch(h, 'session:pause', { reason: reason === 'suspend' ? 'lock' : 'suspend' })
+    expect(liveSession(ctx.store.data)?.pauses).toHaveLength(2)
+    ctx.advance(minute(5))
+    checkExpire(ctx)
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(25))
+    await dispatch(h, 'session:resume', {})
+    ctx.advance(minute(1))
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(26))
+  })
+
+  it('自動休憩に入り、休憩後は手動で次周期を再開する', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', mode: 'pomodoro', minutes: 25, breakMinutes: 5 })
+    const startedAt = ctx.now()
+    ctx.advance(minute(27))
+    checkExpire(ctx)
+    expect(buildState(ctx.store.data, ctx.runtime, ctx.now()).breakTimer).toMatchObject({ startedAt: startedAt + minute(25), endsAt: startedAt + minute(30) })
+    expect(ctx.calls).not.toContain('open:expire')
+    ctx.advance(minute(10))
+    checkExpire(ctx)
+    expect(ctx.calls).toContain('open:expire')
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(25))
+    await dispatch(h, 'session:resume', {})
+    ctx.advance(minute(10))
+    expect(liveSession(ctx.store.data)?.plannedMs).toBe(minute(50))
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(35))
+  })
+
+  it('任意の自動再開でも、遅れた刻みの空白を作業に加算しない', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    await dispatch(createHandlers(ctx), 'session:start', { taskId: 'a', mode: 'pomodoro', minutes: 25, breakMinutes: 5, autoResume: true })
+    ctx.advance(minute(50))
+    checkExpire(ctx)
+    expect(liveSession(ctx.store.data)?.state).toBe('running')
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(25))
+    ctx.advance(minute(3))
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(28))
+  })
+
+  it('作業途中の手動休憩から再開しても次周期へ繰り上げない', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', mode: 'pomodoro', minutes: 25 })
+    ctx.advance(minute(10))
+    await dispatch(h, 'session:break', { minutes: 3 })
+    ctx.advance(minute(3))
+    await dispatch(h, 'session:resume', {})
+    expect(liveSession(ctx.store.data)?.plannedMs).toBe(minute(25))
+    ctx.advance(minute(5))
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(15))
+  })
+
+  it('自動再開の設定があっても管理中に明示した停止は保つ', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await dispatch(h, 'session:start', { taskId: 'a', mode: 'pomodoro', minutes: 25, breakMinutes: 5, autoResume: true })
+    ctx.advance(minute(25))
+    checkExpire(ctx)
+    setCurrentWorkOpen(ctx, true)
+    await dispatch(h, 'session:pause', {})
+    ctx.advance(minute(10))
+    checkExpire(ctx)
+    setCurrentWorkOpen(ctx, false)
+    expect(liveSession(ctx.store.data)?.state).toBe('paused')
+    expect(focusMs(liveSession(ctx.store.data)!, ctx.now())).toBe(minute(25))
   })
 })

@@ -59,7 +59,7 @@ const SPECS: Record<WindowKind, Spec> = {
     skipTaskbar: false,
     titleBarOverlay: true,
   },
-  start: { width: 660, height: 500, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
+  start: { width: 660, height: 590, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
   hud: {
     width: 248,
     height: 88,

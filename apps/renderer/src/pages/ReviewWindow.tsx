@@ -88,7 +88,7 @@ export function ReviewWindow() {
           <Stat label="一時停止" value={formatDuration(Math.max(0, livePausedMs(session, end) - managingMs), 'compact')} />
           {excluded > 0 && <Stat label="除外" value={formatDuration(excluded, 'compact')} />}
           <Stat label="タスク整理" value={formatDuration(managingMs, 'compact')} />
-          <Stat label="予定" value={formatDuration(session.plannedMs, 'compact')} />
+          {session.mode !== 'stopwatch' && <Stat label="予定" value={formatDuration(session.plannedMs, 'compact')} />}
           <Stat label="タスク" value={`${drafts.length}`} />
         </section>
 

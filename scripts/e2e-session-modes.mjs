@@ -46,7 +46,7 @@ function connect(url) {
     let sequence = 0
     socket.addEventListener('error', reject)
     socket.addEventListener('close', () => {
-      for (const callback of pending.values()) callback.reject(new Error('CDP接続が閉じた'))
+      for (const callback of pending.values()) { clearTimeout(callback.timer); callback.reject(new Error('CDP接続が閉じた')) }
       pending.clear()
     })
     socket.addEventListener('message', ({ data }) => {
@@ -55,6 +55,7 @@ function connect(url) {
       const callback = pending.get(message.id)
       if (!callback) return
       pending.delete(message.id)
+      clearTimeout(callback.timer)
       if (message.error) callback.reject(new Error(JSON.stringify(message.error)))
       else callback.resolve(message.result)
     })
@@ -63,7 +64,8 @@ function connect(url) {
         close: () => socket.close(),
         send: (method, params = {}) => new Promise((res, rej) => {
           const id = ++sequence
-          pending.set(id, { resolve: res, reject: rej })
+          const timer = setTimeout(() => { pending.delete(id); rej(new Error(`${method} timeout`)) }, 10000)
+          pending.set(id, { resolve: res, reject: rej, timer })
           socket.send(JSON.stringify({ id, method, params }))
         }),
         async evaluate(expression) {
@@ -103,8 +105,9 @@ async function command(name, args = {}) {
 }
 
 async function screenshot(client, name) {
+  await client.send('Page.bringToFront')
   await wait(250)
-  const { data } = await client.send('Page.captureScreenshot', { format: 'png' })
+  const { data } = await client.send('Page.captureScreenshot', { format: 'png', fromSurface: false })
   fs.writeFileSync(path.join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'))
 }
 
@@ -139,6 +142,29 @@ async function live() {
 try {
   await startApp()
   const task = await command('task:create', { title: '満了停止の検証' })
+  await main.evaluate('Array.from(document.querySelectorAll(".rail-tab")).find((el) => el.querySelector(".rail-tab-label").textContent === "設定").click(); true')
+  check('設定画面に計測方式と休憩を表示', await main.evaluate('document.body.innerText.includes("既定の計測方法") && document.body.innerText.includes("ポモドーロの休憩")'))
+  await main.evaluate('Array.from(document.querySelectorAll(".set-row")).find((el) => el.querySelector(".set-row-label").textContent === "既定の計測方法").scrollIntoView({ block: "center" }); true')
+  await screenshot(main, '00-settings-modes')
+  await command('window:open', { kind: 'start' })
+  const start = await page('start')
+  check('開始画面で3方式を選べる', await start.evaluate('document.querySelectorAll(".start-mode").length') === 3)
+  await screenshot(start, '01-start-timer')
+  await start.evaluate('document.querySelectorAll(".start-mode")[2].click(); true')
+  check('ポモドーロの自動再開は既定で無効', await start.evaluate('document.querySelector(".start-pomodoro input[type=checkbox]").checked') === false)
+  await screenshot(start, '02-start-pomodoro')
+  await start.evaluate('document.querySelectorAll(".start-mode")[1].click(); true')
+  await screenshot(start, '03-start-stopwatch')
+  await start.evaluate('document.querySelector(".start-row").click(); true')
+  await wait(1200)
+  check('選択したタスクでストップウォッチを実UIから開始', (await live())?.mode === 'stopwatch')
+  await screenshot(await page('hud'), '04-hud-stopwatch')
+  await command('session:end')
+  const review = await page('review')
+  check('ストップウォッチの振り返りに予定時間を表示しない', await review.evaluate('document.querySelectorAll(".review-summary .stat").length === 4 && !Array.from(document.querySelectorAll(".review-summary .stat > .label")).some((el) => el.textContent === "予定")'))
+  await screenshot(review, '04b-review-stopwatch')
+  await command('session:skipReview')
+
   await command('session:start', { taskId: task.id, minutes: 100 })
   await wait(1200)
   await command('window:open', { kind: 'current' })
@@ -178,14 +204,35 @@ try {
   await wait(2200)
   await command('session:resume')
   check('満了後の休憩も再開だけでは停止を保つ', (await live()).state === 'paused' && (await live()).elapsedMs === 1800)
-  const rested = await page('expire')
-  check('休憩終了画面から明示延長を選べる', await rested.evaluate('document.querySelector(".btn-primary").textContent.includes("続ける")'))
-  await screenshot(rested, '06b-expired-timer-break')
+  const expiredBreakPage = await page('expire')
+  check('休憩終了画面から明示延長を選べる', await expiredBreakPage.evaluate('document.querySelector(".btn-primary").textContent.includes("続ける")'))
+  await screenshot(expiredBreakPage, '06b-expired-timer-break')
   await command('session:extend', { minutes: 1 })
   await wait(1300)
   check('明示延長から再開', (await live()).state === 'running' && (await live()).elapsedMs > 1800)
   await command('session:end')
   await command('session:skipReview')
+  await stopApp()
+
+  const saved = JSON.parse(fs.readFileSync(file))
+  const startedAt = Date.now()
+  saved.sessions.push({
+    id: 'pomodoro-boundary', startedAt, endedAt: null, createdAt: startedAt,
+    plannedMs: 1200, pomodoroWorkMs: 1200, pomodoroBreakMs: 5000, mode: 'pomodoro', pomodoroAutoResume: false,
+    state: 'running', segments: [{ id: 'pomodoro-segment', taskId: task.id, startedAt, endedAt: null }], pauses: [], events: [], progressChanges: [], note: '', expiredNotifiedAt: null, editedAt: null,
+  })
+  fs.writeFileSync(file, JSON.stringify(saved))
+  await startApp()
+  await wait(2000)
+  const state = await command('state:get')
+  check('ポモドーロは自動で休憩へ移る', state.breakTimer !== null && state.live.elapsedMs === 1200, state.live)
+  await screenshot(await page('hud'), '07-pomodoro-break')
+  await wait(5500)
+  const rested = await command('state:get')
+  check('休憩後も明示再開まで停止', rested.breakTimer.notifiedAt !== null && rested.live.state === 'paused' && rested.live.elapsedMs === 1200)
+  await screenshot(await page('expire'), '08-pomodoro-break-finished')
+  await command('session:resume')
+  check('明示再開で次の作業周期', (await live()).state === 'running' && (await live()).plannedMs === 2400)
   check('描画時の例外がない', errors.length === 0, errors)
   console.log(`画像と隔離記録: ${DATA}`)
 } finally {

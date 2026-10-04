@@ -46,7 +46,11 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs: number): void {
   ctx.ticker.start()
 }
 
-/** 予定時間に到達していたら満了の印を付け、満了ポップアップを出す。 */
+/**
+ * タイマー満了では作業を止めて確認窓を出し、ポモドーロ満了では休憩に切り替える。
+ * 休憩満了は、自動再開が有効なポモドーロで整理・復旧・他の停止がなければ次周期へ進む。
+ * それ以外は停止を維持して確認窓を出す。ストップウォッチには作業満了がない。
+ */
 export function checkExpire(ctx: Ctx): void {
   let s = liveSession(ctx.store.data)
   if (!s) return
@@ -56,13 +60,16 @@ export function checkExpire(ctx: Ctx): void {
     replaceSession(ctx.store.data, expired)
     s = expired
     ctx.publish()
-    ctx.windows.open('expire')
+    if (s.mode !== 'pomodoro') ctx.windows.open('expire')
   }
   const breakTimer = buildBreakTimer(ctx.store.data)
-  if (breakTimer && breakTimer.notifiedAt === null && now >= breakTimer.endsAt) {
-    replaceSession(ctx.store.data, ops.markBreakExpired(s, now))
+  if (breakTimer && now >= breakTimer.endsAt) {
+    const automatic = s.mode === 'pomodoro' && s.pomodoroAutoResume && !ctx.runtime.currentWorkOpen && !ctx.runtime.recovery && !s.pauses.some((p) => p.endedAt === null && p.reason !== 'break')
+    if (!automatic && breakTimer.notifiedAt !== null) return
+    replaceSession(ctx.store.data, automatic ? ops.resumeSession(s, now) : ops.markBreakExpired(s, now))
     ctx.publish()
-    ctx.windows.open('expire')
+    if (!automatic) ctx.windows.open('expire')
+    return
   }
 }
 

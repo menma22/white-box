@@ -2,7 +2,7 @@
  * セッションの時間計算。副作用を持たない純関数だけを置く（テスト対象）。
  *
  * 実作業時間 = 対象範囲の経過時間 − 一時停止の重なり。
- * 未終了のタイマーは、満了処理前でも予定到達時刻を上限にする。
+ * 未終了のタイマー／ポモドーロは、満了処理前でも予定到達時刻を上限にする。
  */
 import type { PauseInterval, Session, TaskSegment, TimeRange, ID } from './types.js'
 
@@ -49,7 +49,7 @@ export function focusMs(session: Session, now: number): number {
 
 function focusEndOrNow(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
-  if (session.endedAt !== null || session.expiredNotifiedAt !== null) return end
+  if (session.endedAt !== null || session.mode === 'stopwatch' || session.expiredNotifiedAt !== null) return end
   return plannedReachedAt(session, now) ?? end
 }
 
@@ -116,6 +116,7 @@ export function plannedReachedAt(session: Session, now: number): number | null {
 
 /** 予定に達してから終了までの、まだ止まっていない範囲（＝満了後に放置していた分）。 */
 export function overrunRanges(session: Session, now: number): TimeRange[] {
+  if (session.mode === 'stopwatch') return []
   const from = plannedReachedAt(session, now)
   if (from === null) return []
   return unpausedRanges(session.pauses, from, sessionEndOrNow(session, now), now)

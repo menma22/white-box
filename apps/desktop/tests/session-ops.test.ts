@@ -121,7 +121,7 @@ function neglected(): Session {
 }
 
 function historicalEnd(session: Session, endedAt: number): Session {
-  return { ...session, state: 'ended', endedAt, segments: session.segments.map((s) => ({ ...s, endedAt: s.endedAt ?? endedAt })) }
+  return { ...session, mode: undefined, state: 'ended', endedAt, segments: session.segments.map((s) => ({ ...s, endedAt: s.endedAt ?? endedAt })) }
 }
 
 describe('記録の事後修正（除外の申告）', () => {

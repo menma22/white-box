@@ -3,6 +3,15 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
+  it('方式と休憩設定の開始引数を受け取る', () => {
+    const args = { taskId: 't1', mode: 'pomodoro' as const, minutes: 25, breakMinutes: 5, autoResume: false }
+    expect(parseArgs('session:start', args)).toEqual(args)
+  })
+
+  it.each([{ mode: 'other' }, { minutes: 0 }, { minutes: 1441 }, { minutes: NaN }, { breakMinutes: 0 }, { autoResume: 'yes' }])('不正な方式や開始時間は受け付けない: %j', (args) => {
+    expect(() => parseArgs('session:start', args)).toThrow()
+  })
+
   it('コマンドは 44 個で固定（増減するときはこのテストを意図的に更新する）', () => {
     expect(Object.keys(COMMANDS)).toHaveLength(44)
   })

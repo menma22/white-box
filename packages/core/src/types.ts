@@ -96,6 +96,7 @@ export interface GoalMap {
 }
 
 export type SessionState = 'running' | 'paused' | 'ended'
+export type SessionMode = 'timer' | 'stopwatch' | 'pomodoro'
 
 /** 同一瞬間に開いている区間は 1 つだけ（Foreground Task は常に 1 つ）。 */
 export interface TaskSegment {
@@ -151,8 +152,12 @@ export interface Session {
   id: ID
   startedAt: number
   endedAt: number | null
-  /** 「今から何分やるか」。タスク全体の所要見積もりとしては使わない。 */
+  /** 作業時間の予定。ポモドーロでは周期ごとの累積、ストップウォッチでは満了に使わない。タスク全体の見積もりではない。 */
   plannedMs: number
+  mode?: SessionMode
+  pomodoroBreakMs?: number
+  pomodoroWorkMs?: number
+  pomodoroAutoResume?: boolean
   state: SessionState
   segments: TaskSegment[]
   pauses: PauseInterval[]
@@ -168,6 +173,9 @@ export interface Settings {
   /** 呼びかけに使う名前。 */
   displayName: string
   defaultSessionMinutes: number
+  defaultSessionMode?: SessionMode
+  pomodoroBreakMinutes?: number
+  pomodoroAutoResume?: boolean
   defaultExtendMinutes: number
   extendOptions: number[]
   shortcuts: {
@@ -207,6 +215,7 @@ export interface LiveTick {
   /** 予定時間−実作業時間。負値は旧記録の超過。満了停止により通常0で止まる。 */
   remainingMs: number
   plannedMs: number
+  mode?: SessionMode
   activeTaskId: ID | null
 }
 

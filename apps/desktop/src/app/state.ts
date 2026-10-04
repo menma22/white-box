@@ -42,6 +42,7 @@ export function buildTick(db: Database, now: number): LiveTick | null {
     remainingMs: remainingMs(s, now),
     plannedMs: s.plannedMs,
     activeTaskId: activeTaskId(s),
+    mode: s.mode ?? 'timer',
   }
 }
 

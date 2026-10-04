@@ -144,8 +144,17 @@ export function createHandlers(ctx: Ctx): Handlers {
         taskId = r.task.id
       }
       if (!taskId) return null
-      const minutes = a.minutes || db().settings.defaultSessionMinutes
-      const session = ops.createSession({ taskId, taskTitle: taskTitle(db(), taskId), plannedMs: minutes * MINUTE, now })
+      const minutes = a.minutes ?? db().settings.defaultSessionMinutes
+      if (!Number.isFinite(minutes) || minutes <= 0) throw new Error('作業時間は1分以上にする')
+      const session = ops.createSession({
+        taskId,
+        taskTitle: taskTitle(db(), taskId),
+        plannedMs: minutes * MINUTE,
+        mode: a.mode ?? db().settings.defaultSessionMode ?? 'timer',
+        pomodoroBreakMs: (a.breakMinutes ?? db().settings.pomodoroBreakMinutes ?? 5) * MINUTE,
+        pomodoroAutoResume: a.autoResume ?? db().settings.pomodoroAutoResume ?? false,
+        now,
+      })
       db().sessions.push(session)
       if (ctx.runtime.currentWorkOpen) replaceSession(db(), ops.pauseSession(session, now, 'task-management'))
       db().tasks = taskOps.updateTask(db(), taskId, { status: 'doing' })

@@ -23,7 +23,8 @@ export function ExpireWindow() {
     const breakPlannedMs = breakTimer.endsAt - breakTimer.startedAt
     const breakElapsedMs = Math.min(breakPlannedMs, Math.max(0, now - breakTimer.startedAt))
     const finished = breakTimer.notifiedAt !== null
-    const needsExtension = state.sessions.find((session) => session.id === tick.sessionId)?.expiredNotifiedAt != null
+    const session = state.sessions.find((session) => session.id === tick.sessionId)
+    const needsExtension = (session?.mode ?? 'timer') === 'timer' && session?.expiredNotifiedAt != null
     return (
       <div className="win expire drag">
         <div className="expire-ring">
