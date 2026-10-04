@@ -17,6 +17,10 @@ describe('ノートの変更', () => {
     expect(ctx.store.data.notes).toEqual(original)
     expect(() => handlers['note:archive']({ id: 'n', archived: true })).toThrow('disk failed')
     expect(ctx.store.data.notes).toEqual(original)
+    ctx.store.data.notes = createNote(ctx.store.data, { remindAt: ctx.now() }, 100, 'reminder').notes
+    const reminders = ctx.store.data.notes
+    expect(() => handlers['note:markReminded']({ id: 'reminder', remindAt: ctx.now() })).toThrow('disk failed')
+    expect(ctx.store.data.notes).toEqual(reminders)
     ctx.publish = () => { ctx.calls.push('publish') }
     handlers['note:update']({ id: 'n', patch: { body: '書きかけ' } })
     expect(ctx.store.data.notes?.[0]!.body).toBe('書きかけ')

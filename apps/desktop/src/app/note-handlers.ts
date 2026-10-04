@@ -24,8 +24,7 @@ export function createNoteHandlers(ctx: Ctx): NoteHandlers {
       return null
     },
     'note:markReminded': (args) => {
-      db().notes = ops.markNoteReminded(db(), args.id, args.remindAt, ctx.now())
-      ctx.publish()
+      commitChanges(ctx, { notes: ops.markNoteReminded(db(), args.id, args.remindAt, ctx.now()) })
       return null
     },
   }
