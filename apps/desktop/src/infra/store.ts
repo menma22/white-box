@@ -8,6 +8,7 @@ import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
+import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
 
 const DB_VERSION = 1
@@ -54,6 +55,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     sessions: parsed.sessions ?? [],
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     dayNotes: parsed.dayNotes ?? {},
+    notes: NoteSchema.array().parse(parsed.notes ?? []),
     goalMap,
     goalMapImports: parsed.goalMapImports ?? [],
   }

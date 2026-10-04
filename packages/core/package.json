@@ -20,6 +20,10 @@
     "./outcome": {
       "types": "./dist/outcome.d.ts",
       "default": "./dist/outcome.js"
+    },
+    "./notes": {
+      "types": "./dist/notes.d.ts",
+      "default": "./dist/notes.js"
     }
   },
   "scripts": {

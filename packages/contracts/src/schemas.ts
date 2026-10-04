@@ -3,6 +3,7 @@
  * スキーマと型がずれると末尾の Exact 検査がコンパイルで落ちる。
  */
 import { z } from 'zod'
+import { NoteSchema } from './notes.js'
 import type {
   AppState,
   GoalHistory,
@@ -232,6 +233,7 @@ export const AppStateSchema = z.object({
   sessions: z.array(SessionSchema),
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
+  notes: z.array(NoteSchema).optional(),
   goalMap: GoalMapSchema,
   live: LiveTickSchema.nullable(),
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),

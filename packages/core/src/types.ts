@@ -5,6 +5,8 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { Note } from './notes.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
@@ -195,6 +197,7 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  notes?: Note[]
   goalMap: GoalMap
   goalMapImports?: string[]
 }
@@ -217,6 +220,7 @@ export interface AppState {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  notes?: Note[]
   goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById, todayKey } from '@/lib/selectors'
@@ -13,8 +13,9 @@ import { GoalIssuesView } from '@/features/goals/GoalIssues'
 import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
+import { NotesView } from '@/features/notes/NotesView'
 
-type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues'
+type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
 const TABS: { id: Tab; label: string; glyph: string; shortcut: string }[] = [
   { id: 'today', label: '今日', glyph: '◷', shortcut: '1' },
@@ -22,6 +23,7 @@ const TABS: { id: Tab; label: string; glyph: string; shortcut: string }[] = [
   { id: 'history', label: '記録', glyph: '≣', shortcut: '3' },
   { id: 'goals', label: '道標', glyph: '⌘', shortcut: '5' },
   { id: 'issues', label: '問題・改善', glyph: '◇', shortcut: '6' },
+  { id: 'notes', label: 'ノート', glyph: '▱', shortcut: '7' },
   { id: 'settings', label: '設定', glyph: '⚙', shortcut: '4' },
 ]
 
@@ -30,6 +32,8 @@ export function MainWindow() {
   const tick = useApp((s) => s.tick)
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
+  const contentRef = useRef<HTMLElement>(null)
+  useEffect(() => { if (contentRef.current) contentRef.current.scrollTop = 0 }, [tab])
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
@@ -128,7 +132,7 @@ export function MainWindow() {
           </div>
         </nav>
 
-        <main className="main-content">
+        <main className="main-content" ref={contentRef}>
           {state.recovery && <RecoveryBanner />}
           {tab === 'today' && <TodayView />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
@@ -136,6 +140,7 @@ export function MainWindow() {
           {tab === 'settings' && <SettingsView />}
           {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}
           {tab === 'issues' && <GoalIssuesView onJump={jumpGoal} />}
+          {tab === 'notes' && <NotesView data={state} />}
         </main>
       </div>
 
