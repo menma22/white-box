@@ -26,6 +26,23 @@ beforeEach(() => { input.starts = 0; input.stops = 0; input.failOnStart = false;
 afterEach(() => vi.restoreAllMocks())
 
 describe('開始通知の監視を設定へつなぐ', () => {
+  it('入力サンプルの間に開始・終了したセッションも、開始前の入力をリセットする', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.settings.remindToStart = true
+    ctx.store.data.settings.startReminderMinutes = 1
+    const service = createStartReminderService(ctx)
+    input.count!(12)
+    ctx.advance(59000)
+    ctx.store.data.sessions = [createSession({ taskId: 't', taskTitle: 'T', plannedMs: 60000, now: ctx.now() })]
+    service.refresh()
+    ctx.advance(1000)
+    ctx.store.data.sessions = []
+    service.refresh()
+    input.count!(1)
+    expect(native.notices).toHaveLength(0)
+    service.stop()
+  })
+
   it('起動時に同期エラーが起きてもOFFと停止を維持し、次にONにすれば再起動できる', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const ctx = fakeCtx()
