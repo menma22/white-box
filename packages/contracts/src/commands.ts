@@ -7,6 +7,7 @@
  */
 import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
+import { PRESENCE_COMMANDS } from './presence.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -30,6 +31,7 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...PRESENCE_COMMANDS,
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project

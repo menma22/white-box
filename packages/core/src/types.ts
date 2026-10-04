@@ -6,6 +6,7 @@
  */
 
 import type { GoalCriterion } from './goal-criteria.js'
+import type { PresenceCandidate } from './presence.js'
 
 export type ID = string
 
@@ -199,6 +200,7 @@ export interface Database {
   settings: Settings
   dayNotes: Record<string, string>
   goalMap: GoalMap
+  presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
 }
 
@@ -224,6 +226,7 @@ export interface AppState {
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
+  presenceCandidates?: PresenceCandidate[]
   pendingReview: { sessionId: ID; thenStart: boolean } | null
 }
 

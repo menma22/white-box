@@ -64,6 +64,7 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),
     recovery: runtime.recovery,
+    presenceCandidates: db.presenceCandidates ?? [],
     pendingReview: runtime.pendingReview,
   }
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PresenceCandidates } from '@/features/presence/PresenceCandidates'
 import { invoke, cmd } from '@/lib/bridge'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
@@ -101,6 +102,8 @@ export function ReviewWindow() {
             </button>
           </section>
         )}
+
+        <PresenceCandidates sessionId={session.id} />
 
         <div className="review-lead">
           <h3>どこまで進んだ？</h3>

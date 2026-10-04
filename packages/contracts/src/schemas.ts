@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
+import { PresenceCandidatesSchema } from './presence.js'
 import type {
   AppState,
   GoalHistory,
@@ -228,6 +229,7 @@ export const LiveTickSchema = z.object({
 })
 
 export const AppStateSchema = z.object({
+  presenceCandidates: PresenceCandidatesSchema.optional(),
   revision: z.number(),
   projects: z.array(ProjectSchema),
   tasks: z.array(TaskSchema),

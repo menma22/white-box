@@ -24,6 +24,10 @@
     "./goal-criteria": {
       "types": "./dist/goal-criteria.d.ts",
       "default": "./dist/goal-criteria.js"
+    },
+    "./presence": {
+      "types": "./dist/presence.d.ts",
+      "default": "./dist/presence.js"
     }
   },
   "scripts": {
