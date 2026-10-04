@@ -76,6 +76,19 @@ describe('AIタスク登録', () => {
 })
 
 describe('AIの実績提案', () => {
+  it.each([false, true])('確認・却下後の同じ提案の再送は結果を返し、二重反映を防ぐ（採用=%s）', (accept) => {
+    const { ctx, handlers } = context()
+    const args = parseArgs('agent:propose', { sessionId: 's', title: '再送される調査', reason: '本人のメモ', markDone: true })
+    const proposed = handlers['agent:propose'](args)
+    handlers['agent:resolve']({ id: proposed.id, accept })
+    const before = JSON.stringify(ctx.store.data)
+    const retry = handlers['agent:propose'](args)
+    expect(retry.id).toBe(proposed.id)
+    expect(retry.status).toBe(accept ? 'accepted' : 'dismissed')
+    handlers['agent:resolve']({ id: retry.id, accept: true })
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+  })
+
   it.each([false, true])('空区間の未割当記録を本人確認で割り当て、時刻・停止・除外・メモを保持する（完了=%s）', (markDone) => {
     const { ctx, handlers } = context()
     const session = ctx.store.data.sessions[0]!

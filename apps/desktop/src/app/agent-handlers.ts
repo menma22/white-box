@@ -61,8 +61,10 @@ export function createAgentHandlers(ctx: Ctx) {
       const task = args.taskId ? db().tasks.find((item) => item.id === args.taskId) : null
       if (args.taskId && !task) throw new Error('タスクが見つかりません')
       if (!task && !args.title) throw new Error('未知の作業はタスク名を提案してください')
-      const pending = (db().taskSuggestions ?? []).find((item) => item.sessionId === session.id && item.status === 'pending')
-      if (pending) return pending
+      const previous = (db().taskSuggestions ?? []).find((item) => item.sessionId === session.id && (
+        item.status === 'pending' || item.taskId === (task?.id ?? null) && (item.taskId !== null || item.title === args.title) && item.reason === args.reason && item.markDone === (args.markDone ?? false)
+      ))
+      if (previous) return previous
       const suggestion: TaskSuggestion = {
         id: sessionOps.newId('sug'), sessionId: session.id, taskId: task?.id ?? null,
         title: task?.title ?? args.title!, reason: args.reason, markDone: args.markDone ?? false,
