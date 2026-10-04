@@ -34,6 +34,8 @@ describe('MCPのstdio境界', () => {
       { jsonrpc: '2.0', id: 4, method: 'notifications/initialized' },
       { jsonrpc: '2.0', method: 'notifications/initialized' },
       { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: { toString: 0 } } },
+      { jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'white_box_context', arguments: false } },
+      { jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'white_box_context', arguments: null } },
       { jsonrpc: '2.0', method: 'tools/call', params: { name: 'white_box_register_tasks', arguments: {} } },
     ])
     expect(replies[0]).toMatchObject({ id: 1, error: { code: -32602 } })
@@ -41,6 +43,8 @@ describe('MCPのstdio境界', () => {
     expect(replies[2]).toMatchObject({ id: 3, result: { protocolVersion: '2025-11-25' } })
     expect(replies[3]).toMatchObject({ id: 4, error: { code: -32600 } })
     expect(replies[4]).toMatchObject({ id: 5, error: { code: -32602 } })
-    expect(replies).toHaveLength(5)
+    expect(replies[5]).toMatchObject({ id: 6, error: { code: -32602 } })
+    expect(replies[6]).toMatchObject({ id: 7, error: { code: -32602 } })
+    expect(replies).toHaveLength(7)
   })
 })
