@@ -167,12 +167,15 @@ export function extendSession(session: Session, minutes: number, now: number): S
 }
 
 export function markExpired(session: Session, now: number): Session {
-  if (session.endedAt !== null || session.mode === 'stopwatch' || session.expiredNotifiedAt !== null) return session
+  if (session.endedAt !== null || session.mode === 'stopwatch') return session
   const reachedAt = plannedReachedAt(session, now)
   if (reachedAt === null) return session
+  if (session.expiredNotifiedAt !== null && session.pauses.some((p) =>
+    (p.reason === 'expired' || p.reason === 'break') && p.startedAt <= reachedAt && (p.endedAt === null || p.endedAt > reachedAt),
+  )) return session
   const next = clone(session)
-  next.expiredNotifiedAt = now
-  pushEvent(next, reachedAt, 'timer_expired', '予定時間に到達')
+  next.expiredNotifiedAt ??= now
+  if (session.expiredNotifiedAt === null) pushEvent(next, reachedAt, 'timer_expired', '予定時間に到達')
   next.pauses.push({ startedAt: reachedAt, endedAt: null, reason: 'expired' })
   next.state = 'paused'
   if (next.mode === 'pomodoro') {
