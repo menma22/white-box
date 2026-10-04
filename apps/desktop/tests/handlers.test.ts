@@ -1,6 +1,6 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 45 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全 50 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（45 コマンド）', () => {
+describe('ユースケースの網羅（50 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -29,10 +29,16 @@ describe('ユースケースの網羅（45 コマンド）', () => {
     const handlers = createHandlers(ctx)
     await dispatch(handlers, 'session:start', { taskId: 't1', minutes: 50 })
     const sessionId = ctx.store.data.sessions[0]!.id
+    db.sessions.push({ ...db.sessions[0]!, id: 'finished', state: 'ended', endedAt: ctx.now() })
     ctx.runtime.recovery = { sessionId, lastKnownAt: ctx.now() }
 
     const sample: { [N in CommandName]: ArgsOf<N> } = {
       'presence:resolve': { id: 'candidate', decision: 'dismiss' },
+      'agent:config': {},
+      'agent:context': {},
+      'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
+      'agent:propose': { sessionId: 'finished', taskId: 't1', reason: '本人の依頼' },
+      'agent:resolve': { id: 'nothing', accept: false },
       'state:get': {},
       'project:create': { name: 'P' },
       'project:update': { id: 'p1', patch: { name: 'P2' } },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById, todayKey } from '@/lib/selectors'
@@ -12,6 +12,7 @@ import { GoalMapView } from '@/features/goals/GoalMapView'
 import { GoalIssuesView } from '@/features/goals/GoalIssues'
 import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
+import { TaskSuggestions } from '@/features/agents/TaskSuggestions'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
 
 type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues'
@@ -30,6 +31,8 @@ export function MainWindow() {
   const tick = useApp((s) => s.tick)
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
+  const contentRef = useRef<HTMLElement>(null)
+  useEffect(() => { if (contentRef.current) contentRef.current.scrollTop = 0 }, [tab])
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
@@ -127,8 +130,9 @@ export function MainWindow() {
           </div>
         </nav>
 
-        <main className="main-content">
+        <main className="main-content" ref={contentRef}>
           {state.recovery && <RecoveryBanner />}
+          {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} sessions={state.sessions} />}
           {tab === 'today' && <TodayView />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}

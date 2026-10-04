@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PresenceCandidatesSchema } from './presence.js'
+import { TaskSuggestionSchema } from './agent.js'
 import type {
   AppState,
   GoalHistory,
@@ -228,6 +229,7 @@ export const SettingsSchema = z.object({
   onboardedAt: z.number().nullable(),
   remindToStart: z.boolean().optional(),
   startReminderMinutes: z.number().int().min(1).max(60).optional(),
+  enableAgentApi: z.boolean().optional(),
 })
 
 export const LiveTickSchema = z.object({
@@ -248,6 +250,7 @@ export const AppStateSchema = z.object({
   sessions: z.array(SessionSchema),
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
+  taskSuggestions: z.array(TaskSuggestionSchema).optional(),
   goalMap: GoalMapSchema,
   live: LiveTickSchema.nullable(),
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),

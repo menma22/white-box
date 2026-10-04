@@ -29,6 +29,7 @@ export interface TickerPort {
 }
 
 export interface SystemPort {
+  agentConfig?(): string
   applyShortcuts(): string[]
   applyLoginItem(): void
   quit(): void

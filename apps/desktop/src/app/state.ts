@@ -63,6 +63,7 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     sessions: db.sessions,
     settings: db.settings,
     dayNotes: db.dayNotes,
+    taskSuggestions: db.taskSuggestions ?? [],
     goalMap: db.goalMap,
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),

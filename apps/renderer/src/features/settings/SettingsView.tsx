@@ -214,6 +214,20 @@ export function SettingsView() {
       </section>
 
       <section className="set-block">
+        <h2 className="set-title">AI連携</h2>
+        <div className="set-rows">
+          <Row label="ローカルのAIエージェントからつなぐ" hint="接続したエージェントが目標・タスクを参照し、依頼したタスクを登録できる。記録・完了の判定は確認待ちの提案になる。">
+            <Toggle value={s.enableAgentApi ?? false} onChange={(v) => patch({ enableAgentApi: v })} />
+          </Row>
+        </div>
+        <p className="set-note">AI連携はMCP対応エージェントで使える。コピーした接続設定を、エージェントのMCP設定へ追加する。音声の書き起こしからも、同じ手順でタスクを整理できる。</p>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={!s.enableAgentApi || isBrowserPreview} onClick={() => {
+          setError(null)
+          void invoke('agent:config').then((config) => navigator.clipboard.writeText(config)).then(() => setSaved('AI連携の接続設定をコピーした')).catch((failure) => setError(String(failure)))
+        }}>AI連携の接続設定をコピー</button>
+      </section>
+
+      <section className="set-block">
         <h2 className="set-title">データ</h2>
         <p className="set-note">
           記録はこの PC の中だけにある。書き出しておけば、PC を移しても続きから使える。

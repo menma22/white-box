@@ -8,6 +8,7 @@
 import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PRESENCE_COMMANDS } from './presence.js'
+import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -33,6 +34,25 @@ const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
   ...PRESENCE_COMMANDS,
+  'agent:config': { args: NoArgs, result: z.string() },
+  'agent:context': {
+    args: z.strictObject({ projectId: z.string().optional() }),
+    result: z.object({
+      projects: z.array(ProjectSchema),
+      tasks: z.array(TaskSchema),
+      goals: z.array(GoalNodeSchema),
+      sessions: z.array(z.object({ id: z.string(), startedAt: z.number(), endedAt: z.number().nullable(), taskIds: z.array(z.string()), focusMs: z.number() })),
+    }),
+  },
+  'agent:applyPlan': {
+    args: z.strictObject({ requestId: z.string().min(1).max(200).refine((id) => id !== '__proto__', 'requestIdが不正です'), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
+    result: z.array(TaskSchema),
+  },
+  'agent:propose': {
+    args: z.strictObject({ sessionId: z.string(), taskId: z.string().nullable().optional(), title: z.string().trim().min(1).max(500).optional(), reason: z.string().trim().min(1).max(2000), markDone: z.boolean().optional() }),
+    result: TaskSuggestionSchema,
+  },
+  'agent:resolve': { args: z.strictObject({ id: z.string(), accept: z.boolean() }), result: z.null() },
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project

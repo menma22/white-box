@@ -245,8 +245,9 @@ export function editSession(session: Session, edit: SessionEdit, now: number): S
   if (typeof edit.endedAt === 'number') next.endedAt = edit.endedAt
   if (typeof edit.plannedMs === 'number') next.plannedMs = edit.plannedMs
   if (typeof edit.note === 'string') next.note = edit.note
-  if (edit.segmentTaskId && next.segments[0]) {
-    for (const seg of next.segments) seg.taskId = edit.segmentTaskId
+  if (edit.segmentTaskId) {
+    if (next.segments.length === 0) next.segments.push({ id: newId('seg'), taskId: edit.segmentTaskId, startedAt: next.startedAt, endedAt: next.endedAt })
+    else for (const seg of next.segments) seg.taskId = edit.segmentTaskId
   }
   if (next.endedAt !== null && next.startedAt > next.endedAt) next.endedAt = next.startedAt
   if (edit.exclusions) replaceExclusions(next, edit.exclusions)
