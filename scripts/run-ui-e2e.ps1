@@ -18,6 +18,20 @@ $mutex = [System.Threading.Mutex]::new($false, 'Local\WhiteBoxElectronUiE2E')
 $acquired = $false
 $result = 0
 
+function Get-WhiteBoxQaProcesses {
+  Get-CimInstance Win32_Process -Filter "Name = 'electron.exe' OR Name = 'White Box.exe'" | Where-Object {
+    if (-not $_.CommandLine) { return $false }
+    $profileMatch = [regex]::Match($_.CommandLine, '--user-data-dir=(?:"([^"]+)"|(\S+))', 'IgnoreCase')
+    if (-not $profileMatch.Success) { return $false }
+    $profilePath = if ($profileMatch.Groups[1].Success) { $profileMatch.Groups[1].Value } else { $profileMatch.Groups[2].Value }
+    $qaPath = [regex]::Match($profilePath, '^(.*?)[\\/](?:\.e2e(?:[\\/.-])|shots-presence-(?:app|model)[\\/])', 'IgnoreCase')
+    if (-not $qaPath.Success) { return $false }
+    $packagePath = Join-Path $qaPath.Groups[1].Value 'package.json'
+    if (-not (Test-Path -LiteralPath $packagePath)) { return $false }
+    (Get-Content -Raw -Encoding UTF8 -LiteralPath $packagePath | ConvertFrom-Json).name -eq 'white-box'
+  }
+}
+
 try {
   Write-Output 'Waiting for the White Box UI E2E lock...'
   while (-not $acquired) {
@@ -25,6 +39,8 @@ try {
     catch [System.Threading.AbandonedMutexException] { $acquired = $true }
   }
   Write-Output "UI E2E lock acquired: $resolvedWorktree"
+  $previousQa = @(Get-WhiteBoxQaProcesses)
+  if ($previousQa.Count -ne 0) { throw "Previous QA Electron processes remain: $($previousQa.ProcessId -join ', ')" }
   Set-Location -LiteralPath $resolvedWorktree
   $env:WHITEBOX_EXE = $resolvedExecutable
   foreach ($scriptPath in $scriptPaths) {
