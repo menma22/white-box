@@ -6,6 +6,7 @@ import { emptyDb, fakeCtx } from './helpers.js'
 
 const native = vi.hoisted(() => ({
   supported: true,
+  failNext: false,
   notices: [] as { title: string; body: string; shown: boolean; closed: boolean; emit(event: string): boolean }[],
 }))
 vi.mock('electron', async () => {
@@ -19,7 +20,7 @@ vi.mock('electron', async () => {
       shown = false
       closed = false
       constructor(options: { title: string; body: string }) { super(); this.title = options.title; this.body = options.body; native.notices.push(this) }
-      show() { this.shown = true }
+      show() { if (native.failNext) { native.failNext = false; this.emit('failed', {}, 'native failure') } else this.shown = true }
       close() { this.closed = true; this.emit('close') }
     },
   }
@@ -29,8 +30,45 @@ function note(id: string, remindAt: number, patch: Partial<Note> = {}): Note {
 }
 
 describe('窓に依存しないノート通知', () => {
-  beforeEach(() => { vi.useFakeTimers(); native.supported = true; native.notices = [] })
-  afterEach(() => { vi.clearAllTimers(); vi.useRealTimers() })
+  beforeEach(() => { vi.useFakeTimers(); native.supported = true; native.failNext = false; native.notices = []; vi.spyOn(console, 'error').mockImplementation(() => {}) })
+  afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.restoreAllMocks() })
+
+  it('ネイティブ通知が失敗した予定は未通知へ戻し、1分待って再試行する', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.notes = [note('due', ctx.now())]
+    native.failNext = true
+    const service = createNoteReminders(ctx)
+    expect(ctx.store.data.notes[0]!.remindedAt).toBeNull()
+    ctx.advance(5000); vi.advanceTimersByTime(5000)
+    expect(native.notices).toHaveLength(1)
+    ctx.advance(55000); vi.advanceTimersByTime(55000)
+    expect(native.notices).toHaveLength(2)
+    expect(native.notices[1]!.shown).toBe(true)
+    expect(ctx.store.data.notes[0]!.remindedAt).toBe(ctx.now())
+    service.stop()
+  })
+
+  it('古い通知の失敗は変更した予定と通知済み状態を巻き戻さない', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.notes = [note('due', ctx.now())]
+    const service = createNoteReminders(ctx)
+    const changed = note('due', ctx.now() + 10000, { remindedAt: ctx.now() + 10000 })
+    ctx.store.data.notes = [changed]
+    native.notices[0]!.emit('failed')
+    expect(ctx.store.data.notes).toEqual([changed])
+    service.stop()
+  })
+
+  it('保存に失敗したらメモリ上の通知済み状態も戻し、通知を表示しない', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.notes = [note('due', ctx.now())]
+    ctx.publish = () => { throw new Error('disk failed') }
+    let service: ReturnType<typeof createNoteReminders> | undefined
+    expect(() => { service = createNoteReminders(ctx) }).not.toThrow()
+    expect(ctx.store.data.notes[0]!.remindedAt).toBeNull()
+    expect(native.notices.some((item) => item.shown)).toBe(false)
+    service?.stop()
+  })
 
   it('未通知の期限到達だけを保存して通知し、クリックでメイン画面を開く', () => {
     const ctx = fakeCtx()
