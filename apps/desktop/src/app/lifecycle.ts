@@ -10,7 +10,8 @@ import { buildBreakTimer, liveSession, replaceSession } from './state.js'
  * 異常終了で開いたままのセッションの扱いを決める。
  * 整理中は最後の生存・操作記録（現在時刻が上限）で整理区間を閉じる。
  * 他の停止は維持し、無ければその時刻で停止して復旧を聞く。
- * 休憩中は復旧確認を出さず、満了監視を再開する。
+ * 自動再開しない休憩中は復旧確認を出さず、満了監視を再開する。
+ * 自動再開する休憩に長い空白があれば、作業を再開する前に復旧を聞く。
  * それ以外は、最後の生存記録と最新の操作記録のうち新しい時刻からの空白が
  * crashGapMs より長ければ「PC が落ちていた」とみなし、
  * その時刻で一時停止して人間に聞く（recovery）。短ければそのまま計測を続ける。
@@ -29,15 +30,14 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs: number): void {
     ctx.ticker.start()
     return
   }
-  if (buildBreakTimer(ctx.store.data)) {
+  const lastRecordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
+  const lastKnownAt = Math.min(ctx.now(), Math.max(ctx.store.readLastAlive() ?? lastRecordedAt, lastRecordedAt))
+  const gap = ctx.now() - lastKnownAt
+  if (buildBreakTimer(ctx.store.data) && !(s.mode === 'pomodoro' && s.pomodoroAutoResume && gap > crashGapMs)) {
     ctx.ticker.start()
     return
   }
-  const lastAlive = ctx.store.readLastAlive()
-  const lastRecordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
-  const lastKnownAt = lastAlive ? Math.max(lastAlive, lastRecordedAt) : null
-  const gap = lastKnownAt ? ctx.now() - lastKnownAt : Infinity
-  if (lastKnownAt && gap > crashGapMs) {
+  if (gap > crashGapMs) {
     if (!isPaused(s)) replaceSession(ctx.store.data, ops.pauseSession(s, lastKnownAt, 'suspend'))
     ctx.runtime.recovery = { sessionId: s.id, lastKnownAt }
     ctx.store.save()
