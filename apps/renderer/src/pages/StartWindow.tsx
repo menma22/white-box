@@ -4,6 +4,7 @@ import { useApp, useData } from '@/stores/app'
 import { candidateTasks, matchTask, projectById, projectColor, STATUS_LABEL } from '@/lib/selectors'
 import { Chip, Kbd, ProgressBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
+import type { SessionMode } from '@white-box/core/types'
 
 const DURATIONS = [25, 50, 90]
 
@@ -13,6 +14,9 @@ export function StartWindow() {
   const [query, setQuery] = useState('')
   const [cursor, setCursor] = useState(0)
   const [minutes, setMinutes] = useState(state.settings.defaultSessionMinutes)
+  const [mode, setMode] = useState<SessionMode>(state.settings.defaultSessionMode ?? 'timer')
+  const [breakMinutes, setBreakMinutes] = useState(state.settings.pomodoroBreakMinutes ?? 5)
+  const [autoResume, setAutoResume] = useState(state.settings.pomodoroAutoResume ?? false)
   const [projectId, setProjectId] = useState<string>(state.projects[0]?.id ?? '')
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -33,20 +37,22 @@ export function StartWindow() {
     listRef.current?.querySelector('.is-cursor')?.scrollIntoView({ block: 'nearest' })
   }, [cursor, query])
 
-  async function start() {
-    if (isCreateRow) {
+  async function start(index = cursor) {
+    const options = { minutes, mode, breakMinutes, autoResume }
+    if (canCreate && index === matches.length) {
       await invoke('session:start', {
         newTask: { title: query.trim(), projectId: projectId || null },
-        minutes,
+        ...options,
       })
       return
     }
-    const task = matches[cursor]
+    const task = matches[index]
     if (!task) return
-    await invoke('session:start', { taskId: task.id, minutes })
+    await invoke('session:start', { taskId: task.id, ...options })
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
+    if (!(e.target instanceof HTMLInputElement) || !e.target.classList.contains('start-input')) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setCursor((c) => (rows === 0 ? 0 : (c + 1) % rows))
@@ -56,10 +62,6 @@ export function StartWindow() {
     } else if (e.key === 'Enter') {
       e.preventDefault()
       void start()
-    } else if (e.key === 'Tab') {
-      e.preventDefault()
-      const i = DURATIONS.indexOf(minutes)
-      setMinutes(DURATIONS[(i + 1) % DURATIONS.length] ?? 50)
     }
   }
 
@@ -68,6 +70,18 @@ export function StartWindow() {
       <div className="start-head drag">
         <div className="start-head-label label">これから何をやる？</div>
         <Kbd>Esc</Kbd>
+      </div>
+
+      <div className="start-mode-controls no-drag">
+        <div className="start-modes" aria-label="計測方式">
+          {([['timer', 'タイマー'], ['stopwatch', 'ストップウォッチ'], ['pomodoro', 'ポモドーロ']] as const).map(([value, label]) => (
+            <button key={value} type="button" className={`start-mode disp ${mode === value ? 'is-active' : ''}`} aria-pressed={mode === value} onClick={() => setMode(value)}>{label}</button>
+          ))}
+        </div>
+        {mode === 'pomodoro' && <div className="start-pomodoro">
+          <label>休憩 <input className="start-dur-custom num" type="number" min={1} max={120} value={breakMinutes} onChange={(e) => setBreakMinutes(Math.max(1, Math.min(120, Number(e.target.value) || 1)))} /> 分</label>
+          <label><input type="checkbox" checked={autoResume} onChange={(e) => setAutoResume(e.target.checked)} /> 休憩後に自動再開</label>
+        </div>}
       </div>
 
       <div className="start-search no-drag">
@@ -94,7 +108,7 @@ export function StartWindow() {
               type="button"
               className={`start-row ${i === cursor ? 'is-cursor' : ''}`}
               onMouseMove={() => setCursor(i)}
-              onClick={() => void start()}
+              onClick={() => void start(i)}
             >
               <span className="start-row-status disp" data-status={task.status}>
                 {STATUS_LABEL[task.status]}
@@ -143,7 +157,7 @@ export function StartWindow() {
       </div>
 
       <footer className="start-foot">
-        <div className="start-durations">
+        {mode !== 'stopwatch' ? <div className="start-durations">
           <span className="label">セッション</span>
           {DURATIONS.map((m) => (
             <button
@@ -165,10 +179,10 @@ export function StartWindow() {
             onChange={(e) => setMinutes(Math.max(1, Math.min(480, Number(e.target.value) || 1)))}
             title="任意の長さ"
           />
-        </div>
+        </div> : <span className="start-stopwatch-hint">終了するまで経過時間を記録</span>}
         <button type="button" className="start-go disp" onClick={() => void start()} disabled={rows === 0}>
           開始
-          <span className="start-go-time num">{formatDuration(minutes * 60_000, 'compact')}</span>
+          {mode !== 'stopwatch' && <span className="start-go-time num">{formatDuration(minutes * 60_000, 'compact')}</span>}
         </button>
       </footer>
 
@@ -178,7 +192,7 @@ export function StartWindow() {
           <Kbd>↓</Kbd> 選ぶ
         </span>
         <span>
-          <Kbd>Tab</Kbd> 長さ
+          <Kbd>Tab</Kbd> 移動
         </span>
         <span>
           <Kbd>Enter</Kbd> 開始

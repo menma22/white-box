@@ -48,14 +48,15 @@ describe('実作業時間', () => {
     expect(pausedMs(s, T0 + min(35))).toBe(min(15))
   })
 
-  it('残りは満了後にマイナスへ進む', () => {
+  it('刻みが遅れても満了後に実作業は増えない', () => {
     const s = base()
     expect(remainingMs(s, T0 + min(50))).toBe(0)
-    expect(remainingMs(s, T0 + min(58))).toBe(min(-8))
+    expect(remainingMs(s, T0 + min(58))).toBe(0)
   })
 
   it('区間に重なる停止だけを、その区間から引く', () => {
     let s = base()
+    s.plannedMs = min(90)
     s = switchTask(s, 'b', 'B', T0 + min(30))
     s = pauseSession(s, T0 + min(40))
     s = resumeSession(s, T0 + min(45))
@@ -116,7 +117,11 @@ describe('状態遷移', () => {
 })
 
 function neglected(): Session {
-  return endSession(base(), T0 + min(230))
+  return historicalEnd(base(), T0 + min(230))
+}
+
+function historicalEnd(session: Session, endedAt: number): Session {
+  return { ...session, mode: undefined, state: 'ended', endedAt, segments: session.segments.map((s) => ({ ...s, endedAt: s.endedAt ?? endedAt })) }
 }
 
 describe('記録の事後修正（除外の申告）', () => {
@@ -166,7 +171,7 @@ describe('記録の事後修正（除外の申告）', () => {
   it('観測された一時停止は申告で置き換わらない', () => {
     let s = pauseSession(base(), T0 + min(20))
     s = resumeSession(s, T0 + min(30))
-    s = endSession(s, T0 + min(230))
+    s = historicalEnd(s, T0 + min(230))
     const fixed = editSession(s, { exclusions: [{ startedAt: T0 + min(60), endedAt: T0 + min(230) }] }, EDITED_AT)
     expect(fixed.pauses.filter((p) => p.reason === 'manual')).toHaveLength(1)
     expect(pausedMs(fixed, EDITED_AT) - excludedMs(fixed, EDITED_AT)).toBe(min(10))
@@ -203,7 +208,7 @@ describe('記録の事後修正（除外の申告）', () => {
     // 既にある一時停止と重なる
     let paused = pauseSession(base(), T0 + min(20))
     paused = resumeSession(paused, T0 + min(30))
-    paused = endSession(paused, T0 + min(230))
+    paused = historicalEnd(paused, T0 + min(230))
     expect(() => editSession(paused, { exclusions: [{ startedAt: T0 + min(25), endedAt: T0 + min(60) }] }, EDITED_AT)).toThrow()
     // 終わっていないセッションは対象外
     expect(() => editSession(base(), { exclusions: [{ startedAt: T0, endedAt: T0 + min(5) }] }, EDITED_AT)).toThrow()

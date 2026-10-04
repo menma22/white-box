@@ -16,6 +16,9 @@ const DB_VERSION = 1
 export const DEFAULT_SETTINGS: Settings = {
   displayName: '',
   defaultSessionMinutes: 50,
+  defaultSessionMode: 'timer',
+  pomodoroBreakMinutes: 5,
+  pomodoroAutoResume: false,
   defaultExtendMinutes: 15,
   extendOptions: [5, 10, 15, 25, 50],
   // 既定値を埋めると他アプリのショートカットと衝突する。初回オンボーディングで本人に割り当ててもらう

@@ -8,7 +8,7 @@ import { app, BrowserWindow, powerMonitor } from 'electron'
 import { dayKey } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
 import { createHandlers, dispatch, type Handlers } from '../app/handlers.js'
-import { checkExpire, restoreOpenSession } from '../app/lifecycle.js'
+import { checkExpire, restoreOpenSession, setCurrentWorkOpen } from '../app/lifecycle.js'
 import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
@@ -17,7 +17,7 @@ import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
 import { createTicker } from '../infra/ticker.js'
-import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow } from '../infra/windows.js'
+import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow, observeCurrentWorkWindow } from '../infra/windows.js'
 import { registerIpc } from './ipc.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000
@@ -51,13 +51,13 @@ if (!app.requestSingleInstanceLock()) {
         return
       }
       const now = Date.now()
+      checkExpire(ctx)
       broadcast('whitebox:tick', buildTick(store.data, now))
       tray.update()
       if (now - lastAliveWrite > ALIVE_WRITE_INTERVAL_MS) {
         lastAliveWrite = now
         store.markAlive()
       }
-      checkExpire(ctx)
     })
 
     const ctx: Ctx = {
@@ -92,6 +92,7 @@ if (!app.requestSingleInstanceLock()) {
     }
 
     handlers = createHandlers(ctx)
+    observeCurrentWorkWindow((open) => setCurrentWorkOpen(ctx, open))
     registerIpc(handlers)
     startReminderService = createStartReminderService(ctx)
 
@@ -129,6 +130,7 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     app.on('before-quit', () => {
+      runtime.quitting = true
       startReminderService?.stop()
       store.markAlive()
       store.save()

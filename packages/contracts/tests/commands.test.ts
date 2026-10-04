@@ -12,6 +12,16 @@ describe('コマンド契約', () => {
     for (const startReminderMinutes of [0, 1.5, 61, Infinity]) expect(() => parseArgs('settings:update', { patch: { startReminderMinutes } })).toThrow()
   })
 
+  it('方式と休憩設定の開始引数を受け取る', () => {
+    const args = { taskId: 't1', mode: 'pomodoro' as const, minutes: 25, breakMinutes: 5, autoResume: false }
+    expect(parseArgs('session:start', args)).toEqual(args)
+  })
+
+  it.each([{ mode: 'other' }, { minutes: 0 }, { minutes: 1441 }, { minutes: NaN }, { breakMinutes: 0 }, { autoResume: 'yes' }])('不正な方式や開始時間は受け付けない: %j', (args) => {
+    expect(() => parseArgs('session:start', args)).toThrow()
+  })
+
+
   it('全コマンドが args と result の両スキーマを持つ', () => {
     for (const [name, def] of Object.entries(COMMANDS)) {
       expect(typeof def.args.parse, name).toBe('function')

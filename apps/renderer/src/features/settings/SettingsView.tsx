@@ -83,6 +83,17 @@ export function SettingsView() {
             />
             <span className="set-unit">分</span>
           </Row>
+          <Row label="既定の計測方法" hint="開始画面で変更できる。">
+            <select className="input" value={s.defaultSessionMode ?? 'timer'} onChange={(e) => patch({ defaultSessionMode: e.target.value as Settings['defaultSessionMode'] })}>
+              <option value="timer">タイマー</option><option value="stopwatch">ストップウォッチ</option><option value="pomodoro">ポモドーロ</option>
+            </select>
+          </Row>
+          <Row label="ポモドーロの休憩" hint="作業時間の満了後に自動で休憩へ切り替える。">
+            <input className="input num set-num" type="number" min={1} max={180} value={s.pomodoroBreakMinutes ?? 5} onChange={(e) => patch({ pomodoroBreakMinutes: Math.max(1, Math.min(180, Number(e.target.value) || 5)) })} /><span className="set-unit">分</span>
+          </Row>
+          <Row label="休憩後に自動で次の作業へ" hint="OFFなら、自分で再開するまで計測は止まったまま。">
+            <Toggle value={s.pomodoroAutoResume ?? false} onChange={(v) => patch({ pomodoroAutoResume: v })} />
+          </Row>
           <Row label="延長の既定値" hint="満了ポップアップの「続ける」に出る値。">
             <input
               className="input num set-num"
