@@ -12,6 +12,7 @@ import { checkExpire, restoreOpenSession } from '../app/lifecycle.js'
 import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
+import { createStartReminderService } from '../infra/start-reminder-service.js'
 import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
@@ -35,6 +36,7 @@ if (!app.requestSingleInstanceLock()) {
     const runtime = newRuntime()
     let handlers: Handlers
     let lastAliveWrite = 0
+    let startReminderService: ReturnType<typeof createStartReminderService> | null = null
 
     const tray = createTray({
       getDb: () => store.data,
@@ -85,11 +87,13 @@ if (!app.requestSingleInstanceLock()) {
         store.save()
         broadcast('whitebox:state', buildState(store.data, runtime, Date.now()))
         tray.update()
+        startReminderService?.refresh()
       },
     }
 
     handlers = createHandlers(ctx)
     registerIpc(handlers)
+    startReminderService = createStartReminderService(ctx)
 
     restoreOpenSession(ctx, CRASH_GAP_MS)
     ctx.system.applyShortcuts()
@@ -125,6 +129,7 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     app.on('before-quit', () => {
+      startReminderService?.stop()
       store.markAlive()
       store.save()
     })

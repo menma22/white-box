@@ -214,6 +214,8 @@ export const SettingsSchema = z.object({
   stallWarningDays: z.number(),
   showSessionCard: z.boolean(),
   onboardedAt: z.number().nullable(),
+  remindToStart: z.boolean().optional(),
+  startReminderMinutes: z.number().int().min(1).max(60).optional(),
 })
 
 export const LiveTickSchema = z.object({

@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS: Settings = {
   stallWarningDays: 3,
   showSessionCard: true,
   onboardedAt: null,
+  remindToStart: false,
+  startReminderMinutes: 3,
 }
 
 function emptyDb(): Database {
