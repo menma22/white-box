@@ -7,6 +7,8 @@ import { parseGoalMap } from '@white-box/core/goal-map'
 import { createGoal, importGoals, updateGoal } from '../src/domain/goal-ops.js'
 import { createTask, updateTask } from '../src/domain/task-ops.js'
 import { normalizeDatabase, Store } from '../src/infra/store.js'
+import { createHandlers, dispatch } from '../src/app/handlers.js'
+import { fakeCtx } from './helpers.js'
 
 vi.mock('electron', () => ({ app: { getPath: () => os.tmpdir() } }))
 const dirs: string[] = []
@@ -14,6 +16,32 @@ afterEach(() => { for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: 
 const numeric: GoalCriterion = { id: 'readers', title: '協力者が読む', evidence: '', kind: 'number', target: 10, current: null, unit: '人', comparison: 'at-least' }
 
 describe('目標の成功条件の保存境界', () => {
+  it('作成の保存失敗はメモリにも未保存の目標を残さず、再送で1件だけ作る', async () => {
+    const ctx = fakeCtx()
+    const handlers = createHandlers(ctx)
+    const before = structuredClone(ctx.store.data)
+    const publish = vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('disk full') })
+    await expect(dispatch(handlers, 'goal:create', { goal: '成果', criteria: [numeric] })).rejects.toThrow('disk full')
+    expect(ctx.store.data).toEqual(before)
+    await dispatch(handlers, 'goal:create', { goal: '成果', criteria: [numeric] })
+    expect(Object.values(ctx.store.data.goalMap.nodes)).toHaveLength(1)
+    expect(Object.values(ctx.store.data.goalMap.nodes)[0]!.criteria).toEqual([numeric])
+    publish.mockRestore()
+  })
+
+  it('条件編集の保存失敗後に別の更新を配布しても未保存条件を含めない', async () => {
+    const ctx = fakeCtx()
+    const handlers = createHandlers(ctx)
+    const goal = await dispatch(handlers, 'goal:create', { goal: '成果', criteria: [numeric] })
+    const before = structuredClone(ctx.store.data.goalMap)
+    const publish = vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('disk full') })
+    await expect(dispatch(handlers, 'goal:update', { id: goal.id, patch: { criteria: [{ ...numeric, current: 10 }] } })).rejects.toThrow('disk full')
+    expect(ctx.store.data.goalMap).toEqual(before)
+    await dispatch(handlers, 'goal:update', { id: goal.id, patch: { reason: '別の変更' } })
+    expect(ctx.store.data.goalMap.nodes[goal.id]!.criteria).toEqual([numeric])
+    publish.mockRestore()
+  })
+
   it('抽象的な目標を作成でき、条件更新・数値到達・タスク完了はoutcomeを変えない', () => {
     const db = normalizeDatabase({})
     const created = createGoal(db, { goal: '社会に役立つ' })

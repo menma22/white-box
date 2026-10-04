@@ -8,6 +8,7 @@ import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import * as goalOps from '../domain/goal-ops.js'
 import type { Ctx } from './ports.js'
+import { commitChanges } from './commit.js'
 import { buildBreakTimer, buildState, liveSession, replaceSession, taskTitle } from './state.js'
 
 export type Handlers = {
@@ -69,13 +70,11 @@ export function createHandlers(ctx: Ctx): Handlers {
     // ── 道標
     'goal:create': (a) => {
       const r = goalOps.createGoal(db(), a)
-      db().goalMap = r.goalMap
-      ctx.publish()
+      commitChanges(ctx, { goalMap: r.goalMap })
       return r.goal
     },
     'goal:update': (a) => {
-      db().goalMap = goalOps.updateGoal(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.updateGoal(db(), a.id, a.patch) })
       return null
     },
     'goal:merge': (a) => {
