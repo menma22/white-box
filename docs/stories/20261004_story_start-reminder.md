@@ -20,7 +20,7 @@
 
 ## 設計メモ
 
-既存のsettings:updateへ2設定を加える。開始通知の判断はappの純関数、Windowsの押下回数集計はinfraの専用helper、設定変更と終了処理は独立したstart-reminder-serviceを通してmainへ接続する。
+既存のsettings:updateへ2設定を加える。開始通知の判断はappの純関数、Windowsの押下回数集計はinfraの専用helper、設定変更と終了処理は独立したstart-reminder-serviceを通してmainへ接続する。OFFと終了では通知も閉じ、停止済みhelperの遅延callbackを無視する。古いhelperのエラーで新しい監視をOFFにしない。
 
 ## 検証
 

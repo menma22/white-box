@@ -37,8 +37,10 @@ export function watchInputActivity(onCount: (count: number) => void, onError: (e
   let partial = ''
   let stopped = false
   let diagnostic = ''
+  const fail = (error: Error) => { if (!stopped) { stopped = true; child.kill(); onError(error) } }
   child.stderr.on('data', (data: Buffer) => { diagnostic = (diagnostic + data.toString('utf8')).slice(-2000) })
   child.stdout.on('data', (data: Buffer) => {
+    if (stopped) return
     partial += data.toString('utf8')
     const lines = partial.split(/\r?\n/)
     partial = lines.pop() ?? ''
@@ -47,7 +49,7 @@ export function watchInputActivity(onCount: (count: number) => void, onError: (e
       if (Number.isInteger(count) && count >= 0) onCount(count)
     }
   })
-  child.on('error', onError)
-  child.on('exit', (code) => { if (!stopped) onError(new Error(`入力活動の検知を停止しました (${code ?? 'signal'}) ${diagnostic.trim()}`)) })
+  child.on('error', fail)
+  child.on('exit', (code) => fail(new Error(`入力活動の検知を停止しました (${code ?? 'signal'}) ${diagnostic.trim()}`)))
   return () => { stopped = true; child.kill() }
 }
