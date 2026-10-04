@@ -6,6 +6,7 @@
  * args を緩い object にすると、綴り違いのキーが zod に黙って捨てられ、無反応のまま成功が返る。
  */
 import { z } from 'zod'
+import { GoalCriteriaSchema } from './goal-criteria.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -69,7 +70,7 @@ export const COMMANDS = {
 
   // ── 道標（目標・問題・改善）
   'goal:create': {
-    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional() }),
+    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional(), criteria: GoalCriteriaSchema.optional() }),
     result: GoalNodeSchema,
   },
   'goal:update': {
@@ -78,6 +79,7 @@ export const COMMANDS = {
       patch: z.strictObject({
         goal: z.string().optional(),
         reason: z.string().optional(),
+        criteria: GoalCriteriaSchema.optional(),
         outcome: OutcomeRecordSchema.omit({ assessedAt: true }).partial().strict().optional(),
       }),
     }),

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { GoalMap } from '@white-box/core/types'
 import { isGoalHidden, layoutGoals, NODE_HEIGHT, NODE_WIDTH } from '@white-box/core/goal-map'
 import { Button, Empty } from '@/components/ui'
+import { summarizeGoalCriteria } from '@white-box/core/goal-criteria'
 
 export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
   map: GoalMap; selected: string | null; focusRequest: number; onSelect: (id: string | null) => void; onAdd: (id: string) => void
@@ -133,7 +134,7 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
           <button type="button" className="gm-node-body" aria-label={`目標：${goal.goal || '未入力の目標'}`} aria-pressed={selected === id}
             onClick={() => { if (tipTimer.current) clearTimeout(tipTimer.current); onSelect(id); setTip(null) }} onMouseEnter={(event) => showTip(id, event.currentTarget)} onMouseLeave={hideTip}
             onFocus={(event) => showTip(id, event.currentTarget)} onBlur={hideTip}>
-            <span className="gm-node-meta">{!goal.parentId ? '最上位の目標' : '目標'}{goal.outcome?.status === 'achieved' ? ' · 達成' : goal.outcome?.status === 'not-achieved' ? ' · 非達成' : ''}{hidden ? ' · 非表示' : ''}</span>
+            <span className="gm-node-meta">{!goal.parentId ? '最上位の目標' : '目標'}{goal.outcome?.status === 'achieved' ? ' · 達成' : goal.outcome?.status === 'not-achieved' ? ' · 非達成' : ''}{hidden ? ' · 非表示' : ''}<span className={!goal.criteria?.length ? 'gm-criteria-missing' : ''}> · {goal.criteria?.length ? `条件 ${goal.criteria.length}` : '条件 未設定'}</span></span>
             <strong>{goal.goal || '未入力の目標'}</strong><span className="gm-node-reason">{goal.reason || '理由を添える'}</span>
           </button>
           {!hidden && <button type="button" className="gm-node-add" aria-label={`${goal.goal}に子目標を追加`} onClick={() => onAdd(id)}>＋</button>}
@@ -152,6 +153,6 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
     </div>
     {node && tip && <div className="gm-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}
       onMouseEnter={() => { if (tipTimer.current) clearTimeout(tipTimer.current) }} onMouseLeave={hideTip}><strong>{node.goal || '未入力の目標'}</strong>
-      {node.reason && <p>{node.reason}</p>}<span className="gm-muted">第{depth}層 · 子 {node.children.length} · 配下 {descendants}{isGoalHidden(map, node.id) ? ' · 非表示の枝' : ''}</span></div>}
+      {node.reason && <p>{node.reason}</p>}<p className="gm-muted">{summarizeGoalCriteria(node.criteria).count ? `成功条件 ${node.criteria!.length} 件` : '成功条件がまだない。詳細で具体的な条件を追加できる。'}</p><span className="gm-muted">第{depth}層 · 子 {node.children.length} · 配下 {descendants}{isGoalHidden(map, node.id) ? ' · 非表示の枝' : ''}</span></div>}
   </div>
 }

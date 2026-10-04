@@ -3,6 +3,7 @@
  * スキーマと型がずれると末尾の Exact 検査がコンパイルで落ちる。
  */
 import { z } from 'zod'
+import { GoalCriteriaSchema } from './goal-criteria.js'
 import type {
   AppState,
   GoalHistory,
@@ -85,6 +86,7 @@ export const GoalNodeSchema = z.object({
   hiddenAt: z.number().nullable(),
   hideReason: z.string(),
   outcome: OutcomeRecordSchema.optional(),
+  criteria: GoalCriteriaSchema.optional(),
 })
 
 export const GoalIssueKindSchema = z.enum(['problem', 'question', 'idea'])

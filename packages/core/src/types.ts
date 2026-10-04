@@ -5,6 +5,8 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { GoalCriterion } from './goal-criteria.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
@@ -59,6 +61,7 @@ export interface GoalNode {
   hiddenAt: number | null
   hideReason: string
   outcome?: OutcomeRecord
+  criteria?: GoalCriterion[]
 }
 
 export interface GoalIssue {

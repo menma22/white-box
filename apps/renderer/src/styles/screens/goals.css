@@ -128,3 +128,29 @@ textarea.gm-text, .gm-dialog textarea { resize: vertical; line-height: 1.65; min
   .gm-detail { width: 280px; padding: 14px; }
   .gm-zoom > span { display: none; }
 }
+
+.gm-criteria { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.gm-criteria > * { flex: none; }
+.gm-criteria h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.gm-criteria > p, .gm-criteria-review p { margin: 0; line-height: 1.6; }
+.gm-criteria-missing { color: var(--amber); font-size: 11px; }
+.gm-node-meta .gm-criteria-missing { font-size: inherit; }
+.gm-criteria-list { display: flex; flex-direction: column; gap: 8px; }
+.gm-criterion { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: 10px; overflow-wrap: anywhere; }
+.gm-criterion-heading { display: flex; flex-direction: column; gap: 4px; }
+.gm-criterion-heading strong { font-size: 12px; line-height: 1.5; }
+.gm-criterion-heading > span { font-size: 10px; }
+.gm-criterion-confirmed { color: var(--accent); }
+.gm-criterion-value { font-size: 12px; font-variant-numeric: tabular-nums; margin: 7px 0; }
+.gm-criterion-value span { display: block; color: var(--text-2); font-size: 11px; }
+.gm-criterion-evidence { margin: 7px 0; font-size: 11px; color: var(--text-3); white-space: pre-wrap; }
+.gm-criterion-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.gm-criterion-editor { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--accent-line); border-radius: var(--r-md); }
+.gm-criterion-editor .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.gm-criterion-editor textarea { resize: vertical; line-height: 1.5; }
+.gm-criterion-editor .input { width: 100%; min-width: 0; }
+.gm-criterion-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gm-criterion-numbers .label { font-size: 10px; line-height: 1.5; }
+.gm-criterion-check { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--text-2); line-height: 1.5; }
+.gm-criteria-review { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.gm-criteria-review summary { color: var(--text-2); font-size: 11px; cursor: pointer; margin-bottom: 6px; }

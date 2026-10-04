@@ -1,5 +1,6 @@
 import type { GoalHistory, GoalIssue, GoalMap, ID } from './types.js'
 import { emptyOutcome, parseOutcome } from './outcome.js'
+import { parseGoalCriteria } from './goal-criteria.js'
 
 export const NODE_WIDTH = 240
 export const NODE_HEIGHT = 88
@@ -121,6 +122,7 @@ export function parseGoalMap(value: unknown): GoalMap {
       hiddenAt: node.hiddenAt == null ? null : goalTime(node.hiddenAt),
       hideReason: goalString(node.hideReason ?? ''),
       outcome: node.outcome === undefined ? emptyOutcome() : parseOutcome(node.outcome),
+      ...(node.criteria === undefined ? {} : { criteria: parseGoalCriteria(node.criteria) }),
     }
   }
   map.heads = list(raw.heads).map(goalId)
