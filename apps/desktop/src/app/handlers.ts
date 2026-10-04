@@ -8,7 +8,8 @@ import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import * as goalOps from '../domain/goal-ops.js'
 import type { Ctx } from './ports.js'
-import { buildBreakTimer, buildState, liveSession, replaceSession, taskTitle } from './state.js'
+import { buildState, liveSession, replaceSession, taskTitle } from './state.js'
+import { checkExpire } from './lifecycle.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -16,6 +17,10 @@ export type Handlers = {
 
 export function createHandlers(ctx: Ctx): Handlers {
   const db = () => ctx.store.data
+  const currentSession = () => {
+    checkExpire(ctx)
+    return liveSession(db())
+  }
 
   const handlers: Handlers = {
     'state:get': () => buildState(db(), ctx.runtime, ctx.now()),
@@ -150,7 +155,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return session
     },
     'session:pause': (a) => {
-      const s = liveSession(db())
+      const s = currentSession()
       // 既に止まっているなら窓も出し直さない（スリープは lock-screen と suspend を続けて撃つ）
       if (!s || isPaused(s)) return null
       replaceSession(db(), ops.pauseSession(s, ctx.now(), a.reason ?? 'manual'))
@@ -159,12 +164,16 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'session:resume': () => {
-      const s = liveSession(db())
+      const s = currentSession()
       if (!s) return null
-      const resumingBreak = buildBreakTimer(db()) !== null
-      replaceSession(db(), ops.resumeSession(s, ctx.now()))
+      const next = ops.resumeSession(s, ctx.now())
+      if (next === s) {
+        if (s.expiredNotifiedAt !== null) ctx.windows.open('expire')
+        return null
+      }
+      replaceSession(db(), next)
       ctx.publish()
-      if (resumingBreak) ctx.windows.closeLater('expire')
+      ctx.windows.closeLater('expire')
       return null
     },
     'session:toggle': async () => {
@@ -176,7 +185,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return await handlers[isPaused(s) ? 'session:resume' : 'session:pause']({})
     },
     'session:extend': (a) => {
-      const s = liveSession(db())
+      const s = currentSession()
       if (!s) return null
       const minutes = a.minutes || db().settings.defaultExtendMinutes
       replaceSession(db(), ops.extendSession(s, minutes, ctx.now()))
@@ -185,7 +194,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'session:break': (a) => {
-      const s = liveSession(db())
+      const s = currentSession()
       if (!s) return null
       const minutes = a.minutes || 5
       const next = ops.startBreak(s, minutes, ctx.now())
@@ -197,7 +206,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'session:switchTask': (a) => {
-      const s = liveSession(db())
+      const s = currentSession()
       if (!s) return null
       const now = ctx.now()
       const prev = activeTaskId(s)
@@ -211,7 +220,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'session:end': (a) => {
-      const s = liveSession(db())
+      const s = currentSession()
       if (!s) return null
       const ended = ops.endSession(s, ctx.now())
       replaceSession(db(), ended)
@@ -275,7 +284,11 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'recovery:resume': () => {
       const s = db().sessions.find((x) => x.id === ctx.runtime.recovery?.sessionId)
-      if (s) replaceSession(db(), ops.resumeSession(s, ctx.now()))
+      if (s) {
+        const next = ops.resumeSession(s, ctx.now())
+        replaceSession(db(), next)
+        if (next === s && s.expiredNotifiedAt !== null) ctx.windows.open('expire')
+      }
       ctx.runtime.recovery = null
       ctx.publish()
       ctx.ticker.start()

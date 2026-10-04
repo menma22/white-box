@@ -49,13 +49,13 @@ if (!app.requestSingleInstanceLock()) {
         return
       }
       const now = Date.now()
+      checkExpire(ctx)
       broadcast('whitebox:tick', buildTick(store.data, now))
       tray.update()
       if (now - lastAliveWrite > ALIVE_WRITE_INTERVAL_MS) {
         lastAliveWrite = now
         store.markAlive()
       }
-      checkExpire(ctx)
     })
 
     const ctx: Ctx = {

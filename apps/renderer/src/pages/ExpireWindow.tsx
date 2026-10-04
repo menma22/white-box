@@ -20,9 +20,10 @@ export function ExpireWindow() {
 
   const breakTimer = state.breakTimer
   if (breakTimer) {
-    const breakElapsedMs = Math.max(0, now - breakTimer.startedAt)
     const breakPlannedMs = breakTimer.endsAt - breakTimer.startedAt
+    const breakElapsedMs = Math.min(breakPlannedMs, Math.max(0, now - breakTimer.startedAt))
     const finished = breakTimer.notifiedAt !== null
+    const needsExtension = state.sessions.find((session) => session.id === tick.sessionId)?.expiredNotifiedAt != null
     return (
       <div className="win expire drag">
         <div className="expire-ring">
@@ -35,8 +36,8 @@ export function ExpireWindow() {
         <p className="expire-task">再開するまで実作業時間には入らない</p>
         {finished && (
           <div className="expire-actions no-drag">
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => void invoke('session:resume')} autoFocus>
-              再開する
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => void (needsExtension ? invoke('session:extend', { minutes: extendMinutes }) : invoke('session:resume'))} autoFocus>
+              {needsExtension ? `+${extendMinutes}分 続ける` : '再開する'}
             </button>
             <button type="button" className="btn btn-solid btn-lg" onClick={() => void invoke('session:end')}>
               終了する
@@ -66,6 +67,7 @@ export function ExpireWindow() {
         {taskTitle(state, tick.activeTaskId)}
       </p>
       {overMs > 0 && <p className="expire-over num">超過 +{formatDuration(overMs, 'compact')}</p>}
+      {overMs === 0 && <p className="expire-over">続けるまで実作業時間は増えない</p>}
 
       <div className="expire-actions no-drag">
         <button type="button" className="btn btn-primary btn-lg" onClick={() => void invoke('session:end')} autoFocus>

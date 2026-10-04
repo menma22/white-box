@@ -1,7 +1,7 @@
 /**
  * 起動時の復旧と、毎秒の満了判定。どちらも業務ルールなので app 層に置く（electron を知らない）。
  */
-import { isPaused, remainingMs } from '@white-box/core/engine'
+import { isPaused } from '@white-box/core/engine'
 import * as ops from '../domain/session-ops.js'
 import type { Ctx } from './ports.js'
 import { buildBreakTimer, liveSession, replaceSession } from './state.js'
@@ -35,18 +35,19 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs: number): void {
 
 /** 予定時間に到達していたら満了の印を付け、満了ポップアップを出す。 */
 export function checkExpire(ctx: Ctx): void {
-  const s = liveSession(ctx.store.data)
+  let s = liveSession(ctx.store.data)
   if (!s) return
   const now = ctx.now()
+  const expired = ops.markExpired(s, now)
+  if (expired !== s) {
+    replaceSession(ctx.store.data, expired)
+    s = expired
+    ctx.publish()
+    ctx.windows.open('expire')
+  }
   const breakTimer = buildBreakTimer(ctx.store.data)
   if (breakTimer && breakTimer.notifiedAt === null && now >= breakTimer.endsAt) {
     replaceSession(ctx.store.data, ops.markBreakExpired(s, now))
-    ctx.publish()
-    ctx.windows.open('expire')
-    return
-  }
-  if (!isPaused(s) && s.expiredNotifiedAt === null && remainingMs(s, now) <= 0) {
-    replaceSession(ctx.store.data, ops.markExpired(s, now))
     ctx.publish()
     ctx.windows.open('expire')
   }

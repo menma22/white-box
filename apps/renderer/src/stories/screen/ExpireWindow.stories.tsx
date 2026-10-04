@@ -12,9 +12,9 @@ const activeTaskId = state.tasks[0]!.id
 
 const justExpiredTick: LiveTick = {
   sessionId: 'ses_live',
-  state: 'running',
+  state: 'paused',
   elapsedMs: 50 * MIN,
-  remainingMs: -1 * MIN,
+  remainingMs: 0,
   plannedMs: 50 * MIN,
   activeTaskId,
 }

@@ -12,6 +12,7 @@ import {
   formatDuration,
   isPaused,
   MINUTE,
+  plannedReachedAt,
   totalRangeMs,
 } from '@white-box/core/engine'
 
@@ -72,8 +73,10 @@ export function pauseSession(session: Session, now: number, reason: PauseInterva
 }
 
 export function startBreak(session: Session, minutes: number, now: number): Session {
-  if (session.endedAt || isPaused(session) || !Number.isFinite(minutes) || minutes <= 0) return session
+  if (session.endedAt !== null || !Number.isFinite(minutes) || minutes <= 0) return session
+  if (session.pauses.some((p) => p.endedAt === null && p.reason !== 'expired')) return session
   const next = clone(session)
+  for (const p of next.pauses) if (p.endedAt === null && p.reason === 'expired') p.endedAt = now
   next.pauses.push({
     startedAt: now,
     endedAt: null,
@@ -101,7 +104,7 @@ export function markBreakExpired(session: Session, now: number): Session {
 }
 
 export function resumeSession(session: Session, now: number): Session {
-  if (session.endedAt || !isPaused(session)) return session
+  if (session.endedAt || !isPaused(session) || session.expiredNotifiedAt !== null) return session
   const next = clone(session)
   for (const p of next.pauses) {
     if (p.endedAt === null) p.endedAt = now
@@ -124,25 +127,33 @@ export function switchTask(session: Session, taskId: ID, taskTitle: string, now:
 }
 
 export function extendSession(session: Session, minutes: number, now: number): Session {
-  if (session.endedAt) return session
+  if (session.endedAt !== null || !Number.isFinite(minutes) || minutes <= 0) return session
   const next = clone(session)
   next.plannedMs += minutes * MINUTE
   next.expiredNotifiedAt = null
+  for (const p of next.pauses) {
+    if (p.endedAt === null && (p.reason === 'expired' || (session.expiredNotifiedAt !== null && p.reason === 'break'))) p.endedAt = now
+  }
+  next.state = isPaused(next) ? 'paused' : 'running'
   pushEvent(next, now, 'extended', `延長 +${minutes}分`, { minutes })
   return next
 }
 
 export function markExpired(session: Session, now: number): Session {
-  if (session.endedAt || session.expiredNotifiedAt !== null) return session
+  if (session.endedAt !== null || session.expiredNotifiedAt !== null) return session
+  const reachedAt = plannedReachedAt(session, now)
+  if (reachedAt === null) return session
   const next = clone(session)
   next.expiredNotifiedAt = now
-  pushEvent(next, now, 'timer_expired', '予定時間に到達')
+  pushEvent(next, reachedAt, 'timer_expired', '予定時間に到達')
+  next.pauses.push({ startedAt: reachedAt, endedAt: null, reason: 'expired' })
+  next.state = 'paused'
   return next
 }
 
 export function endSession(session: Session, now: number): Session {
   if (session.endedAt) return session
-  const next = clone(session)
+  const next = clone(markExpired(session, now))
   for (const p of next.pauses) {
     if (p.endedAt === null) p.endedAt = now
   }
@@ -241,7 +252,7 @@ function editLabel(before: TimeRange[], after: TimeRange[]): string {
  */
 export function closeAtLastKnown(session: Session, lastKnownAt: number): Session {
   const at = Math.max(lastKnownAt, session.startedAt)
-  const next = clone(session)
+  const next = clone(markExpired(session, at))
   for (const p of next.pauses) {
     if (p.endedAt === null) p.endedAt = Math.min(at, p.startedAt > at ? p.startedAt : at)
   }

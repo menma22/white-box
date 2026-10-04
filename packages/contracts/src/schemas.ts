@@ -34,7 +34,7 @@ export const TaskStatusSchema = z.enum(['inbox', 'todo', 'doing', 'done'])
 export const PrioritySchema = z.enum(['low', 'normal', 'high'])
 export const SessionStateSchema = z.enum(['running', 'paused', 'ended'])
 export const WindowKindSchema = z.enum(['main', 'start', 'hud', 'expire', 'review', 'current'])
-export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'break', 'excluded'])
+export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'break', 'excluded', 'expired'])
 /** 'excluded' は終了後の申告なので session:pause では受けない。 */
 export const LivePauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
 

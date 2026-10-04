@@ -109,7 +109,7 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | 'expired' | null
   plannedEndAt?: number
   notifiedAt?: number | null
 }
@@ -204,7 +204,7 @@ export interface LiveTick {
   sessionId: ID
   state: Exclude<SessionState, 'ended'>
   elapsedMs: number
-  /** 満了後はマイナスになり、超過時間を表す。 */
+  /** 予定時間−実作業時間。負値は旧記録の超過。満了停止により通常0で止まる。 */
   remainingMs: number
   plannedMs: number
   activeTaskId: ID | null
