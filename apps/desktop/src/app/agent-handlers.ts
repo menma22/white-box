@@ -5,7 +5,7 @@ import type { TaskSuggestion } from '@white-box/core/agent'
 import * as taskOps from '../domain/task-ops.js'
 import * as sessionOps from '../domain/session-ops.js'
 import type { Ctx } from './ports.js'
-import { replaceSession } from './state.js'
+import { commitChanges } from './commit.js'
 
 export function createAgentHandlers(ctx: Ctx) {
   const db = () => ctx.store.data
@@ -50,9 +50,7 @@ export function createAgentHandlers(ctx: Ctx) {
         created.push(result.task)
         staged = { ...staged, tasks: result.tasks }
       }
-      db().tasks = staged.tasks
-      db().agentRequests = { ...requests, [args.requestId]: { fingerprint, taskIds: created.map((task) => task.id) } }
-      ctx.publish()
+      commitChanges(ctx, { tasks: staged.tasks, agentRequests: { ...requests, [args.requestId]: { fingerprint, taskIds: created.map((task) => task.id) } } })
       return created
     },
     'agent:propose': (args: ArgsOf<'agent:propose'>): ResultOf<'agent:propose'> => {
@@ -70,13 +68,14 @@ export function createAgentHandlers(ctx: Ctx) {
         title: task?.title ?? args.title!, reason: args.reason, markDone: args.markDone ?? false,
         status: 'pending', createdAt: ctx.now(), resolvedAt: null,
       }
-      db().taskSuggestions = [...(db().taskSuggestions ?? []), suggestion]
-      ctx.publish()
+      commitChanges(ctx, { taskSuggestions: [...(db().taskSuggestions ?? []), suggestion] })
       return suggestion
     },
     'agent:resolve': (args: ArgsOf<'agent:resolve'>): null => {
       const suggestion = (db().taskSuggestions ?? []).find((item) => item.id === args.id)
       if (!suggestion || suggestion.status !== 'pending') return null
+      let tasks = db().tasks
+      let sessions = db().sessions
       if (args.accept) {
         const session = db().sessions.find((item) => item.id === suggestion.sessionId)
         if (!session || session.state !== 'ended') throw new Error('対象セッションを確認できません')
@@ -86,12 +85,10 @@ export function createAgentHandlers(ctx: Ctx) {
         const staged = { ...db(), tasks: created?.tasks ?? db().tasks }
         if (!staged.tasks.some((task) => task.id === taskId)) throw new Error('提案されたタスクが見つかりません')
         const updated = sessionOps.editSession(session, { segmentTaskId: taskId }, ctx.now())
-        const tasks = suggestion.markDone ? taskOps.updateTask(staged, taskId, { status: 'done' }) : staged.tasks
-        db().tasks = tasks
-        replaceSession(db(), updated)
+        tasks = suggestion.markDone ? taskOps.updateTask(staged, taskId, { status: 'done' }) : staged.tasks
+        sessions = db().sessions.map((item) => item.id === updated.id ? updated : item)
       }
-      db().taskSuggestions = (db().taskSuggestions ?? []).map((item) => item.id === suggestion.id ? { ...item, status: args.accept ? 'accepted' : 'dismissed', resolvedAt: ctx.now() } : item)
-      ctx.publish()
+      commitChanges(ctx, { tasks, sessions, taskSuggestions: (db().taskSuggestions ?? []).map((item) => item.id === suggestion.id ? { ...item, status: args.accept ? 'accepted' : 'dismissed', resolvedAt: ctx.now() } : item) })
       return null
     },
   }

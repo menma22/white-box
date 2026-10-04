@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { parseArgs } from '@white-box/contracts'
 import type { Session } from '@white-box/core/types'
 import { focusMs } from '@white-box/core/engine'
@@ -84,6 +84,34 @@ describe('AIタスク登録', () => {
 })
 
 describe('AIの実績提案', () => {
+  it('提案の保存失敗をメモリへ残さず、再送で確認待ちを一件だけ作る', () => {
+    const { ctx, handlers } = context()
+    const args = parseArgs('agent:propose', { sessionId: 's', title: '保存し直す提案', reason: '本人のメモ', markDone: true })
+    const before = JSON.stringify(ctx.store.data)
+    vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('保存失敗') })
+    expect(() => handlers['agent:propose'](args)).toThrow('保存失敗')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+    const proposed = handlers['agent:propose'](args)
+    expect(ctx.store.data.taskSuggestions).toHaveLength(1)
+    expect(proposed.status).toBe('pending')
+    expect(ctx.calls).toEqual(['publish'])
+  })
+
+  it.each([false, true])('確認・却下の保存失敗を全体から戻し、同じ操作を再試行できる（採用=%s）', (accept) => {
+    const { ctx, handlers } = context()
+    const proposed = handlers['agent:propose']({ sessionId: 's', title: '保存に失敗する作業', reason: '本人のメモ', markDone: true })
+    const before = JSON.stringify(ctx.store.data)
+    vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('保存失敗') })
+    expect(() => handlers['agent:resolve']({ id: proposed.id, accept })).toThrow('保存失敗')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+    handlers['agent:resolve']({ id: proposed.id, accept })
+    expect(ctx.store.data.taskSuggestions![0]!.status).toBe(accept ? 'accepted' : 'dismissed')
+    expect(ctx.store.data.tasks).toHaveLength(accept ? 2 : 1)
+    const resolved = JSON.stringify(ctx.store.data)
+    handlers['agent:resolve']({ id: proposed.id, accept })
+    expect(JSON.stringify(ctx.store.data)).toBe(resolved)
+  })
+
   it.each([false, true])('確認・却下後の同じ提案の再送は結果を返し、二重反映を防ぐ（採用=%s）', (accept) => {
     const { ctx, handlers } = context()
     const args = parseArgs('agent:propose', { sessionId: 's', title: '再送される調査', reason: '本人のメモ', markDone: true })
