@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { parseArgs } from '@white-box/contracts'
 import type { Session } from '@white-box/core/types'
 import { createAgentHandlers } from '../src/app/agent-handlers.js'
@@ -20,6 +20,20 @@ function context() {
 }
 
 describe('AIタスク登録', () => {
+  it('保存に失敗した登録をメモリと再送履歴へ残さず、再送で一度だけ保存する', () => {
+    const { ctx, handlers } = context()
+    const args = parseArgs('agent:applyPlan', { requestId: 'save-failure', tasks: [{ title: '親' }, { title: '子', parentIndex: 0 }] })
+    const before = JSON.stringify(ctx.store.data)
+    vi.spyOn(ctx, 'publish').mockImplementationOnce(() => { throw new Error('保存失敗') })
+    expect(() => handlers['agent:applyPlan'](args)).toThrow('保存失敗')
+    expect(JSON.stringify(ctx.store.data)).toBe(before)
+    const created = handlers['agent:applyPlan'](args)
+    expect(ctx.store.data.tasks).toHaveLength(3)
+    expect(ctx.store.data.agentRequests?.['save-failure']?.taskIds).toEqual(created.map((item) => item.id))
+    expect(handlers['agent:applyPlan'](args).map((item) => item.id)).toEqual(created.map((item) => item.id))
+    expect(ctx.calls).toEqual(['publish'])
+  })
+
   it('保存時に履歴が消えるrequestIdを登録前に拒否する', () => {
     const { ctx, handlers } = context()
     const before = JSON.stringify(ctx.store.data)

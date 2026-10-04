@@ -3,6 +3,7 @@ import { focusMs } from '@white-box/core/engine'
 import type { Task } from '@white-box/core/types'
 import * as taskOps from '../domain/task-ops.js'
 import type { Ctx } from './ports.js'
+import { commitChanges } from './commit.js'
 
 export function createAgentHandlers(ctx: Ctx) {
   const db = () => ctx.store.data
@@ -47,9 +48,7 @@ export function createAgentHandlers(ctx: Ctx) {
         created.push(result.task)
         staged = { ...staged, tasks: result.tasks }
       }
-      db().tasks = staged.tasks
-      db().agentRequests = { ...requests, [args.requestId]: { fingerprint, taskIds: created.map((task) => task.id) } }
-      ctx.publish()
+      commitChanges(ctx, { tasks: staged.tasks, agentRequests: { ...requests, [args.requestId]: { fingerprint, taskIds: created.map((task) => task.id) } } })
       return created
     },
   }
