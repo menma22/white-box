@@ -17,6 +17,10 @@
       "types": "./dist/goal-map.d.ts",
       "default": "./dist/goal-map.js"
     },
+    "./agent": {
+      "types": "./dist/agent.d.ts",
+      "default": "./dist/agent.js"
+    },
     "./outcome": {
       "types": "./dist/outcome.d.ts",
       "default": "./dist/outcome.js"

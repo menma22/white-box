@@ -5,6 +5,8 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { AgentRequestRecord } from './agent.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
@@ -186,6 +188,7 @@ export interface Settings {
   showSessionCard: boolean
   /** 初回オンボーディングを終えた時刻。null は未完了。 */
   onboardedAt: number | null
+  enableAgentApi?: boolean
 }
 
 export interface Database {
@@ -195,6 +198,7 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  agentRequests?: Record<string, AgentRequestRecord>
   goalMap: GoalMap
   goalMapImports?: string[]
 }

@@ -5,6 +5,7 @@
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
 import { app, BrowserWindow, powerMonitor } from 'electron'
+import path from 'node:path'
 import { dayKey } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
 import { createHandlers, dispatch, type Handlers } from '../app/handlers.js'
@@ -18,6 +19,7 @@ import { createTray } from '../infra/tray.js'
 import { createTicker } from '../infra/ticker.js'
 import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow } from '../infra/windows.js'
 import { registerIpc } from './ipc.js'
+import { createAgentService } from '../infra/agent-service.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000
 /** これより長く記録が途切れていたら、PC が落ちていたとみなす。 */
@@ -34,6 +36,7 @@ if (!app.requestSingleInstanceLock()) {
     const store = new Store()
     const runtime = newRuntime()
     let handlers: Handlers
+    let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
 
     const tray = createTray({
@@ -69,6 +72,7 @@ if (!app.requestSingleInstanceLock()) {
       },
       ticker,
       system: {
+        agentConfig: () => JSON.stringify({ mcpServers: { 'white-box': { command: process.execPath, args: [path.join(APP_ROOT, 'scripts', 'white-box-mcp.mjs')], env: { ELECTRON_RUN_AS_NODE: '1', WHITEBOX_AGENT_CONFIG: path.join(store.dir, 'agent-connection.json') } } } }, null, 2),
         applyShortcuts: () =>
           applyShortcuts(store.data.settings.shortcuts, () => void dispatch(handlers, 'session:toggle', {})),
         applyLoginItem: () => {
@@ -85,10 +89,12 @@ if (!app.requestSingleInstanceLock()) {
         store.save()
         broadcast('whitebox:state', buildState(store.data, runtime, Date.now()))
         tray.update()
+        agentService?.refresh()
       },
     }
 
     handlers = createHandlers(ctx)
+    agentService = createAgentService(ctx, store.dir, handlers)
     registerIpc(handlers)
 
     restoreOpenSession(ctx, CRASH_GAP_MS)
@@ -125,6 +131,7 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     app.on('before-quit', () => {
+      agentService?.stop()
       store.markAlive()
       store.save()
     })

@@ -6,6 +6,7 @@
  * args を緩い object にすると、綴り違いのキーが zod に黙って捨てられ、無反応のまま成功が返る。
  */
 import { z } from 'zod'
+import { AgentPlanEntrySchema } from './agent.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -29,6 +30,20 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  'agent:config': { args: NoArgs, result: z.string() },
+  'agent:context': {
+    args: z.strictObject({ projectId: z.string().optional() }),
+    result: z.object({
+      projects: z.array(ProjectSchema),
+      tasks: z.array(TaskSchema),
+      goals: z.array(GoalNodeSchema),
+      sessions: z.array(z.object({ id: z.string(), startedAt: z.number(), endedAt: z.number().nullable(), taskIds: z.array(z.string()), focusMs: z.number() })),
+    }),
+  },
+  'agent:applyPlan': {
+    args: z.strictObject({ requestId: z.string().min(1).max(200), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
+    result: z.array(TaskSchema),
+  },
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project

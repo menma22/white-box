@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
+import { AgentRequestsSchema } from '@white-box/contracts'
 
 const DB_VERSION = 1
 
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   stallWarningDays: 3,
   showSessionCard: true,
   onboardedAt: null,
+  enableAgentApi: false,
 }
 
 function emptyDb(): Database {
@@ -54,6 +56,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     sessions: parsed.sessions ?? [],
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     dayNotes: parsed.dayNotes ?? {},
+    agentRequests: AgentRequestsSchema.parse(parsed.agentRequests ?? {}),
     goalMap,
     goalMapImports: parsed.goalMapImports ?? [],
   }

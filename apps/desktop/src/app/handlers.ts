@@ -8,6 +8,7 @@ import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import * as goalOps from '../domain/goal-ops.js'
 import type { Ctx } from './ports.js'
+import { createAgentHandlers } from './agent-handlers.js'
 import { buildBreakTimer, buildState, liveSession, replaceSession, taskTitle } from './state.js'
 
 export type Handlers = {
@@ -18,6 +19,7 @@ export function createHandlers(ctx: Ctx): Handlers {
   const db = () => ctx.store.data
 
   const handlers: Handlers = {
+    ...createAgentHandlers(ctx),
     'state:get': () => buildState(db(), ctx.runtime, ctx.now()),
 
     // ── Project

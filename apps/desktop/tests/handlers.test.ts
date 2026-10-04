@@ -1,6 +1,6 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 44 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全 47 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（44 コマンド）', () => {
+describe('ユースケースの網羅（47 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -31,6 +31,9 @@ describe('ユースケースの網羅（44 コマンド）', () => {
     ctx.runtime.recovery = { sessionId, lastKnownAt: ctx.now() }
 
     const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'agent:config': {},
+      'agent:context': {},
+      'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
       'state:get': {},
       'project:create': { name: 'P' },
       'project:update': { id: 'p1', patch: { name: 'P2' } },
