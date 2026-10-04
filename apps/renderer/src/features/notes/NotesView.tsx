@@ -5,8 +5,8 @@ import { Button } from '@/components/ui'
 import { invoke } from '@/lib/bridge'
 import { NoteEditor, type NoteEditorHandle } from './NoteEditor'
 
-export function NotesView({ data, initialNoteId, onJumpHandled }: {
-  data: AppState; initialNoteId?: string | null; onJumpHandled?: () => void
+export function NotesView({ data, now = Date.now(), initialNoteId, onJumpHandled }: {
+  data: AppState; now?: number; initialNoteId?: string | null; onJumpHandled?: () => void
 }) {
   const [query, setQuery] = useState('')
   const [project, setProject] = useState('all')
@@ -82,10 +82,10 @@ export function NotesView({ data, initialNoteId, onJumpHandled }: {
         <div className="notes-list">{notes.map((note) => <button key={note.id} type="button" className={`note-list-item${selectedId === note.id ? ' note-list-selected' : ''}`} aria-pressed={selectedId === note.id} onClick={() => void choose(note.id)}>
           <span className="note-list-title">{note.pinned && <span className="note-list-pin" aria-label="ピン留め">● </span>}{noteTitle(note)}</span>
           <span className="note-list-preview">{note.body.trim() || '本文はまだない'}</span>
-          <span className="note-list-meta">{new Date(note.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}</span>
+          <span className="note-list-meta">{new Date(note.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}{note.remindAt !== null && ' · リマインドあり'}</span>
         </button>)}{!notes.length && <p className="notes-empty-list">{query || pinned || project !== 'all' ? '条件に合うノートはない。' : archived ? 'アーカイブしたノートはない。' : 'まだノートはない。浮かんだことを残しておこう。'}</p>}</div>
       </aside>
-      {selected ? <NoteEditor key={selected.id} ref={editor} note={selected} projects={data.projects} tasks={data.tasks} onArchive={(value) => void archive(value)} /> : <div className="notes-empty-editor"><h2>続きへ戻る場所</h2><p>ノートを選ぶか、新しく書き始めよう。</p><Button variant="primary" disabled={creating} onClick={() => void create()}>ノートを書く</Button></div>}
+      {selected ? <NoteEditor key={selected.id} ref={editor} note={selected} projects={data.projects} tasks={data.tasks} now={now} onArchive={(value) => void archive(value)} /> : <div className="notes-empty-editor"><h2>続きへ戻る場所</h2><p>ノートを選ぶか、新しく書き始めよう。</p><Button variant="primary" disabled={creating} onClick={() => void create()}>ノートを書く</Button></div>}
     </div>
   </div>
 }

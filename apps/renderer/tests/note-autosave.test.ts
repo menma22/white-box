@@ -3,7 +3,7 @@ import type { Note, NotePatch } from '@white-box/core/notes'
 import { NoteAutosave } from '../src/features/notes/note-autosave.js'
 
 function note(patch: Partial<Note> = {}): Note {
-  return { id: 'n', title: '元のタイトル', body: '元の本文', projectId: null, taskId: null, pinned: false, archived: false, createdAt: 1, updatedAt: 1, ...patch }
+  return { id: 'n', title: '元のタイトル', body: '元の本文', projectId: null, taskId: null, pinned: false, archived: false, remindAt: null, remindedAt: null, createdAt: 1, updatedAt: 1, ...patch }
 }
 function pending() {
   let resolve!: () => void

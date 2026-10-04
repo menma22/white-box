@@ -7,10 +7,16 @@ import { NoteAutosave } from './note-autosave'
 
 export interface NoteEditorHandle { flush(): Promise<boolean> }
 
+export function localDateTime(timestamp: number | null): string {
+  if (timestamp === null) return ''
+  const date = new Date(timestamp)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 export const NoteEditor = forwardRef<NoteEditorHandle, {
-  note: Note; projects: Project[]; tasks: Task[]; onArchive: (archived: boolean) => void
-}>(function NoteEditor({ note, projects, tasks, onArchive }, ref) {
+  note: Note; projects: Project[]; tasks: Task[]; now: number; onArchive: (archived: boolean) => void
+}>(function NoteEditor({ note, projects, tasks, now, onArchive }, ref) {
   const controller = useRef<NoteAutosave | null>(null)
   if (!controller.current) controller.current = new NoteAutosave(note, (patch) => invoke('note:update', { id: note.id, patch }))
   const autosave = controller.current
@@ -37,7 +43,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, {
       <Button size="sm" onClick={() => onArchive(!note.archived)}>{note.archived ? '一覧に戻す' : 'アーカイブ'}</Button>
     </div>
     {state.error && <div className="note-error" role="alert"><span>保存できなかった：{state.error}。入力はこの画面に残っている。</span><Button size="sm" onClick={() => void autosave.flush()}>もう一度保存</Button></div>}
-    {note.archived && <p className="note-archive-label">アーカイブ中。</p>}
+    {note.archived && <p className="note-archive-label">アーカイブ中。リマインドは止まっている。</p>}
     <input className="note-title-input" aria-label="ノートのタイトル" placeholder="タイトル" value={draft.title} autoFocus onChange={(event) => autosave.update({ title: event.target.value })} />
     <div className="note-links">
       <label>プロジェクト<select className="input" aria-label="ノートのプロジェクト" value={draft.projectId ?? ''} onChange={(event) => autosave.update({ projectId: event.target.value || null, taskId: null })}>
@@ -55,6 +61,14 @@ export const NoteEditor = forwardRef<NoteEditorHandle, {
       </select></label>
     </div>
     <textarea className="note-body-input" aria-label="ノートの本文" placeholder="浮かんだこと、次に戻る場所を書いておく。" value={draft.body} onChange={(event) => autosave.update({ body: event.target.value })} />
+    <div className="note-reminder-control"><label>思い出す日時<input className="input" type="datetime-local" aria-label="リマインドの日時" value={localDateTime(draft.remindAt)} onChange={(event) => {
+      if (!event.target.value) autosave.update({ remindAt: null })
+      else { const timestamp = new Date(event.target.value).getTime(); if (Number.isFinite(timestamp)) autosave.update({ remindAt: timestamp }) }
+    }} /></label>
+      <Button size="sm" onClick={() => autosave.update({ remindAt: now + 60 * 60 * 1000 })}>1時間後</Button>
+      <Button size="sm" onClick={() => autosave.update({ remindAt: now + 24 * 60 * 60 * 1000 })}>明日</Button>
+      {draft.remindAt !== null && <Button size="sm" onClick={() => autosave.update({ remindAt: null })}>日時を外す</Button>}
+    </div>
     <p className="note-editor-hint">入力は自動で保存する。Ctrl + S でも保存できる。</p>
   </section>
 })

@@ -11,6 +11,8 @@ export const NoteSchema = z.object({
   taskId: z.string().nullable(),
   pinned: z.boolean(),
   archived: z.boolean(),
+  remindAt: Timestamp.nullable().default(null),
+  remindedAt: Timestamp.nullable().default(null),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 })
@@ -21,6 +23,7 @@ export const NoteCreateArgsSchema = z.strictObject({
   projectId: z.string().nullable().optional(),
   taskId: z.string().nullable().optional(),
   pinned: z.boolean().optional(),
+  remindAt: Timestamp.nullable().optional(),
 })
 export const NotePatchSchema = NoteCreateArgsSchema
 
@@ -28,6 +31,7 @@ export const NOTE_COMMANDS = {
   'note:create': { args: NoteCreateArgsSchema, result: NoteSchema },
   'note:update': { args: z.strictObject({ id: z.string(), patch: NotePatchSchema }), result: z.null() },
   'note:archive': { args: z.strictObject({ id: z.string(), archived: z.boolean() }), result: z.null() },
+  'note:markReminded': { args: z.strictObject({ id: z.string(), remindAt: Timestamp }), result: z.null() },
 } as const
 
 type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false

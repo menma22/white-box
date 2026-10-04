@@ -14,6 +14,7 @@ import { WelcomeOverlay } from '@/features/welcome/WelcomeOverlay'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
 import { NotesView } from '@/features/notes/NotesView'
+import { ReminderPanel } from '@/features/notes/ReminderPanel'
 
 type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
@@ -37,6 +38,9 @@ export function MainWindow() {
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
+  const [selectedNote, setSelectedNote] = useState<string | null>(null)
+  const goNote = useCallback((id: string) => { setSelectedNote(id); setTab('notes') }, [])
+  const noteJumpHandled = useCallback(() => setSelectedNote(null), [])
   const [boardView, setBoardView] = useState<'board' | 'list'>('board')
   const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); setTab('goals') }, [])
   const goTasks = useCallback((id?: string) => { setSelectedTask(id ?? null); setBoardView('list'); setTab('board') }, [])
@@ -134,13 +138,14 @@ export function MainWindow() {
 
         <main className="main-content" ref={contentRef}>
           {state.recovery && <RecoveryBanner />}
+          {tab === 'today' && <ReminderPanel notes={state.notes ?? []} now={now} onOpen={goNote} onDismiss={(id) => void invoke('note:update', { id, patch: { remindAt: null } })} />}
           {tab === 'today' && <TodayView />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}
           {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}
           {tab === 'issues' && <GoalIssuesView onJump={jumpGoal} />}
-          {tab === 'notes' && <NotesView data={state} />}
+          {tab === 'notes' && <NotesView data={state} now={now} initialNoteId={selectedNote} onJumpHandled={noteJumpHandled} />}
         </main>
       </div>
 

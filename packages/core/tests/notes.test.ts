@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { noteTitle, selectNotes, type Note } from '../src/notes.js'
+import { noteTitle, selectDueNotes, selectNotes, selectVisibleReminders, type Note } from '../src/notes.js'
 
 function note(id: string, patch: Partial<Note> = {}): Note {
-  return { id, title: id, body: '', projectId: null, taskId: null, pinned: false, archived: false, createdAt: 1, updatedAt: 1, ...patch }
+  return { id, title: id, body: '', projectId: null, taskId: null, pinned: false, archived: false, remindAt: null, remindedAt: null, createdAt: 1, updatedAt: 1, ...patch }
 }
 
 describe('ノートを選ぶ', () => {
   it('古いデータの空一覧と無題に対応する', () => {
     expect(selectNotes(undefined)).toEqual([])
+    expect(selectDueNotes(undefined, 100)).toEqual([])
+    expect(selectVisibleReminders(undefined, 100)).toEqual([])
     expect(noteTitle(note('n', { title: ' ', body: ' 続きへ戻る\n詳細' }))).toBe('続きへ戻る')
     expect(noteTitle(note('n', { title: '', body: '' }))).toBe('無題のノート')
   })
@@ -27,7 +29,13 @@ describe('ノートを選ぶ', () => {
     expect(notes.map((item) => item.id)).toEqual(['old', 'new', 'pin', 'archived'])
   })
 
+  it('期限到達・未通知だけを古い予定順に抽出する', () => {
+    const notes = [note('now', { remindAt: 100 }), note('old', { remindAt: 80 }), note('future', { remindAt: 101 }), note('sent', { remindAt: 90, remindedAt: 95 }), note('archived', { remindAt: 50, archived: true }), note('pin', { pinned: true })]
+    expect(selectDueNotes(notes, 100).map((item) => item.id)).toEqual(['old', 'now'])
+  })
 
-
-
+  it('通知済みも確認まで普段の面に残し、期限到達を先に出す', () => {
+    const notes = [note('future', { remindAt: 200 }), note('pin', { pinned: true }), note('sent', { remindAt: 90, remindedAt: 95 }), note('ordinary'), note('archived', { pinned: true, archived: true })]
+    expect(selectVisibleReminders(notes, 100).map((item) => item.id)).toEqual(['sent', 'pin', 'future'])
+  })
 })

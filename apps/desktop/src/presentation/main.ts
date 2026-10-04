@@ -12,6 +12,7 @@ import { checkExpire, restoreOpenSession } from '../app/lifecycle.js'
 import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
+import { createNoteReminders } from '../infra/note-reminders.js'
 import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
@@ -90,6 +91,7 @@ if (!app.requestSingleInstanceLock()) {
 
     handlers = createHandlers(ctx)
     registerIpc(handlers)
+    const noteReminders = createNoteReminders(ctx)
 
     restoreOpenSession(ctx, CRASH_GAP_MS)
     ctx.system.applyShortcuts()
@@ -125,6 +127,7 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     app.on('before-quit', () => {
+      noteReminders.stop()
       store.markAlive()
       store.save()
     })

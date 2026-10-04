@@ -23,8 +23,12 @@ function links(db: Database, input: NotePatch, previous?: Note): { projectId: st
   return { projectId, taskId }
 }
 
+function validateReminder(remindAt: number | null | undefined): void {
+  if (remindAt != null && (!Number.isSafeInteger(remindAt) || remindAt < 0 || remindAt > 8_640_000_000_000_000)) throw new Error('日時を正しく指定する')
+}
 
 export function createNote(db: Database, input: NoteCreateInput, now: number, id: string): { note: Note; notes: Note[] } {
+  validateReminder(input.remindAt)
   const note: Note = {
     id,
     title: input.title ?? '',
@@ -32,6 +36,8 @@ export function createNote(db: Database, input: NoteCreateInput, now: number, id
     ...links(db, input),
     pinned: input.pinned ?? false,
     archived: false,
+    remindAt: input.remindAt ?? null,
+    remindedAt: null,
     createdAt: now,
     updatedAt: now,
   }
@@ -40,9 +46,11 @@ export function createNote(db: Database, input: NoteCreateInput, now: number, id
 
 export function updateNote(db: Database, id: string, patch: NotePatch, now: number): Note[] {
   const previous = requireNote(db, id)
+  validateReminder(patch.remindAt)
   const clean = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) as NotePatch
   const next = {
     ...previous, ...clean, ...links(db, clean, previous), updatedAt: now,
+    remindedAt: clean.remindAt !== undefined && clean.remindAt !== previous.remindAt ? null : previous.remindedAt,
   }
   return db.notes!.map((note) => note.id === id ? next : note)
 }
@@ -50,4 +58,9 @@ export function updateNote(db: Database, id: string, patch: NotePatch, now: numb
 export function archiveNote(db: Database, id: string, archived: boolean, now: number): Note[] {
   requireNote(db, id)
   return db.notes!.map((note) => note.id === id ? { ...note, archived, updatedAt: now } : note)
+}
+
+export function markNoteReminded(db: Database, id: string, remindAt: number, now: number): Note[] {
+  return (db.notes ?? []).map((note) => note.id === id && !note.archived && note.remindAt === remindAt
+    && remindAt <= now && note.remindedAt === null ? { ...note, remindedAt: now } : note)
 }

@@ -4,10 +4,10 @@ export type NoteDraft = Required<NotePatch>
 export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error'
 export interface NoteDraftState { draft: NoteDraft; status: SaveStatus; error: string }
 
-const fields = ['title', 'body', 'projectId', 'taskId', 'pinned'] as const
+const fields = ['title', 'body', 'projectId', 'taskId', 'pinned', 'remindAt'] as const
 
 export function noteDraft(note: Note): NoteDraft {
-  return { title: note.title, body: note.body, projectId: note.projectId, taskId: note.taskId, pinned: note.pinned }
+  return { title: note.title, body: note.body, projectId: note.projectId, taskId: note.taskId, pinned: note.pinned, remindAt: note.remindAt }
 }
 
 function difference(draft: NoteDraft, saved: NoteDraft): NotePatch {

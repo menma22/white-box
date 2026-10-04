@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createNote, updateNote, archiveNote } from '../src/domain/note-ops.js'
+import { selectDueNotes } from '@white-box/core/notes'
+import { createNote, updateNote, archiveNote, markNoteReminded } from '../src/domain/note-ops.js'
 import { createNoteHandlers } from '../src/app/note-handlers.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
@@ -9,7 +10,7 @@ describe('ノートの変更', () => {
     const result = createNote(db, { body: '考えたこと' }, 100, 'n')
     expect(db.notes).toBeUndefined()
     expect(result.notes).toEqual([result.note])
-    expect(result.note).toMatchObject({ id: 'n', title: '', body: '考えたこと', pinned: false, archived: false, createdAt: 100, updatedAt: 100 })
+    expect(result.note).toMatchObject({ id: 'n', title: '', body: '考えたこと', pinned: false, archived: false, remindAt: null, remindedAt: null, createdAt: 100, updatedAt: 100 })
   })
 
   it('タスクのプロジェクトを導き、存在しない関連先と矛盾した関連先を拒む', () => {
@@ -36,26 +37,43 @@ describe('ノートの変更', () => {
     expect(() => updateNote(db, 'missing', {}, 200)).toThrow('ノート')
   })
 
-  it('アーカイブは本文とピンを残し、復元できる', () => {
+  it('アーカイブは本文と予定を残して通知から外し、復元できる', () => {
     const db = emptyDb()
-    db.notes = createNote(db, { body: '残す', pinned: true }, 10, 'n').notes
+    db.notes = createNote(db, { body: '残す', pinned: true, remindAt: 50 }, 10, 'n').notes
     const original = db.notes
     db.notes = archiveNote(db, 'n', true, 100)
-    expect(db.notes[0]).toMatchObject({ body: '残す', pinned: true, archived: true })
+    expect(selectDueNotes(db.notes, 100)).toEqual([])
+    expect(db.notes[0]).toMatchObject({ body: '残す', pinned: true, archived: true, remindAt: 50 })
     expect(original[0]!.archived).toBe(false)
     db.notes = archiveNote(db, 'n', false, 110)
-    expect(db.notes[0]!.archived).toBe(false)
+    expect(selectDueNotes(db.notes, 110)).toHaveLength(1)
   })
 
-
+  it('通知の印は同じ期限だけに一度付け、日時変更を再び通知対象にする', () => {
+    const db = emptyDb()
+    db.notes = createNote(db, { remindAt: 100 }, 10, 'n').notes
+    expect(markNoteReminded(db, 'n', 100, 99)[0]!.remindedAt).toBeNull()
+    db.notes = markNoteReminded(db, 'n', 100, 110)
+    expect(selectDueNotes(db.notes, 120)).toEqual([])
+    expect(markNoteReminded(db, 'n', 100, 120)[0]!.remindedAt).toBe(110)
+    db.notes = updateNote(db, 'n', { body: '本文のみ' }, 130)
+    expect(db.notes[0]!.remindedAt).toBe(110)
+    db.notes = updateNote(db, 'n', { remindAt: 150 }, 140)
+    expect(db.notes[0]!.remindedAt).toBeNull()
+    db.notes = markNoteReminded(db, 'n', 100, 160)
+    expect(selectDueNotes(db.notes, 160)).toHaveLength(1)
+    db.notes = updateNote(db, 'n', { remindAt: null }, 170)
+    expect(selectDueNotes(db.notes, 180)).toEqual([])
+  })
 
   it('全ノート操作が状態を配布し、失敗した入力ではデータを変更しない', () => {
     const ctx = fakeCtx()
     const handlers = createNoteHandlers(ctx)
-    const note = handlers['note:create']({ title: '開始' })
+    const note = handlers['note:create']({ title: '開始', remindAt: ctx.now() })
     handlers['note:update']({ id: note.id, patch: { body: '続き', pinned: true } })
+    handlers['note:markReminded']({ id: note.id, remindAt: ctx.now() })
     handlers['note:archive']({ id: note.id, archived: true })
-    expect(ctx.calls.filter((call) => call === 'publish')).toHaveLength(3)
+    expect(ctx.calls.filter((call) => call === 'publish')).toHaveLength(4)
     const before = JSON.stringify(ctx.store.data)
     expect(() => handlers['note:update']({ id: note.id, patch: { taskId: 'missing' } })).toThrow()
     expect(JSON.stringify(ctx.store.data)).toBe(before)

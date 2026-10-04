@@ -14,6 +14,7 @@
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
 | 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物の IPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
 | ノートの統合 | `node scripts/e2e-notes.mjs` | 実Electronのノート作成・自動保存・検索・関連付け・アーカイブ復元・最小画面幅・再起動 |
+| ノート通知 | `node scripts/verify-note-reminders.cjs` | 窓・セッションなしの実Electron OS通知、保存、旧ノート移行、重複防止と監視終了 |
 | 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて両方の E2E を実行 | 組み上げた exe の中で同じことが起きるか |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
 | UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
