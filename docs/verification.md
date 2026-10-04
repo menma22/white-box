@@ -25,6 +25,8 @@ pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && node s
 
 ## 通し確認が見ているもの
 
+Windowsで複数worktreeから実アプリを検証するときは、`powershell -NoProfile -File scripts/run-ui-e2e.ps1 -Worktree . -Scripts e2e.mjs,e2e-goals.mjs` を使う。同じログインセッションの名前付きMutexで、撮影を含むE2E全体を順番に実行する。配布版は `-Executable` に実行ファイルの絶対パスを指定する。型検査・lint・単体テスト・buildは並列に実行できる。
+
 仕様書の MVP 完成条件そのもの。
 
 ```
