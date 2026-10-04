@@ -6,6 +6,7 @@
  * args を緩い object にすると、綴り違いのキーが zod に黙って捨てられ、無反応のまま成功が返る。
  */
 import { z } from 'zod'
+import { PRESENCE_COMMANDS } from './presence.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -29,6 +30,7 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...PRESENCE_COMMANDS,
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project

@@ -20,6 +20,10 @@
     "./outcome": {
       "types": "./dist/outcome.d.ts",
       "default": "./dist/outcome.js"
+    },
+    "./presence": {
+      "types": "./dist/presence.d.ts",
+      "default": "./dist/presence.js"
     }
   },
   "scripts": {

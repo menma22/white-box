@@ -3,6 +3,7 @@
  * スキーマと型がずれると末尾の Exact 検査がコンパイルで落ちる。
  */
 import { z } from 'zod'
+import { PresenceCandidatesSchema } from './presence.js'
 import type {
   AppState,
   GoalHistory,
@@ -226,6 +227,7 @@ export const LiveTickSchema = z.object({
 })
 
 export const AppStateSchema = z.object({
+  presenceCandidates: PresenceCandidatesSchema.optional(),
   revision: z.number(),
   projects: z.array(ProjectSchema),
   tasks: z.array(TaskSchema),

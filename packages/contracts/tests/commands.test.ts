@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 44 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(44)
+  it('コマンドは 45 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(45)
   })
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
@@ -52,6 +52,7 @@ describe('コマンド契約', () => {
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
   const sample: { [N in CommandName]: ArgsOf<N> } = {
+    'presence:resolve': { id: 'candidate', decision: 'dismiss' },
     'state:get': {},
     'project:create': { name: 'P' },
     'project:update': { id: 'p1', patch: { name: 'P2' } },

@@ -5,6 +5,7 @@
  * 直接 fs.writeFile で data.json を上書きしないこと。
  */
 import { app } from 'electron'
+import { PresenceCandidatesSchema } from '@white-box/contracts'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
@@ -55,6 +56,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     dayNotes: parsed.dayNotes ?? {},
     goalMap,
+    presenceCandidates: PresenceCandidatesSchema.parse(parsed.presenceCandidates ?? []),
     goalMapImports: parsed.goalMapImports ?? [],
   }
 }

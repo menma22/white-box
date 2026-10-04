@@ -5,6 +5,8 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { PresenceCandidate } from './presence.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
@@ -196,6 +198,7 @@ export interface Database {
   settings: Settings
   dayNotes: Record<string, string>
   goalMap: GoalMap
+  presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
 }
 
@@ -221,6 +224,7 @@ export interface AppState {
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
+  presenceCandidates?: PresenceCandidate[]
   pendingReview: { sessionId: ID; thenStart: boolean } | null
 }
 
