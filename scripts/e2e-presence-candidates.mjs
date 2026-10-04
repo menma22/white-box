@@ -45,28 +45,35 @@ function check(name, condition, details) {
 function connect(url) {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(url)
+    const connectionTimer = setTimeout(() => { socket.close(); reject(new Error('CDP接続がタイムアウトした')) }, 10_000)
     const pending = new Map()
     let sequence = 0
-    socket.addEventListener('error', reject)
+    socket.addEventListener('error', (error) => { clearTimeout(connectionTimer); reject(error) })
     socket.addEventListener('close', () => {
-      for (const callback of pending.values()) callback.reject(new Error('CDP接続が閉じた'))
+      clearTimeout(connectionTimer)
+      for (const callback of pending.values()) { clearTimeout(callback.timer); callback.reject(new Error('CDP接続が閉じた')) }
       pending.clear()
     })
     socket.addEventListener('message', ({ data }) => {
       const message = JSON.parse(data)
       if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails)
+      if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error') errors.push(message.params)
       const callback = pending.get(message.id)
       if (!callback) return
       pending.delete(message.id)
+      clearTimeout(callback.timer)
       if (message.error) callback.reject(new Error(JSON.stringify(message.error)))
       else callback.resolve(message.result)
     })
     socket.addEventListener('open', () => {
+      clearTimeout(connectionTimer)
       const client = {
         close: () => socket.close(),
-        send: (method, params = {}) => new Promise((res, rej) => {
+        send: (method, params = {}, timeoutMs = 10_000) => new Promise((res, rej) => {
+          if (socket.readyState !== WebSocket.OPEN) { rej(new Error('CDP接続が閉じている')); return }
           const id = ++sequence
-          pending.set(id, { resolve: res, reject: rej })
+          const timer = setTimeout(() => { pending.delete(id); rej(new Error(`CDPタイムアウト: ${method}`)) }, timeoutMs)
+          pending.set(id, { resolve: res, reject: rej, timer })
           socket.send(JSON.stringify({ id, method, params }))
         }),
         async evaluate(expression) {
@@ -88,6 +95,7 @@ async function page(kind) {
     if (target) {
       const client = await connect(target.webSocketDebuggerUrl)
       await client.send('Runtime.enable')
+      await client.send('Log.enable')
       for (let ready = 0; ready < 30; ready++) {
         if (await client.evaluate('document.readyState === "complete" && typeof window.whitebox === "object" && !document.querySelector(".boot")').catch(() => false)) return client
         await wait(100)
@@ -108,7 +116,7 @@ async function command(name, args = {}) {
 async function screenshot(client, name) {
   await client.send('Page.bringToFront')
   await wait(250)
-  const { data } = await client.send('Page.captureScreenshot', { format: 'png' })
+  const { data } = await client.send('Page.captureScreenshot', { format: 'png' }, 30_000)
   fs.writeFileSync(path.join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'))
 }
 
