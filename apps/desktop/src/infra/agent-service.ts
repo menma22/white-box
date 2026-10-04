@@ -17,7 +17,7 @@ export function createAgentService(ctx: Ctx, directory: string, handlers: Handle
         console.error('[white-box] AI連携を開始できません:', error)
         ctx.store.data.settings.enableAgentApi = false
         ctx.publish()
-      }).finally(() => { startingAgent = false })
+      }).finally(() => { startingAgent = false; refresh() })
     } else if (!ctx.store.data.settings.enableAgentApi && agent) { agent.close(); agent = null }
   }
   refresh()
