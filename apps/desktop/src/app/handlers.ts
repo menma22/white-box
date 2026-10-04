@@ -13,6 +13,7 @@ import { buildState, liveSession, replaceSession, taskTitle } from './state.js'
 import { checkExpire } from './lifecycle.js'
 import { commitChanges } from './commit.js'
 import { createAgentHandlers } from './agent-handlers.js'
+import { createNoteHandlers } from './note-handlers.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -28,6 +29,7 @@ export function createHandlers(ctx: Ctx): Handlers {
   const handlers: Handlers = {
     ...createPresenceHandlers(ctx),
     ...createAgentHandlers(ctx),
+    ...createNoteHandlers(ctx),
     'state:get': () => buildState(db(), ctx.runtime, ctx.now()),
 
     // ── Project

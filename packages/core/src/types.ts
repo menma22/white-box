@@ -8,6 +8,7 @@
 import type { GoalCriterion } from './goal-criteria.js'
 import type { PresenceCandidate } from './presence.js'
 import type { AgentRequestRecord, TaskSuggestion } from './agent.js'
+import type { Note } from './notes.js'
 
 export type ID = string
 
@@ -213,6 +214,7 @@ export interface Database {
   dayNotes: Record<string, string>
   taskSuggestions?: TaskSuggestion[]
   agentRequests?: Record<string, AgentRequestRecord>
+  notes?: Note[]
   goalMap: GoalMap
   presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
@@ -238,6 +240,7 @@ export interface AppState {
   settings: Settings
   dayNotes: Record<string, string>
   taskSuggestions?: TaskSuggestion[]
+  notes?: Note[]
   goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null

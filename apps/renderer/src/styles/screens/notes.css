@@ -1,0 +1,66 @@
+.notes-view { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.notes-view > * { flex: none; }
+.notes-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 23px 30px 19px; }
+.notes-header h1 { margin: 0; font-family: var(--font-serif); font-size: 27px; font-weight: 500; letter-spacing: .08em; }
+.notes-header p { color: var(--text-3); margin: 5px 0 0; font-size: 12px; }
+.notes-workspace { display: flex; flex: 1; min-height: 0; border-top: 1px solid var(--line); }
+.notes-sidebar { display: flex; flex-direction: column; gap: 11px; width: 290px; flex: none; min-height: 0; padding: 20px 16px; border-right: 1px solid var(--line); background: var(--surface); }
+.notes-sidebar > * { flex: none; }
+.notes-filters { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); }
+.notes-filters label, .note-pin { display: flex; gap: 6px; align-items: center; }
+.notes-filters input, .note-pin input { accent-color: var(--accent); }
+.notes-count { font-size: 11px; color: var(--text-3); }
+.notes-sidebar .notes-list { flex: 1; overflow-y: auto; min-height: 0; }
+.note-list-item { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: var(--r-md); padding: 12px; color: var(--text); cursor: pointer; margin-bottom: 4px; }
+.note-list-item > * { flex: none; }
+.note-list-item:hover { background: var(--surface-2); }
+.note-list-selected { border-color: var(--accent-line); background: var(--accent-soft); }
+.note-list-title { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.note-list-pin { color: var(--accent); font-size: 9px; }
+.note-list-preview { color: var(--text-2); font-size: 11px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+.note-list-meta { color: var(--text-3); font-size: 10px; }
+.notes-empty-list { color: var(--text-3); font-size: 12px; line-height: 1.7; padding: 10px; }
+.notes-empty-editor { display: flex; flex: 1; align-items: flex-start; justify-content: center; flex-direction: column; padding: 45px; gap: 14px; }
+.notes-empty-editor > * { flex: none; }
+.notes-empty-editor h2 { font-family: var(--font-serif); font-weight: 500; font-size: 22px; margin: 0; }
+.notes-empty-editor p { color: var(--text-3); font-size: 12px; margin: 0; }
+.note-editor { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; background: var(--panel); padding: 23px 28px; display: flex; flex-direction: column; gap: 18px; }
+.note-editor > * { flex: none; }
+.note-editor-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.note-pin { font-size: 12px; color: var(--text-2); }
+.note-save-status { margin-left: auto; color: var(--text-3); font-size: 11px; }
+.note-save-error, .note-error { color: var(--rose); }
+.note-error { padding: 10px 16px; background: var(--rose-soft); font-size: 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; overflow-wrap: anywhere; }
+.note-title-input { width: 100%; border: 0; background: transparent; outline: none; color: var(--text); font-family: var(--font-body); font-size: 24px; font-weight: 600; padding: 5px 0; }
+.note-title-input::placeholder { color: var(--text-4); }
+.note-links { display: flex; gap: 16px; }
+.note-links label, .note-reminder-control label { display: flex; flex-direction: column; gap: 6px; color: var(--text-3); font-size: 11px; min-width: 0; }
+.note-links label { flex: 1; }
+.note-body-input { width: 100%; min-height: 230px; flex: 1; resize: vertical; border: 0; outline: none; background: transparent; color: var(--text); font: 14px/1.9 var(--font-body); padding: 4px 0; }
+.note-body-input::placeholder { color: var(--text-4); }
+.note-reminder-control { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 16px; }
+.note-editor-hint, .note-archive-label { margin: 0; color: var(--text-3); font-size: 11px; }
+.note-archive-label { background: var(--surface-2); padding: 10px; border-radius: var(--r-sm); }
+.reminder-panel { margin: 20px 0; }
+.main-content > .reminder-panel { margin: 22px 40px 0; max-width: 1100px; }
+.reminder-panel > header { display: flex; gap: 10px; align-items: baseline; margin-bottom: 11px; }
+.reminder-panel h2 { font-size: 14px; font-weight: 600; margin: 0; }
+.reminder-panel header span { font-size: 11px; color: var(--text-3); }
+.reminder-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.reminder-card { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel); padding: 14px; display: flex; flex-direction: column; gap: 7px; }
+.reminder-card > * { flex: none; }
+.reminder-card-due { border-color: var(--amber); background: var(--amber-dim); }
+.reminder-card-meta { font-size: 10px; color: var(--text-3); }
+.reminder-card-due .reminder-card-meta { color: var(--amber); }
+.reminder-card strong, .reminder-open { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.reminder-open { color: var(--text); cursor: pointer; text-align: left; border: 0; padding: 0; background: none; }
+.reminder-open:hover { color: var(--accent); }
+.reminder-card p { margin: 0; white-space: pre-wrap; font-size: 12px; line-height: 1.7; color: var(--text-2); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.reminder-dismiss { align-self: flex-start; margin-top: auto; padding: 4px 0 0; background: none; border: 0; color: var(--accent); font-size: 11px; cursor: pointer; }
+.note-list-item:focus-visible, .reminder-open:focus-visible, .reminder-dismiss:focus-visible, .note-title-input:focus-visible, .note-body-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 780px) {
+  .notes-header { padding: 20px; }
+  .notes-sidebar { width: 225px; padding: 16px 12px; }
+  .note-editor { padding: 18px; }
+  .note-links { flex-direction: column; gap: 10px; }
+}

@@ -16,6 +16,8 @@
 | 開始通知 | `node scripts/e2e-start-reminder.mjs` | 実設定UI・保存・再起動・監視helperの起動と終了。WHITEBOX_EXE経路も対応 |
 | Windows入力監視 | `node scripts/verify-input-activity.mjs` | 実GetAsyncKeyState helperの数値出力と停止。入力文字・生の回数は証拠に保存しない |
 | 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて各 E2E を実行 | 組み上げた exe の中で同じことが起きるか |
+| ノートの統合 | `node scripts/e2e-notes.mjs` | 実Electronのノート作成・自動保存・検索・関連付け・アーカイブ復元・最小画面幅・再起動 |
+| ノート通知 | `node scripts/verify-note-reminders.cjs` | 窓・セッションなしの実Electron OS通知、保存、旧ノート移行、重複防止と監視終了 |
 | 見た目 | `node scripts/seed-demo.mjs .demo` → `electron scripts/shoot.cjs .demo <出力先>` | 全画面を実際に描画して PNG に落とす（基準は `shots-baseline/`） |
 | UI 部品 | `pnpm run storybook` | 部品と主要画面を状態ごとに並べて見る |
 

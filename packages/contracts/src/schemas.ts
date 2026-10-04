@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PresenceCandidatesSchema } from './presence.js'
 import { TaskSuggestionSchema } from './agent.js'
+import { NoteSchema } from './notes.js'
 import type {
   AppState,
   GoalHistory,
@@ -251,6 +252,7 @@ export const AppStateSchema = z.object({
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
   taskSuggestions: z.array(TaskSuggestionSchema).optional(),
+  notes: z.array(NoteSchema).optional(),
   goalMap: GoalMapSchema,
   live: LiveTickSchema.nullable(),
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),

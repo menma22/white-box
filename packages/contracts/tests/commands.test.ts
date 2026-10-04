@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 50 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(50)
+  it('コマンドは 54 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(54)
   })
 
   it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
@@ -73,6 +73,10 @@ describe('コマンド契約', () => {
     'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
     'agent:propose': { sessionId: 's1', taskId: 't1', reason: '本人の依頼' },
     'agent:resolve': { id: 'suggestion', accept: false },
+    'note:create': { title: 'N' },
+    'note:update': { id: 'n1', patch: { pinned: true } },
+    'note:archive': { id: 'n1', archived: true },
+    'note:markReminded': { id: 'n1', remindAt: 1000 },
     'state:get': {},
     'project:create': { name: 'P' },
     'project:update': { id: 'p1', patch: { name: 'P2' } },

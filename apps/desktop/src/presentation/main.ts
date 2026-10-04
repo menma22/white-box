@@ -14,6 +14,7 @@ import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
 import { createStartReminderService } from '../infra/start-reminder-service.js'
+import { createNoteReminders } from '../infra/note-reminders.js'
 import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
@@ -101,6 +102,7 @@ if (!app.requestSingleInstanceLock()) {
     agentService = createAgentService(ctx, store.dir, handlers)
     registerIpc(handlers)
     startReminderService = createStartReminderService(ctx)
+    const noteReminders = createNoteReminders(ctx)
 
     restoreOpenSession(ctx, CRASH_GAP_MS)
     ctx.system.applyShortcuts()
@@ -139,6 +141,7 @@ if (!app.requestSingleInstanceLock()) {
       runtime.quitting = true
       startReminderService?.stop()
       agentService?.stop()
+      noteReminders.stop()
       store.markAlive()
       store.save()
     })

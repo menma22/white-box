@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PRESENCE_COMMANDS } from './presence.js'
 import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
+import { NOTE_COMMANDS } from './notes.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -53,6 +54,7 @@ export const COMMANDS = {
     result: TaskSuggestionSchema,
   },
   'agent:resolve': { args: z.strictObject({ id: z.string(), accept: z.boolean() }), result: z.null() },
+  ...NOTE_COMMANDS,
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project
