@@ -4,6 +4,7 @@
 @import './screens/view-common.css';
 @import './screens/today.css';
 @import './screens/history.css';
+@import './screens/activity.css';
 @import './screens/board.css';
 @import './screens/settings.css';
 @import './screens/slider.css';

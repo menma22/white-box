@@ -6,6 +6,7 @@ import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Kbd } from '@/components/ui'
 import { BoardView } from '@/features/board/BoardView'
 import { TodayView } from '@/features/today/TodayView'
+import { WeekView } from '@/features/today/WeekView'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { GoalMapView } from '@/features/goals/GoalMapView'
@@ -17,10 +18,11 @@ import { remainingLabel, shortcutLabel } from '@/lib/format'
 import { NotesView, type NotesViewHandle } from '@/features/notes/NotesView'
 import { ReminderPanel } from '@/features/notes/ReminderPanel'
 
-type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
+type Tab = 'today' | 'week' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
 const TABS: { id: Tab; label: string; glyph: string; shortcut: string }[] = [
   { id: 'today', label: '今日', glyph: '◷', shortcut: '1' },
+  { id: 'week', label: '週', glyph: '▦', shortcut: '8' },
   { id: 'board', label: 'ボード', glyph: '▤', shortcut: '2' },
   { id: 'history', label: '記録', glyph: '≣', shortcut: '3' },
   { id: 'goals', label: '道標', glyph: '⌘', shortcut: '5' },
@@ -146,6 +148,7 @@ export function MainWindow() {
           {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} sessions={state.sessions} />}
           {tab === 'today' && <ReminderPanel notes={state.notes ?? []} now={now} onOpen={goNote} onDismiss={(id) => void invoke('note:update', { id, patch: { remindAt: null } })} />}
           {tab === 'today' && <TodayView />}
+          {tab === 'week' && <WeekView />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}

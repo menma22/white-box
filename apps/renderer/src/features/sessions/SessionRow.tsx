@@ -19,7 +19,7 @@ import {
   unpausedRanges,
 } from '@white-box/core/engine'
 
-export function SessionRow({ session, now }: { session: Session; now: number }) {
+export function SessionRow({ session, now, inPeriod }: { session: Session; now: number; inPeriod?: { ms: number; label: string } }) {
   const state = useData()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -74,7 +74,7 @@ export function SessionRow({ session, now }: { session: Session; now: number }) 
               </span>
             )}
             {session.editedAt && <span className="srow-edited" title="手で修正した記録">修正</span>}
-            <span className="num srow-focus">{formatDuration(focusMs(session, end), 'compact')}</span>
+            <span className="num srow-focus">{formatDuration(inPeriod?.ms ?? focusMs(session, end), 'compact')}{inPeriod && <small className="srow-scope">{inPeriod.label} / 全体 {formatDuration(focusMs(session, end), 'compact')}</small>}</span>
           </span>
         </button>
 
