@@ -18,6 +18,7 @@
 | 依存関係・外部待ち | `node scripts/e2e-dependencies.mjs` | 旧DB互換・開始ガード・循環拒否・削除後のリンク保持・外部待ちUI・確認導線・保存と再起動。WHITEBOX_EXE経路対応 |
 | 週の時間配分・固定予定・再開文脈 | `node scripts/e2e-phase2-planning.mjs` | 実画面での4方式の週予算、未入力・再利用・下書き、Project Priority、Fixed Work、Task/linked Note、保存失敗時の入力保持、別窓からの終了・切替、自然終了・再起動。WHITEBOX_EXE経路対応 |
 | 終了イベント・保存・窓・PID | `node scripts/e2e-quit.mjs` | 隔離したソース版で実際の終了イベントと保存、自然終了・再起動後のDB全体、所有PIDの不在を観測。`WHITEBOX_QUIT_LIVE=1`で複数窓、`WHITEBOX_QUIT_OBSERVER=0`で観測器なしでも確認 |
+| 所有プロセスの判定 | `node --test scripts/owned-processes.test.mjs` | PIDと作成時刻で所有を照合し、子・孫・親が終了した後の子を検出する。同名・別名のPID再利用を残存と取り違えず、旧PIDだけの判定が誤検出する実例も確認 |
 | 開始通知 | `node scripts/e2e-start-reminder.mjs` | 実設定UI・保存・再起動・監視helperの起動と終了。WHITEBOX_EXE経路も対応 |
 | Windows入力監視 | `node scripts/verify-input-activity.mjs` | 実GetAsyncKeyState helperの数値出力と停止。入力文字・生の回数は証拠に保存しない |
 | 配布物 | `pnpm run pack` → `WHITEBOX_EXE="release/White Box/White Box.exe"` を付けて各 E2E を実行 | 組み上げた exe の中で同じことが起きるか |
