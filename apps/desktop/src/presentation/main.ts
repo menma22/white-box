@@ -38,7 +38,7 @@ if (!app.requestSingleInstanceLock()) {
     const store = new Store()
     setWindowDraftProfile(createHash('sha256').update(path.resolve(store.dir).toLowerCase()).digest('hex'))
     const runtime = newRuntime()
-    setWindowOpeningGuard(() => !runtime.quitting)
+    setWindowOpeningGuard(() => !runtime.quitting && !runtime.preparingQuit)
     const editors = new RendererFlush((kinds = ['main', 'current']) => kinds.flatMap((kind) => {
       const win = getWindow(kind)
       return win ? [{ id: win.webContents.id, kind,
@@ -51,7 +51,7 @@ if (!app.requestSingleInstanceLock()) {
       if (typeof ready === 'boolean') editors.setReady(event.sender.id, ready)
     })
     ipcMain.on('whitebox:flush-reply', (event, reply: unknown) => editors.reply(event.sender.id, reply))
-    setWindowCloseGuard((kind) => editors.prepare('close', [kind]))
+    setWindowCloseGuard((kind) => editors.prepare('close', [kind]), () => runtime.quitting)
     let handlers: Handlers
     let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
@@ -160,12 +160,11 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('unlock-screen', onWake)
 
     let quitPrepared = false
-    let preparingQuit = false
     app.on('before-quit', (event) => {
       if (quitPrepared) return
       event.preventDefault()
-      if (preparingQuit) return
-      preparingQuit = true
+      if (runtime.preparingQuit) return
+      runtime.preparingQuit = true
       void editors.prepare('quit').then((release) => {
         try {
           prepareQuit(ctx)
@@ -178,7 +177,7 @@ if (!app.requestSingleInstanceLock()) {
       }).catch((cause) => {
         console.error('[white-box] 終了前の保存に失敗:', cause)
         dialog.showErrorBox('終了できません', `データを保存できなかったため、終了を取り消しました。\n${String(cause)}`)
-      }).finally(() => { preparingQuit = false })
+      }).finally(() => { runtime.preparingQuit = false })
     })
   })
 

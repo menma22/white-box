@@ -16,7 +16,9 @@ afterEach(() => vi.useRealTimers())
 describe('renderer flush acknowledgement', () => {
   it('waits for the matching sender and keeps a closing window locked until native close', async () => {
     const current = target(10)
-    const manager = new RendererFlush(() => [current])
+    let open = true
+    current.onClosed(() => { open = false })
+    const manager = new RendererFlush(() => open ? [current] : [])
     manager.setReady(10, true)
     const prepared = manager.prepare('end')
     const request = current.send.mock.calls[0]![1] as { id: string }
@@ -62,6 +64,37 @@ describe('renderer flush acknowledgement', () => {
     await assertion
     expect(current.focus).toHaveBeenCalledOnce()
     expect(current.send.mock.calls.map((call) => call[0])).toEqual(['whitebox:flush-request', 'whitebox:flush-release'])
+  })
+
+  it('includes a loading window and waits for its editor readiness and acknowledgement', async () => {
+    const current = target(10)
+    const manager = new RendererFlush(() => [current])
+    const prepared = manager.prepare('quit')
+    let finished = false
+    void prepared.then(() => { finished = true })
+    await Promise.resolve()
+    expect(finished).toBe(false)
+    expect(current.send).not.toHaveBeenCalled()
+    manager.setReady(10, true)
+    const request = current.send.mock.calls[0]![1] as { id: string; reason: string }
+    expect(request.reason).toBe('quit')
+    manager.reply(10, { id: request.id, ok: true })
+    const release = await prepared
+    expect(finished).toBe(true)
+    release()
+    expect(current.send).toHaveBeenCalledWith('whitebox:flush-release', request.id)
+  })
+
+  it('vetoes when an existing window never becomes ready', async () => {
+    vi.useFakeTimers()
+    const current = target(10)
+    const manager = new RendererFlush(() => [current], 100)
+    const prepared = manager.prepare('quit')
+    const assertion = expect(prepared).rejects.toThrow('操作を取り消しました')
+    await vi.advanceTimersByTimeAsync(100)
+    await assertion
+    expect(current.focus).toHaveBeenCalledOnce()
+    expect(current.send.mock.calls.map((call) => call[0])).toEqual(['whitebox:flush-release'])
   })
 })
 
@@ -112,5 +145,26 @@ describe('commands originating outside the editor window', () => {
     expect(() => handlers['task:update']({ id: 'first', patch: { title: 'late' } })).toThrow('終了中')
     expect(ctx.store.data.tasks[0]!.title).not.toBe('late')
     expect(ctx.calls).toEqual([])
+  })
+
+  it('allows draft saves while preparing to quit and blocks new work, windows and waiting transitions', async () => {
+    const { ctx, handlers } = context()
+    let acknowledge!: () => void
+    ctx.windows.prepareEditors = () => new Promise((resolve) => { acknowledge = () => resolve(() => {}) })
+    const switchTask = handlers['session:switchTask']({ taskId: 'next' })
+    ctx.runtime.preparingQuit = true
+    const before = structuredClone(ctx.store.data)
+    expect(() => handlers['session:start']({ taskId: 'next', minutes: 50 })).toThrow('終了中')
+    expect(() => handlers['window:open']({ kind: 'current' })).toThrow('終了中')
+    expect(() => handlers['task:create']({ title: 'late' })).toThrow('終了中')
+    expect(ctx.store.data).toEqual(before)
+    expect(ctx.calls).toEqual([])
+    await handlers['task:update']({ id: 'first', patch: { nextContext: '終了前に保存する文脈' } })
+    expect(ctx.store.data.tasks[0]!.nextContext).toBe('終了前に保存する文脈')
+    acknowledge()
+    await expect(switchTask).rejects.toThrow('終了中')
+    expect(ctx.store.data.sessions).toEqual(before.sessions)
+    ctx.runtime.preparingQuit = false
+    expect(() => handlers['window:open']({ kind: 'current' })).not.toThrow()
   })
 })

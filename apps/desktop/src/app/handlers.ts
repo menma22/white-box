@@ -400,15 +400,19 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
   }
+  const quitSaveCommands = new Set<CommandName>(['state:get', 'app:quit', 'task:update', 'project:update', 'note:update', 'fixedWork:create', 'fixedWork:update'])
   function guard<N extends CommandName>(name: N, reason?: 'end' | 'switch' | 'import') {
     const original = handlers[name] as (args: ArgsOf<N>) => ResultOf<N> | Promise<ResultOf<N>>
+    const assertAvailable = () => {
+      if (ctx.runtime.quitting && name !== 'state:get' || ctx.runtime.preparingQuit && !quitSaveCommands.has(name)) throw new Error('アプリを終了中です')
+    }
     handlers[name] = ((args: ArgsOf<N>) => {
-      if (ctx.runtime.quitting && name !== 'state:get') throw new Error('アプリを終了中です')
+      assertAvailable()
       if (!reason || !ctx.windows.prepareEditors) return original(args)
       return ctx.windows.prepareEditors(reason, reason === 'import' ? undefined : ['current']).then(async (release) => {
         let closing: WindowKind[] = []
         try {
-          if (ctx.runtime.quitting) throw new Error('アプリを終了中です')
+          assertAvailable()
           const endsCurrent = name === 'session:end' && Boolean(currentSession())
           const result = await original(args)
           if (endsCurrent) closing = ['current']

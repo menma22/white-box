@@ -21,9 +21,11 @@ let draftProfile = ''
 
 export function setWindowDraftProfile(key: string): void { draftProfile = key }
 let prepareClose: (kind: WindowKind) => Promise<(closing?: WindowKind[]) => void> = async () => () => {}
+let canCloseWithoutSaving = () => false
 
-export function setWindowCloseGuard(prepare: typeof prepareClose): void {
+export function setWindowCloseGuard(prepare: typeof prepareClose, saved = () => false): void {
   prepareClose = prepare
+  canCloseWithoutSaving = saved
 }
 
 export function setWindowOpeningGuard(allowed: () => boolean): void {
@@ -246,7 +248,7 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow | null
     let closing = false
     let approved = false
     win.on('close', (event: Electron.Event) => {
-      if (!canOpenWindow() || approved) return
+      if (canCloseWithoutSaving() || approved) return
       event.preventDefault()
       if (closing) return
       closing = true

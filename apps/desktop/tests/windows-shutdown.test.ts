@@ -37,6 +37,7 @@ describe('終了中の窓', () => {
     const closed = vi.fn()
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     win.on('closed', closed)
+    setWindowOpeningGuard(() => false)
     setWindowCloseGuard(async () => { throw new Error('保存できない') })
     win.close()
     await Promise.resolve()

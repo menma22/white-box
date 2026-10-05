@@ -14,7 +14,7 @@ export interface FlushTarget {
 export class RendererFlush {
   private ready = new Set<number>()
   private readyCleanup = new Map<number, () => void>()
-  private pending = new Map<string, { target: FlushTarget; finish(ok: boolean, focus?: boolean): void }>()
+  private pending = new Map<string, { target: FlushTarget; reason: FlushReason; finish(ok: boolean, focus?: boolean): void }>()
 
   constructor(private targets: (kinds?: WindowKind[]) => FlushTarget[], private timeoutMs = 10_000) {}
 
@@ -25,6 +25,11 @@ export class RendererFlush {
       if (!target) return
       this.ready.add(id)
       this.readyCleanup.set(id, target.onClosed(() => this.setReady(id, false)))
+      for (const [requestId, request] of this.pending) {
+        if (request.target.id !== id) continue
+        try { request.target.send('whitebox:flush-request', { id: requestId, reason: request.reason }) }
+        catch { request.finish(false) }
+      }
     } else {
       this.ready.delete(id)
       this.readyCleanup.get(id)?.()
@@ -41,7 +46,7 @@ export class RendererFlush {
   }
 
   async prepare(reason: FlushReason, kinds?: WindowKind[]): Promise<ReleaseEditors> {
-    const tickets = this.targets(kinds).filter((target) => this.ready.has(target.id)).map((target) => ({ target, id: randomUUID() }))
+    const tickets = this.targets(kinds).map((target) => ({ target, id: randomUUID() }))
     const release: ReleaseEditors = (closing = []) => {
       for (const { target, id } of tickets) {
         const unlock = () => target.send('whitebox:flush-release', id)
@@ -67,8 +72,8 @@ export class RendererFlush {
         }
         const timer = setTimeout(() => finish(false), this.timeoutMs)
         unsubscribe = target.onClosed(() => { this.ready.delete(target.id); finish(false) })
-        this.pending.set(id, { target, finish })
-        try { target.send('whitebox:flush-request', { id, reason }) }
+        this.pending.set(id, { target, reason, finish })
+        try { if (this.ready.has(target.id)) target.send('whitebox:flush-request', { id, reason }) }
         catch { finish(false) }
       })))
       return release
