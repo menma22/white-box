@@ -42,8 +42,8 @@
   },
   "buildProvenance": {
     "compiledFileCount": 131,
-    "compiledFingerprintAlgorithm": "SHA256 of JSON-encoded sorted [relative path, SHA256] pairs",
-    "compiledFingerprint": "e880f9c513ae68ab8fa1fffbcafdfc8e07e7ed59a1ceb624b77aefe461129752",
+    "compiledFingerprintAlgorithm": "SHA256 of UTF-8 compact JSON [relative path, SHA256] pairs, sorted by ASCII path ascending; no BOM or trailing newline",
+    "compiledFingerprint": "7dddbf24d0b494689f5ce3d7d3e00f069c0439d131a630407a38ec4d89c34af7",
     "packageCompiledEqualsSourceBuild": true,
     "packageExecutable": "release/White Box/White Box.exe",
     "packageExecutableSha256": "46536526ebca2ce51d59b476d6352415b89250ce5383d8d08572146aa5a8a3f2",
