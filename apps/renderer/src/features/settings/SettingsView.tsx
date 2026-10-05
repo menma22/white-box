@@ -244,7 +244,7 @@ export function SettingsView() {
           >
             書き出す
           </button>
-          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import')}>
+          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import').catch((failure) => setError(String(failure).replace(/^(Error:\s*)+/, '')))}>
             読み込む
           </button>
           <button type="button" className="btn btn-quiet btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:reveal')}>

@@ -3,13 +3,15 @@
 このリポジトリの現在地。**生きた文書**なので、状態が変わったらこのファイルを更新する。
 何を作るかは [product-spec.md](product-spec.md)、なぜそう作ったかは [decisions.md](decisions.md)。
 
-最終更新: 2026-09-24
+最終更新: 2026-10-05
 
 ---
 
 ## 現在地
 
 **Phase 1（MVP）に加え、道標の既存機能を統合。日常使用中。** 再編と第 1 波（PR #2）を `main` に統合し、道標も新構成へ移した。
+
+2026-10-05 の本番は `main 743fc25`（PR #9–#20 統合版）。以下の Phase 2 追加はレビュー用ブランチの実装状態で、本番には反映していない。実績・依存と外部待ち・任意見積とリスクを分けてレビューする。
 
 2026-09-24 の依頼により、目標マップ・タスク・問題／問い／改善・構造履歴と旧データ取り込みを追加した。[機能対応・保存・検証](michishirube.md)を参照。これは Phase 3 の成果設計の実装ではない。以下のフェーズ表は当初ロードマップの進捗を示す。
 
@@ -19,7 +21,7 @@
 
 ```
 Phase 1  ████████████████████  完了（1-26 を除く）
-Phase 2  ░░░░░░░░░░░░░░░░░░░░  未着手
+Phase 2  対象機能を実装・レビュー中（下表）。全体は未完了
 Phase 3  ░░░░░░░░░░░░░░░░░░░░  未着手
 Phase 4  ░░░░░░░░░░░░░░░░░░░░  未着手
 Phase 5  ░░░░░░░░░░░░░░░░░░░░  未着手
@@ -58,7 +60,22 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | 1-23 | Session 削除 | 済 | 確認あり |
 | 1-24 | 最低限 Today 表示 | 済 | `apps/renderer/src/features/today/TodayView.tsx` |
 | 1-25 | Welcome 画面 | 済 | `apps/renderer/src/features/welcome/WelcomeOverlay.tsx` |
-| 1-26 | Welcome の後続拡張 | **未着手** | 自分へのメッセージ・Reminder・名言など |
+| 1-26 | Welcome の後続拡張 | 一部実装 | Welcomeの日次メモと警告、通常画面のノートReminder。名言等の後続拡張は未実装 |
+
+## Phase 2 の項目別
+
+ここで「実装」はレビュー用ブランチの状態。機能ごとの受入条件と検証経路は各storyに置く。
+
+| 項目 | 状態 | 実装・受入への入口 |
+| --- | --- | --- |
+| Today / Week / 最近の作業時間推移 | 実装 | [実績story](stories/20261005_story_activity-views.md)、`packages/core/src/activity.ts`、`apps/renderer/src/features/today/` |
+| Blocked / Dependency Blocked / Hard Dependency | 実装 | [依存・外部待ちstory](stories/20261005_story_dependencies-and-external-follow-up.md)、`packages/core/src/task-control.ts`。進捗とは別、Doneのみが必須先行を満たす |
+| External Blocked / Follow-up | 実装 | 同story、`apps/renderer/src/features/board/ExternalWaiting.tsx`。本人が確認日・連絡日を記録する |
+| Recommended Order | 実装 | 同story。先行未完でも開始可能 |
+| Estimated Effort / Slack | 実装 | [見積・停滞・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)、`packages/core/src/task-priority.ts`。残作業と安全余裕の欠損は不明 |
+| Aging / Warning Escalation / 通常画面の警告 | 実装 | 同story。確かなTodoの起点と実作業を使い、Welcome・Board・Today・Weekで表示 |
+| Project Priority / Weekly Time Budget / Fixed Work | 未実装・今回の対象外 | 仕様の後続項目 |
+| Task Notes / Problems の後続体系 | 一部実装・今回の対象外 | 既存のタスクnotes・ノート・道標の問題を保持。Phase 2全体の体系としては未完了 |
 
 ## 仕様の Phase 1 に無いが入れたもの
 
@@ -82,7 +99,7 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 
 1. **毎日使う。** 道標も含め、目標からタスク実行・記録までを使って確かめる
 2. 使って出た問題を下の「実使用で出た課題」に書き溜める
-3. 溜まった課題を見て、Phase 2 の中から着手順を決める
+3. 対象Phase 2のPRをレビューし、反映後の実使用で判断根拠と実績表示を確かめる。後続項目は別に着手順を決める
 
 ### 実使用で出た課題
 

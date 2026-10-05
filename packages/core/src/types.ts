@@ -16,6 +16,14 @@ export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
 
 export type Priority = 'low' | 'normal' | 'high'
 
+export interface ExternalBlock {
+  who: string
+  what: string
+  since: string
+  lastContactOn: string | null
+  nextFollowUpOn: string | null
+}
+
 export interface Project {
   id: ID
   name: string
@@ -49,6 +57,11 @@ export interface Task {
   /** 現在のコミット期間の開始。Inbox の滞在期間は含めない。 */
   committedAt?: number | null
   lastProgressAt?: number | null
+  blocked?: boolean
+  blockReason?: string
+  hardDependencies?: ID[]
+  recommendedPredecessors?: ID[]
+  externalBlock?: ExternalBlock | null
 }
 
 export type OutcomeStatus = 'pending' | 'achieved' | 'not-achieved'

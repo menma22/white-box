@@ -13,7 +13,7 @@
 - [x] Todo/Doing への初回コミット、Inbox/Done からの再コミット、実際の進捗変更、セッション作業が適切な起点になる。旧データの欠けた起点を作成日などで補完せず、確認できない Aging は不明とする。
 - [x] Normal / Warning / High Risk / Overdue の根拠が表示される。期限超過は Overdue、負の Slack は High Risk。Todo の Aging は設定の閾値以上で Warning、2 倍以上で High Risk。設定の旧不正値は 3 日へフォールバックする。
 - [x] Aging が連続的に推薦順へ反映される。ユーザーは順序に関係なく任意タスクを開始・重要度変更・Inbox へ戻す操作ができる。
-- [x] Welcome と Board で警告と次の行動が見える。Today/Week から同じ警告部品を使える。停止を怠慢と判定する文言を使わない。
+- [ ] Welcome・Board・Today・Week で同じ警告と次の行動が見える。Blocked の開始禁止理由を読み取れ、全4画面から詳細・待ち整理へ進める。アーカイブしたプロジェクトのタスクは警告から除外する。停止を怠慢と判定する文言を使わない。
 - [x] 保存失敗時はタスク・セッション・レビューの状態を操作前へ復元し、成功した顔の状態を配信しない。
 - [x] 公開 IPC と実 UI で入力・警告・任意選択・保存・再起動を確認し、画面 PNG とエラー監視を残す。ソース版と配布版の両方を検証可能。
 
@@ -39,3 +39,9 @@ pnpm 11.5.2・`install --frozen-lockfile` で検証。`typecheck`・`lint`・全
 - [配布版の結果](../../.e2e/task-priority-run-01CcGE/result.json) / [再起動後](../../.e2e/task-priority-run-01CcGE/03-board-after-restart.png)
 
 両方の renderer の例外・console error は 0。ネイティブログのエラーは検証で意図した一時保存先の EISDIR と不正 IPC 4 件の拒否のみで、再起動ログにはエラーがない。全 PNG を目視確認した。新規 E2E の各起動は強制終了なしで停止し、対象 PID の消滅を確認した。Today/Week への配置と Blocked の接続は、同時進行の各機能の統合時に同じ `TaskWarnings` を使う。
+
+## A・B との UI 統合（結合検証待ち）
+
+時間・依存の実装を増やさず、警告の開始可否と理由は `taskExecutionProblem` を使う。Today/Week と Welcome の詳細導線は既存の `goTasks(id)` に接続し、Board では既存の詳細選択を使う。詳細には残作業・安全余裕・リスクと `TaskControlEditor` の両方を残す。「待ち・先行タスクを整理」はこの共通詳細へ進む操作で、状態を自動変更しない。
+
+`e2e-task-priority.mjs` に4画面の警告一致、アーカイブ除外、Blocked の開始禁止、全4画面から待ち編集への到達、理由の実 UI 保存を追加した。`node --check` は成功。結合ゲートとソース・配布版での実 UI 検証は root が実行する。上の26確認の証拠は統合前の版に対するもので、この追加分の成功を示すものではない。

@@ -87,6 +87,13 @@ describe('確かな起点だけを使う Todo Aging', () => {
     const excluded = session({ pauses: [{ startedAt: now - DAY + 10 * MINUTE, endedAt: now - DAY + 30 * MINUTE, reason: 'excluded' }] })
     expect(lastTaskWorkAt(task(), [excluded], now)).toBe(now - DAY + 10 * MINUTE)
   })
+  it('時刻編集で広がった末尾を実作業として読み、未来の記録を進捗にしない', () => {
+    const edited = session({ startedAt: now - 60 * MINUTE, endedAt: now - 10 * MINUTE,
+      segments: [{ id: 'segment', taskId: 'task', startedAt: now - 50 * MINUTE, endedAt: now - 30 * MINUTE }] })
+    expect(lastTaskWorkAt(task(), [edited], now)).toBe(now - 10 * MINUTE)
+    expect(lastTaskWorkAt(task(), [{ ...edited, endedAt: now + 10 * MINUTE }], now)).toBe(now)
+    expect(lastTaskWorkAt(task({ committedAt: now }), [edited], now)).toBeNull()
+  })
   it.each(['inbox', 'done'] as const)('%s は Aging・リスク対象外', (status) => {
     const control = taskControl(task({ status, committedAt: now - 20 * DAY, due: '2026-10-04', remainingEffortMinutes: 900, safetyBufferMinutes: 0 }), [], now, 3)
     expect(control.agingDays).toBeNull()

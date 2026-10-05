@@ -406,3 +406,35 @@
   flex: 1;
 }
 
+.detail-body > * { flex: none; }
+.col-add-area { flex: none; }
+.col-add-area .col-add { width: calc(100% - 24px); }
+.task-control { display: flex; flex-direction: column; gap: 22px; }
+.task-control small, .external-waiting small { color: var(--text-3); font-size: 11px; }
+.task-control-reasons { margin: 0; padding-left: 18px; color: var(--amber); font-size: 12px; }
+.task-link { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.task-link-title { flex: 1; min-width: 0; text-align: left; overflow-wrap: anywhere; color: var(--text-2); }
+.task-link-title:hover { color: var(--accent); }
+.task-control-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.external-summary, .external-form { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.external-form label { display: flex; flex-direction: column; gap: 4px; }
+.external-waiting { flex: none; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel); padding: 14px 18px; margin: 0 0 18px; }
+.external-waiting header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.external-waiting h2 { font-family: var(--font-serif); font-size: 17px; margin: 0; }
+.external-waiting h2 span { color: var(--text-3); font-size: 12px; margin-left: 8px; }
+.external-waiting header label, .external-waiting > p { color: var(--text-3); font-size: 12px; }
+.external-waiting-list { max-height: 260px; overflow-y: auto; margin-top: 10px; }
+.external-waiting-row { display: flex; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.external-waiting-row > div { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; font-size: 12px; overflow-wrap: anywhere; }
+.external-waiting-row.is-due > div strong { color: var(--amber); }
+.external-waiting-task { display: flex; flex-direction: column; gap: 4px; text-align: left; flex: 0 1 190px; min-width: 0; font-size: 13px; overflow-wrap: anywhere; }
+.task-command-error { color: var(--rose); background: var(--rose-soft); padding: 10px 14px; border-radius: var(--r-sm); font-size: 12px; overflow-wrap: anywhere; flex: none; }
+.detail > .task-command-error { margin: 0; border-radius: 0; }
+.task-control-hint { color: var(--amber); font-size: 11px; }
+.start-row:disabled { opacity: 0.75; cursor: default; }
+@media (max-width: 760px) {
+  .external-waiting header, .external-waiting-row { align-items: flex-start; flex-wrap: wrap; }
+  .external-waiting-task { flex-basis: 100%; }
+  .detail { max-width: 100%; }
+}
+

@@ -143,6 +143,18 @@ describe('selectors', () => {
     expect(candidateTasks(s).map((t) => t.id)).toEqual(['doing', 'todo-high', 'todo-low', 'inbox'])
   })
 
+  it('リスクが高くてもarchiveは除き、Blockedは理由を見せる候補として残す', () => {
+    const now = new Date(2026, 9, 5, 12).getTime()
+    const s = state({
+      projects: [{ id: 'archived', name: '過去の仕事', hue: 1, archived: true, order: 0, createdAt: 0, updatedAt: 0 }],
+      tasks: [
+        task({ id: 'archived-risk', projectId: 'archived', priority: 'high', committedAt: 0, due: '2026-10-04' }),
+        task({ id: 'blocked', blocked: true, committedAt: now }),
+      ],
+    })
+    expect(candidateTasks(s, now).map((t) => t.id)).toEqual(['blocked'])
+  })
+
   it('matchTask はタスク名とプロジェクト名を大文字小文字を区別せず見る', () => {
     const s = state({
       projects: [{ id: 'p', name: 'Quri', hue: 1, archived: false, order: 0, createdAt: 0, updatedAt: 0 }],

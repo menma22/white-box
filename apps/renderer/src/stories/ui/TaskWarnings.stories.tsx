@@ -20,3 +20,12 @@ export default meta
 type Story = StoryObj<typeof meta>
 export const Levels: Story = { args: { state, now } }
 export const Empty: Story = { args: { state: { ...state, tasks: [task('未入力', {})] }, now } }
+export const BlockedAndArchived: Story = { args: { state: { ...state,
+  projects: [{ id: 'archived', name: 'アーカイブした仕事', hue: 150, archived: true, order: 0, createdAt: now, updatedAt: now }],
+  tasks: [
+    task('承認を待っている仕事', { due: '2026-10-04', blocked: true, blockReason: '承認待ち', hardDependencies: ['predecessor'],
+      externalBlock: { who: '確認担当', what: '承認の返答', since: '2026-10-04', lastContactOn: null, nextFollowUpOn: '2026-10-05' } }),
+    task('predecessor', { title: '先行する仕事' }),
+    task('警告には出ないアーカイブした仕事', { projectId: 'archived', due: '2026-10-04' }),
+  ],
+}, now } }

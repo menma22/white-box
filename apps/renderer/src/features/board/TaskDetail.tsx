@@ -8,8 +8,10 @@ import type { Priority, Task, TaskStatus } from '@white-box/core/types'
 import { taskControl } from '@white-box/core/task-priority'
 import { OptionalDurationField } from '@/features/task-control/OptionalDurationField'
 import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
+import { taskExecutionProblem } from '@white-box/core/task-control'
+import { TaskControlEditor } from './TaskControlEditor'
 
-export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
@@ -20,6 +22,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
+  const [error, setError] = useState('')
 
   useEscape(!confirmDelete, onClose)
 
@@ -37,8 +40,14 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const touched = lastTouchedAt(state, task.id)
   const path = ancestorTitles(state, task)
 
-  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
-  const patch = (p: Partial<Task>) => void invoke('task:update', { id: task.id, patch: p })
+  async function run(action: () => Promise<unknown>): Promise<boolean> {
+    setError('')
+    try { await action(); return true } catch (cause) { setError(String(cause).replace(/^(Error:\s*)+/, '')); return false }
+  }
+  // Record<string, unknown> はキーの綴り違いを型検査で拾えないため、送信する patch は Partial<Task> で縛る。
+  const save = (p: Partial<Task>) => run(() => invoke('task:update', { id: task.id, patch: p }))
+  const patch = (p: Partial<Task>) => { void save(p) }
+  const executionProblem = taskExecutionProblem(state, task.id)
 
   const taskIdForDelete = task.id
   async function askDelete() {
@@ -58,6 +67,8 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
         </button>
       </header>
 
+      {error && <p className="task-command-error" role="alert">{error}</p>}
+
       <div className="detail-body">
         <textarea
           className="detail-title"
@@ -70,6 +81,8 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             if (title.trim() && title !== task.title) patch({ title: title.trim() })
           }}
         />
+
+        {executionProblem && <p className="task-control-hint" data-execution-problem>開始できない理由: {executionProblem}</p>}
 
         <div className="detail-grid">
           <div className="detail-field">
@@ -154,6 +167,8 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
           </div>
         </div>
 
+        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} />
+
         <div className="detail-field">
           <span className="label">メモ</span>
           <textarea
@@ -177,7 +192,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
               <button
                 type="button"
                 className="detail-sub-check"
-                onClick={() => void invoke('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } })}
+                onClick={() => void run(() => invoke('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } }))}
               >
                 {c.status === 'done' ? '✓' : ''}
               </button>
@@ -194,8 +209,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             onChange={(e) => setSub(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' || !sub.trim()) return
-              void invoke('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })
-              setSub('')
+              void run(() => invoke('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })).then((saved) => { if (saved) setSub('') })
             }}
           />
         </div>
@@ -205,9 +219,9 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
         <button
           type="button"
           className="btn btn-primary btn-md"
-          onClick={() => void invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })}
-          disabled={Boolean(state.live)}
-          title={state.live ? 'すでにセッションが動いている' : ''}
+          onClick={() => void run(() => invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes }))}
+          disabled={Boolean(state.live) || Boolean(executionProblem)}
+          title={executionProblem ?? (state.live ? 'すでにセッションが動いている' : '')}
         >
           このタスクで開始
         </button>
@@ -232,9 +246,10 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             type="button"
             className="btn btn-danger btn-md"
             onClick={() => {
-              void invoke('task:delete', { id: task.id })
-              setConfirmDelete(false)
-              onClose()
+              void run(() => invoke('task:delete', { id: task.id })).then((saved) => {
+                setConfirmDelete(false)
+                if (saved) onClose()
+              })
             }}
           >
             削除する

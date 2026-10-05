@@ -6,6 +6,7 @@ import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/components/ui'
 import { formatDuration, pausedMsWithin } from '@white-box/core/engine'
 import { remainingLabel } from '@/lib/format'
+import { taskExecutionProblem, unfinishedPredecessors } from '@white-box/core/task-control'
 
 export function CurrentWorkWindow() {
   const state = useData()
@@ -15,6 +16,8 @@ export function CurrentWorkWindow() {
   const [draftColumn, setDraftColumn] = useState<'inbox' | 'todo'>('inbox')
   const [splitting, setSplitting] = useState(false)
   const [splitTitle, setSplitTitle] = useState('')
+  const [error, setError] = useState('')
+  const action = (request: Promise<unknown>) => { setError(''); void request.catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, ''))) }
 
   useEscape(true, () => void cmd.closeSelf())
 
@@ -60,6 +63,7 @@ export function CurrentWorkWindow() {
       <TitleBar title="現在の仕事" onClose={() => void cmd.closeSelf()} />
 
       <div className="current-body">
+        {error && <p className="task-command-error" role="alert">{error}</p>}
         {managing && <p className="current-management">タスク整理 {formatDuration(managementMs, 'compact')} · 実作業から除外中。{originallyPaused ? '閉じても一時停止を保つ。' : '閉じると作業を再開する。'}</p>}
         {tick && current && timer ? (
           <section className="current-focus">
@@ -87,7 +91,7 @@ export function CurrentWorkWindow() {
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
-                  onClick={() => void invoke(originallyPaused ? 'session:resume' : 'session:pause')}
+                  onClick={() => action(invoke(originallyPaused ? 'session:resume' : 'session:pause'))}
                 >
                   {expired ? '延長を選ぶ' : timer.isBreak ? '休憩を終える' : originallyPaused ? '閉じたら再開する' : '閉じても一時停止'}
                 </button>
@@ -132,17 +136,17 @@ export function CurrentWorkWindow() {
                   className="current-sub-check"
                   title={t.status === 'done' ? 'Todo に戻す' : '完了にする'}
                   onClick={() =>
-                    void invoke('task:update', {
+                    action(invoke('task:update', {
                       id: t.id,
                       patch: { status: t.status === 'done' ? 'todo' : 'done' },
-                    })
+                    }))
                   }
                 >
                   {t.status === 'done' ? '✓' : ''}
                 </button>
                 <span className="current-sub-title">{t.title}</span>
                 {tick && (
-                  <button type="button" className="current-switch disp" onClick={() => void invoke('session:switchTask', { taskId: t.id })}>
+                  <button type="button" className="current-switch disp" disabled={Boolean(taskExecutionProblem(state, t.id))} title={taskExecutionProblem(state, t.id) ?? ''} onClick={() => action(invoke('session:switchTask', { taskId: t.id }))}>
                     切り替える
                   </button>
                 )}
@@ -179,19 +183,27 @@ export function CurrentWorkWindow() {
             <div className="current-list">
               {others.map((t) => {
                 const project = projectById(state, t.projectId)
+                const problem = taskExecutionProblem(state, t.id)
+                const recommended = unfinishedPredecessors(state, t, 'recommended')
                 return (
                   <div key={t.id} className="current-row">
                     <span className="current-row-status disp" data-status={t.status}>
                       {STATUS_LABEL[t.status]}
                     </span>
-                    <span className="current-row-title">{t.title}</span>
+                    <span className="current-row-body">
+                      <span className="current-row-title">{t.title}</span>
+                      {problem && <span className="task-control-hint">{problem}</span>}
+                      {recommended.length > 0 && <span className="task-control-hint">推奨先行: {recommended.map((item) => item.task?.title ?? '削除されたタスク').join(' / ')}</span>}
+                    </span>
                     {project && <Chip color={projectColor(project)}>{project.name}</Chip>}
                     {t.progress > 0 && <span className="num current-row-pct">{t.progress}%</span>}
                     {tick ? (
                       <button
                         type="button"
                         className="current-switch disp"
-                        onClick={() => void invoke('session:switchTask', { taskId: t.id })}
+                        disabled={Boolean(problem)}
+                        title={problem ?? ''}
+                        onClick={() => action(invoke('session:switchTask', { taskId: t.id }))}
                       >
                         切り替える
                       </button>
@@ -199,7 +211,9 @@ export function CurrentWorkWindow() {
                       <button
                         type="button"
                         className="current-switch disp"
-                        onClick={() => void invoke('session:start', { taskId: t.id, minutes: state.settings.defaultSessionMinutes })}
+                        disabled={Boolean(problem)}
+                        title={problem ?? ''}
+                        onClick={() => action(invoke('session:start', { taskId: t.id, minutes: state.settings.defaultSessionMinutes }))}
                       >
                         開始する
                       </button>

@@ -1,21 +1,22 @@
 import { useMemo } from 'react'
 import { useApp, useData } from '@/stores/app'
-import { sessionsForDay, todayKey } from '@/lib/selectors'
+import { todayKey } from '@/lib/selectors'
 import { BigDuration, Empty } from '@/components/ui'
-import { excludedMs, focusMs, formatDuration, livePausedMs, managementMs } from '@white-box/core/engine'
+import { formatDuration } from '@white-box/core/engine'
+import { activitySummary, dayRange } from '@white-box/core/activity'
 import { SessionRow } from '@/features/sessions/SessionRow'
 import { DayRibbon } from './DayRibbon'
+import { ActivityBreakdown } from './ActivityBreakdown'
+import { ActivityTrend } from './ActivityTrend'
+import { TaskWarnings } from '@/features/task-control/TaskWarnings'
 
-export function TodayView() {
+export function TodayView({ onOpenTask }: { onOpenTask?: (id: string) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const key = todayKey(state, now)
-  const sessions = useMemo(() => sessionsForDay(state, key), [state.sessions, key])
-
-  const total = sessions.reduce((sum, s) => sum + focusMs(s, now), 0)
-  const paused = sessions.reduce((sum, s) => sum + livePausedMs(s, now), 0)
-  const managing = sessions.reduce((sum, s) => sum + managementMs(s, now), 0)
-  const excluded = sessions.reduce((sum, s) => sum + excludedMs(s, now), 0)
+  const period = dayRange(key, state.settings.dayStartHour)
+  const summary = useMemo(() => activitySummary(state.sessions, state.tasks, now, period), [state.sessions, state.tasks, now, key, state.settings.dayStartHour])
+  const { sessions, focusMs: total, pausedMs: paused, managementMs: managing, excludedMs: excluded } = summary
 
   return (
     <div className="view today">
@@ -23,7 +24,7 @@ export function TodayView() {
         <div>
           <span className="label">今日</span>
           <h1 className="view-title">
-            {new Date(now).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' })}
+            {new Date(`${key}T12:00:00`).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' })}
           </h1>
         </div>
         <div className="today-total">
@@ -31,6 +32,8 @@ export function TodayView() {
           <span className="label">記録した作業</span>
         </div>
       </header>
+
+      <TaskWarnings state={state} now={now} onOpenTask={onOpenTask} />
 
       <div className="today-strip">
         <Metric label="セッション" value={`${sessions.length}`} />
@@ -48,21 +51,19 @@ export function TodayView() {
         <Empty title="今日はまだ記録がない" hint="ショートカットを押せば、そこから記録が始まる。" />
       ) : (
         <>
-          <DayRibbon sessions={sessions} now={now} />
+          <DayRibbon sessions={sessions} now={now} period={period} />
+          <ActivityBreakdown state={state} summary={summary} />
           <section className="today-list">
             <div className="label today-list-label">セッション</div>
             {[...sessions].reverse().map((s) => (
-              <SessionRow key={s.id} session={s} now={now} />
+              <SessionRow key={s.id} session={s} now={now} inPeriod={{ ms: summary.sessionMs.get(s.id) ?? 0, label: 'この日' }} />
             ))}
           </section>
         </>
       )}
 
-      {total > 0 && total < 30 * 60_000 && (
-        <p className="today-foot-note">
-          記録は {formatDuration(total, 'compact')}。少ないと感じるなら、それが今日の現実。責める必要はないけれど、目を逸らす必要もない。
-        </p>
-      )}
+      <ActivityTrend state={state} now={now} lastDay={key} />
+      <p className="activity-note">一日の境目は {state.settings.dayStartHour}:00。時間はこの日に入る区間だけを集計。重なる実作業は開始が早い記録へ一度だけ数え、別の記録の停止より実作業を優先する。進捗は現在の宣言値。</p>
     </div>
   )
 }

@@ -199,20 +199,45 @@ const DAY = 86_400_000
 const calendar = (at) => { const date=new Date(at); return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` }
 const task = (id, patch={}) => ({ id, title:id, projectId:null, parentId:null, notes:'', status:'todo', progress:0,
   priority:'normal', order:0, createdAt:now - 100 * DAY, updatedAt:now, doneAt:null, createdInSessionId:null, ...patch })
-fs.writeFileSync(path.join(DATA, 'data.json'), JSON.stringify({ version:1, projects:[], sessions:[], dayNotes:{}, tasks:[
+fs.writeFileSync(path.join(DATA, 'data.json'), JSON.stringify({ version:1, projects:[
+  { id:'archived-project', name:'アーカイブした仕事', hue:150, archived:true, order:0, createdAt:now, updatedAt:now },
+], sessions:[], dayNotes:{}, tasks:[
   task('legacy-inbox', { status:'inbox', priority:'high' }), task('legacy-todo'),
   task('aging-warning', { committedAt:now - 4 * DAY }),
   task('negative-slack', { committedAt:now, due:calendar(now + DAY), remainingEffortMinutes:100000, safetyBufferMinutes:0 }),
-  task('deadline-overdue', { committedAt:now, due:calendar(now - DAY) }),
+  task('deadline-overdue', { committedAt:now, due:calendar(now - DAY), blocked:true, blockReason:'承認待ち',
+    externalBlock:{who:'確認担当',what:'承認の返答',since:calendar(now - DAY),lastContactOn:null,nextFollowUpOn:calendar(now)} }),
+  task('archived-overdue', { projectId:'archived-project', committedAt:now, due:calendar(now - DAY) }),
 ], settings:{ onboardedAt:now, lastWelcomeDate:null, stallWarningDays:3, shortcuts:{startPause:'',currentWork:'',dashboard:''} } }))
 
 async function board() {
   await key('2','Digit2',2)
+  await until(() => page.evaluate('Boolean(document.querySelector(".board"))'), 'board')
+  if (!await page.evaluate('Boolean(document.querySelector(".board-cols"))')) await click('.board-head .segmented-item:first-child')
   await until(() => page.evaluate('Boolean(document.querySelector(".board-cols"))'), 'board view')
 }
 async function detail(id) {
   await click(`[data-card][data-task-id="${id}"]`)
   await until(() => page.evaluate('Boolean(document.querySelector(".detail"))'), 'task detail')
+}
+async function warningSnapshot(surface) {
+  return page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(surface+' .task-warnings [data-warning-task]')}), row => ({
+    id:row.dataset.warningTask, risk:row.querySelector('.task-risk-badge').dataset.risk,
+    disabled:row.querySelector('.btn-primary').disabled, problem:row.querySelector('[data-warning-execution]')?.textContent ?? ''
+  }))`)
+}
+async function waitingDetail(label) {
+  await until(() => page.evaluate(`document.querySelector('.detail-title')?.value==='deadline-overdue'`), label+' detail')
+  check(label+' opens the shared detail with readable Blocked reason and disabled start',await page.evaluate(`
+    document.querySelector('.detail [data-execution-problem]').textContent.includes('承認待ち') &&
+    document.querySelector('.detail-foot .btn-primary').disabled &&
+    document.querySelector('.task-control input[type="checkbox"]').checked
+  `))
+  await page.evaluate(`document.querySelector('.task-control').scrollIntoView({block:'center'})`)
+  check(label+' reaches the waiting and predecessor editor',await page.evaluate(`(() => {
+    const r=document.querySelector('input[aria-label="Blocked の理由"]').getBoundingClientRect();
+    return r.top>=0 && r.bottom<=innerHeight && Boolean(document.querySelector('.task-control .external-summary'));
+  })()`))
 }
 const effortInput='input[aria-label="残作業の見積（任意）"]'
 const bufferInput='input[aria-label="安全余裕（任意）"]'
@@ -226,13 +251,38 @@ try {
   await until(() => page.evaluate('Boolean(document.querySelector(".welcome"))'), 'Welcome overlay')
   check('Welcome displays Warning, High Risk and Overdue with their reasons', await page.evaluate(`['Warning','High Risk','Overdue'].every(label=>document.querySelector('.welcome .task-warnings').innerText.includes(label))`))
   check('Legacy Inbox and unobserved legacy Todo have no warning', await page.evaluate(`!document.querySelector('.welcome [data-warning-task="legacy-inbox"]') && !document.querySelector('.welcome [data-warning-task="legacy-todo"]')`))
+  const expectedWarnings=await warningSnapshot('.welcome')
+  check('Welcome excludes archived warnings and shows the Blocked start reason',expectedWarnings.length===3 && !expectedWarnings.some(item=>item.id==='archived-overdue') && expectedWarnings.find(item=>item.id==='deadline-overdue')?.disabled && expectedWarnings.find(item=>item.id==='deadline-overdue')?.problem.includes('承認待ち'))
+  const beforeBlocked=read()
+  const blockedStart=await raw('session:start',{taskId:'deadline-overdue',minutes:30})
+  check('Blocked start is rejected by public IPC without changing saved data',blockedStart.ok===false && JSON.stringify(read())===JSON.stringify(beforeBlocked))
   await screenshot('01-welcome-warnings')
-  await click('.welcome-close')
+  await click('.welcome [data-warning-task="deadline-overdue"] [data-warning-organize]')
+  await waitingDetail('Welcome warning')
+  await screenshot('01b-welcome-waiting-detail')
+  await click('.detail-close')
+  for (const surface of [{key:'1',code:'Digit1',selector:'.today',name:'Today'}, {key:'8',code:'Digit8',selector:'.week',name:'Week'}]) {
+    await key(surface.key,surface.code,2)
+    await until(()=>page.evaluate(`Boolean(document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')}))`),surface.name+' warnings')
+    const current=await warningSnapshot(surface.selector)
+    check(surface.name+' shows the same warnings, Blocked guard and archive exclusion',JSON.stringify(current)===JSON.stringify(expectedWarnings),current)
+    await screenshot('01-'+surface.name.toLowerCase()+'-warnings')
+    await click(`${surface.selector} [data-warning-task="deadline-overdue"] [data-warning-organize]`)
+    await waitingDetail(surface.name+' warning')
+    await click('.detail-close')
+  }
   await board()
   check('Board has the same three warnings', await page.evaluate('document.querySelectorAll(".board > .task-warnings [data-warning-task]").length===3'))
+  check('Board shows the same warnings, Blocked guard and archive exclusion',JSON.stringify(await warningSnapshot('.board'))===JSON.stringify(expectedWarnings))
+  check('ExternalWaiting is preserved alongside the warning panel',await page.evaluate(`Boolean(document.querySelector('[data-external-task-id="deadline-overdue"]'))`))
   await click('.board-head .segmented-item:nth-child(2)')
   await click('[data-warning-task="deadline-overdue"] .task-warning-title')
   check('Warning title opens detail from the list view too',await page.evaluate(`Boolean(document.querySelector('.board-cols')) && document.querySelector('.detail-title').value==='deadline-overdue'`))
+  await waitingDetail('Board warning')
+  await fill('input[aria-label="Blocked の理由"]','次の確認日を調整している')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='deadline-overdue').blockReason==='次の確認日を調整している','waiting reason saved from UI')
+  check('Warning detail lets the user save waiting information',read().tasks.find(item=>item.id==='deadline-overdue').blocked===true)
   await click('.detail-close')
   await key('4','Digit4',2)
   await until(() => page.evaluate('Boolean(document.querySelector(".settings"))'), 'settings view')

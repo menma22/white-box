@@ -6,6 +6,7 @@ import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Kbd } from '@/components/ui'
 import { BoardView } from '@/features/board/BoardView'
 import { TodayView } from '@/features/today/TodayView'
+import { WeekView } from '@/features/today/WeekView'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { GoalMapView } from '@/features/goals/GoalMapView'
@@ -16,11 +17,13 @@ import { TaskSuggestions } from '@/features/agents/TaskSuggestions'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
 import { NotesView, type NotesViewHandle } from '@/features/notes/NotesView'
 import { ReminderPanel } from '@/features/notes/ReminderPanel'
+import { taskExecutionProblem } from '@white-box/core/task-control'
 
-type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
+type Tab = 'today' | 'week' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
 const TABS: { id: Tab; label: string; glyph: string; shortcut: string }[] = [
   { id: 'today', label: '今日', glyph: '◷', shortcut: '1' },
+  { id: 'week', label: '週', glyph: '▦', shortcut: '8' },
   { id: 'board', label: 'ボード', glyph: '▤', shortcut: '2' },
   { id: 'history', label: '記録', glyph: '≣', shortcut: '3' },
   { id: 'goals', label: '道標', glyph: '⌘', shortcut: '5' },
@@ -145,7 +148,8 @@ export function MainWindow() {
           {state.recovery && <RecoveryBanner />}
           {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} sessions={state.sessions} />}
           {tab === 'today' && <ReminderPanel notes={state.notes ?? []} now={now} onOpen={goNote} onDismiss={(id) => void invoke('note:update', { id, patch: { remindAt: null } })} />}
-          {tab === 'today' && <TodayView />}
+          {tab === 'today' && <TodayView onOpenTask={goTasks} />}
+          {tab === 'week' && <WeekView onOpenTask={goTasks} />}
           {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}
@@ -156,16 +160,18 @@ export function MainWindow() {
       </div>
 
       {onboarding && <OnboardingFlow onDone={() => setOnboarding(false)} />}
-      {welcomeOpen && <WelcomeOverlay onClose={() => setWelcomeOpen(false)} onGoBoard={() => void navigate('board')} />}
+      {welcomeOpen && <WelcomeOverlay onClose={() => setWelcomeOpen(false)} onGoBoard={goTasks} />}
     </div>
   )
 }
 
 function RecoveryBanner() {
   const state = useData()
+  const [error, setError] = useState('')
   const rec = state.recovery!
   const session = state.sessions.find((s) => s.id === rec.sessionId)
   const task = taskById(state, session?.segments.at(-1)?.taskId ?? null)
+  const problem = taskExecutionProblem(state, task?.id ?? null)
   const when = new Date(rec.lastKnownAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   return (
@@ -175,12 +181,13 @@ function RecoveryBanner() {
         <span>
           「{task?.title ?? '不明なタスク'}」を計測中にアプリが終了している。最後に記録が取れたのは {when}。
         </span>
+        {(error || problem) && <span className="task-control-hint" role="alert">{error || problem}</span>}
       </div>
       <div className="recovery-actions">
         <button type="button" className="btn btn-solid btn-sm" onClick={() => void invoke('recovery:close')}>
           その時刻で終了する
         </button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('recovery:resume')}>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={Boolean(problem)} onClick={() => { setError(''); void invoke('recovery:resume').catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, ''))) }}>
           続きから再開する
         </button>
       </div>

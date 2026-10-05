@@ -1,5 +1,5 @@
 import type { Session, Task } from './types.js'
-import { MINUTE, plannedReachedAt, unpausedRanges } from './engine.js'
+import { MINUTE, segmentRange, unpausedRanges } from './engine.js'
 import { validGoalDue } from './goal-map.js'
 
 const DAY = 86_400_000
@@ -46,12 +46,11 @@ export function deadlineEnd(due: Task['due']): number | null {
 export function lastTaskWorkAt(task: Task, sessions: Session[], now: number): number | null {
   let last: number | null = null
   for (const session of sessions) {
-    const sessionEnd = Math.min(now, session.endedAt ?? (session.mode === 'stopwatch' ? now : plannedReachedAt(session, now) ?? now))
-    for (let i = 0; i < session.segments.length; i++) {
-      const segment = session.segments[i]!
+    for (const segment of session.segments) {
       if (segment.taskId !== task.id) continue
-      const start = Math.max(i === 0 ? session.startedAt : segment.startedAt, session.startedAt, task.committedAt ?? 0)
-      const end = i === session.segments.length - 1 ? sessionEnd : Math.min(segment.endedAt ?? sessionEnd, sessionEnd)
+      const range = segmentRange(session, segment, now)
+      const start = Math.max(range.startedAt, task.committedAt ?? 0)
+      const end = Math.min(range.endedAt, now)
       const runs = unpausedRanges(session.pauses, start, end, now)
       const at = runs[runs.length - 1]?.endedAt
       if (at !== undefined && (last === null || at > last)) last = at

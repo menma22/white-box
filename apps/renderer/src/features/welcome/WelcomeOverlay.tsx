@@ -7,7 +7,7 @@ import { dayKey, formatDuration, HOUR } from '@white-box/core/engine'
 import { dayTotalMs } from '@/lib/selectors'
 import { TaskWarnings } from '@/features/task-control/TaskWarnings'
 
-export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; onGoBoard: () => void }) {
+export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; onGoBoard: (id?: string) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const key = todayKey(state, now)
@@ -49,7 +49,7 @@ export function WelcomeOverlay({ onClose, onGoBoard }: { onClose: () => void; on
           </p>
         )}
 
-        <TaskWarnings state={state} now={now} onStarted={dismiss} />
+        <TaskWarnings state={state} now={now} onStarted={dismiss} onOpenTask={(id) => { dismiss(); onGoBoard(id) }} />
 
         <section className="welcome-todo">
           <div className="label">やると決めていること</div>

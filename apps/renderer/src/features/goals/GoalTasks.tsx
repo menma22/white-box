@@ -97,7 +97,7 @@ export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJu
         </button>
         {state.goalMap.ui.doneOpen && done.map(row)}
       </div>
-      {detailId && <TaskDetail key={detailId} taskId={detailId} onClose={() => setDetailId(null)} />}
+      {detailId && <TaskDetail key={detailId} taskId={detailId} onClose={() => setDetailId(null)} onSelectTask={setDetailId} />}
       <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} labelledBy="gm-task-delete-title">
         <h3 id="gm-task-delete-title">「{deleting?.title}」を削除する？</h3>
         <p className="modal-text">{descendants.size > 1 ? `子タスク ${descendants.size - 1} 件も削除する。` : ''}ボードからも消える。これまでのセッション記録は残る。</p>
