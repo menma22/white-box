@@ -7,6 +7,7 @@ import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PresenceCandidatesSchema } from './presence.js'
 import { TaskSuggestionSchema } from './agent.js'
 import { NoteSchema } from './notes.js'
+import { TaskControlSchema } from './task-control.js'
 import type {
   AppState,
   GoalHistory,
@@ -55,6 +56,7 @@ export const ProjectSchema = z.object({
 })
 
 export const TaskSchema = z.object({
+  ...TaskControlSchema.shape,
   id: IdSchema,
   projectId: IdSchema.nullable(),
   parentId: IdSchema.nullable(),

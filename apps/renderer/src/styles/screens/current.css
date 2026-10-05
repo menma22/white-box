@@ -159,6 +159,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.current-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.current-row-body .current-row-title { flex: none; }
+.current-row-body .task-control-hint { overflow-wrap: anywhere; }
 .current-row-pct {
   font-size: 11px;
   color: var(--text-3);

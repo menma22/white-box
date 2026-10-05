@@ -50,7 +50,7 @@ describe('ユースケースの網羅（54 コマンド）', () => {
       'project:delete': { id: 'p1' },
       'task:create': { title: 'T' },
       'task:update': { id: 't1', patch: { progress: 10 } },
-      'task:move': { id: 't1', status: 'todo', index: 0 },
+      'task:move': { id: 't2', status: 'todo', index: 0 },
       'task:delete': { id: 't2' },
       'task:hasTime': { id: 't1' },
       'goal:create': { goal: '新しい目標' },

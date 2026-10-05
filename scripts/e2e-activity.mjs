@@ -350,6 +350,7 @@ async function verifyTodayAndLive() {
   const expected = { [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [shift(previousMonday, -1)]: 30, [today]: expectedMinutes }
   check('Fourteen consecutive trend days include independently expected nonzero and zero values', trend.length === 14 && trend.every((day, index) => day.key === shift(today, index - 13) && durationMinutes(day.time) === (expected[day.key] ?? 0)) && trend.some((day) => durationMinutes(day.time) === 0), trend)
   check('Trend draws all fourteen points, including zero days', await page.evaluate('document.querySelectorAll(".today .trend-point").length===14'))
+  await call('task:update', { id: beta.id, patch: { status: 'todo' } })
   const timer = await call('session:start', { taskId: beta.id, mode: 'timer', minutes: 1 })
   const timerStart = start - 2 * MINUTE
   await call('session:update', { id: timer.id, patch: { startedAt: timerStart } })

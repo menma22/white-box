@@ -9,6 +9,10 @@
       "types": "./dist/activity.d.ts",
       "default": "./dist/activity.js"
     },
+    "./task-control": {
+      "types": "./dist/task-control.d.ts",
+      "default": "./dist/task-control.js"
+    },
     "./engine": {
       "types": "./dist/engine.d.ts",
       "default": "./dist/engine.js"

@@ -5,6 +5,7 @@ dist-electron/
 .e2e/
 .e2e2/
 .e2e-goals/
+.e2e-dependencies/
 # 撮影台の出力は残さない。比較の基準になる shots-baseline/ だけを追跡する
 shots*/
 !shots-baseline/

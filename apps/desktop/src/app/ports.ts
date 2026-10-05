@@ -51,6 +51,6 @@ export interface Ctx {
   dataIO: DataIOPort
   runtime: RuntimeState
   now(): number
-  /** 状態を保存し、全ウィンドウとトレイへ配る。 */
-  publish(): void
+  /** 状態を保存し、全ウィンドウとトレイへ配る。実行不能な保存済みデータを安全停止させる復旧保存が失敗したときは persist=false で安全停止を配信する。 */
+  publish(persist?: boolean): void
 }

@@ -93,9 +93,11 @@
 }
 .start-row-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 9px;
 }
+.start-row-meta > .task-control-hint { flex-basis: 100%; overflow-wrap: anywhere; }
 .start-row-pct {
   font-size: 11px;
   color: var(--text-3);

@@ -10,6 +10,7 @@ import { GoalCriteriaSchema } from './goal-criteria.js'
 import { PRESENCE_COMMANDS } from './presence.js'
 import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
 import { NOTE_COMMANDS } from './notes.js'
+import { TaskControlSchema } from './task-control.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -68,6 +69,7 @@ export const COMMANDS = {
   // ── Task
   'task:create': {
     args: z.strictObject({
+      ...TaskControlSchema.shape,
       title: z.string(),
       projectId: IdSchema.nullable().optional(),
       parentId: IdSchema.nullable().optional(),

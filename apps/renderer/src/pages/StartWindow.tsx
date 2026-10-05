@@ -5,6 +5,7 @@ import { candidateTasks, matchTask, projectById, projectColor, STATUS_LABEL } fr
 import { Chip, Kbd, ProgressBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { SessionMode } from '@white-box/core/types'
+import { taskExecutionProblem, unfinishedPredecessors } from '@white-box/core/task-control'
 
 const DURATIONS = [25, 50, 90]
 
@@ -17,8 +18,9 @@ export function StartWindow() {
   const [mode, setMode] = useState<SessionMode>(state.settings.defaultSessionMode ?? 'timer')
   const [breakMinutes, setBreakMinutes] = useState(state.settings.pomodoroBreakMinutes ?? 5)
   const [autoResume, setAutoResume] = useState(state.settings.pomodoroAutoResume ?? false)
-  const [projectId, setProjectId] = useState<string>(state.projects[0]?.id ?? '')
+  const [projectId, setProjectId] = useState<string>(state.projects.find((project) => !project.archived)?.id ?? '')
   const listRef = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState('')
 
   useEscape(true, () => void cmd.closeSelf())
 
@@ -38,17 +40,20 @@ export function StartWindow() {
   }, [cursor, query])
 
   async function start(index = cursor) {
-    const options = { minutes, mode, breakMinutes, autoResume }
-    if (canCreate && index === matches.length) {
-      await invoke('session:start', {
-        newTask: { title: query.trim(), projectId: projectId || null },
-        ...options,
-      })
-      return
-    }
-    const task = matches[index]
-    if (!task) return
-    await invoke('session:start', { taskId: task.id, ...options })
+    setError('')
+    try {
+      const options = { minutes, mode, breakMinutes, autoResume }
+      if (canCreate && index === matches.length) {
+        await invoke('session:start', {
+          newTask: { title: query.trim(), projectId: projectId || null },
+          ...options,
+        })
+        return
+      }
+      const task = matches[index]
+      if (!task) return
+      await invoke('session:start', { taskId: task.id, ...options })
+    } catch (cause) { setError(String(cause).replace(/^(Error:\s*)+/, '')) }
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -100,13 +105,18 @@ export function StartWindow() {
       </div>
 
       <div className="start-list" ref={listRef}>
+        {error && <p className="task-command-error" role="alert">{error}</p>}
         {matches.map((task, i) => {
           const project = projectById(state, task.projectId)
+          const problem = taskExecutionProblem(state, task.id)
+          const recommended = unfinishedPredecessors(state, task, 'recommended')
           return (
             <button
               key={task.id}
               type="button"
               className={`start-row ${i === cursor ? 'is-cursor' : ''}`}
+              disabled={Boolean(problem)}
+              title={problem ?? ''}
               onMouseMove={() => setCursor(i)}
               onClick={() => void start(i)}
             >
@@ -118,6 +128,8 @@ export function StartWindow() {
                 <span className="start-row-meta">
                   {project && <Chip color={projectColor(project)}>{project.name}</Chip>}
                   {task.progress > 0 && <span className="num start-row-pct">{task.progress}%</span>}
+                  {problem && <span className="task-control-hint">{problem}</span>}
+                  {recommended.length > 0 && <span className="task-control-hint">推奨先行: {recommended.map((item) => item.task?.title ?? '削除されたタスク').join(' / ')}（開始可）</span>}
                 </span>
               </span>
               {task.progress > 0 && (
@@ -144,7 +156,7 @@ export function StartWindow() {
               onClick={(e) => e.stopPropagation()}
             >
               <option value="">プロジェクトなし</option>
-              {state.projects.map((p) => (
+              {state.projects.filter((p) => !p.archived).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -180,7 +192,7 @@ export function StartWindow() {
             title="任意の長さ"
           />
         </div> : <span className="start-stopwatch-hint">終了するまで経過時間を記録</span>}
-        <button type="button" className="start-go disp" onClick={() => void start()} disabled={rows === 0}>
+        <button type="button" className="start-go disp" onClick={() => void start()} disabled={rows === 0 || !isCreateRow && Boolean(matches[cursor] && taskExecutionProblem(state, matches[cursor]!.id))}>
           開始
           {mode !== 'stopwatch' && <span className="start-go-time num">{formatDuration(minutes * 60_000, 'compact')}</span>}
         </button>

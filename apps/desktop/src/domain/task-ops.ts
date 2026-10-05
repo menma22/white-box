@@ -6,8 +6,10 @@
  */
 import type { Database, ID, Priority, Project, Task, TaskStatus } from '@white-box/core/types'
 import { validGoalDue } from '@white-box/core/goal-map'
+import { assertTaskExecutable, normalizeTaskControl, validateTaskLinks, type TaskControl } from '@white-box/core/task-control'
 import { newId } from './session-ops.js'
 import { requireGoal } from './goal-ops.js'
+import { assertLiveWorkPreserved } from './task-control.js'
 
 export function createProject(db: Database, input: { name: string; hue?: number }): { projects: Project[]; project: Project } {
   const now = Date.now()
@@ -27,7 +29,9 @@ export function createProject(db: Database, input: { name: string; hue?: number 
 }
 
 export function updateProject(db: Database, id: ID, patch: Partial<Project>): Project[] {
-  return db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, updatedAt: Date.now() } : p))
+  const projects = db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, updatedAt: Date.now() } : p))
+  assertLiveWorkPreserved(db, { ...db, projects })
+  return projects
 }
 
 export function deleteProject(db: Database, id: ID): { projects: Project[]; tasks: Task[] } {
@@ -39,7 +43,7 @@ export function deleteProject(db: Database, id: ID): { projects: Project[]; task
 
 export function createTask(
   db: Database,
-  input: {
+  input: TaskControl & {
     title: string
     projectId?: ID | null
     parentId?: ID | null
@@ -56,7 +60,7 @@ export function createTask(
   const now = Date.now()
   const status = input.status ?? 'inbox'
   const siblings = db.tasks.filter((t) => t.status === status)
-  const task: Task = {
+  const task: Task = normalizeTaskControl({
     id: newId('tsk'),
     projectId: input.projectId ?? null,
     parentId: input.parentId ?? null,
@@ -72,33 +76,49 @@ export function createTask(
     createdInSessionId: input.sessionId ?? null,
     due,
     goalNodeId,
-  }
-  return { tasks: [...db.tasks, task], task }
+    blocked: input.blocked,
+    blockReason: input.blockReason,
+    hardDependencies: input.hardDependencies,
+    recommendedPredecessors: input.recommendedPredecessors,
+    externalBlock: input.externalBlock,
+  })
+  const tasks = [...db.tasks, task]
+  validateTaskLinks(tasks, task)
+  if (status === 'doing') assertTaskExecutable({ ...db, tasks }, task.id)
+  return { tasks, task }
 }
 
 export function updateTask(db: Database, id: ID, patch: Partial<Task>): Task[] {
+  patch = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) as Partial<Task>
   if (patch.title !== undefined && !patch.title.trim()) throw new Error('タスク名を入力してください')
   if (patch.due !== undefined) validGoalDue(patch.due)
   if (patch.goalNodeId != null) requireGoal(db, patch.goalNodeId)
-  return db.tasks.map((t) => {
+  const previous = db.tasks.find((task) => task.id === id)
+  if (!previous) throw new Error('タスクが見つからない')
+  const tasks = db.tasks.map((t) => {
     if (t.id !== id) return t
     const now = Date.now()
     const nextStatus = patch.status ?? t.status
-    const merged: Task = { ...t, ...patch, id: t.id, updatedAt: now }
-    if (nextStatus === 'done' && merged.doneAt === null) {
+    const merged: Task = normalizeTaskControl({ ...t, ...patch, id: t.id, updatedAt: now })
+    if (patch.status !== undefined && nextStatus === 'done' && merged.doneAt === null) {
       merged.doneAt = now
       if (patch.progress === undefined) merged.progress = 100
     }
-    if (nextStatus !== 'done') merged.doneAt = null
-    merged.progress = Math.max(0, Math.min(100, Math.round(merged.progress)))
+    if (patch.status !== undefined && nextStatus !== 'done') merged.doneAt = null
+    if (patch.progress !== undefined || patch.status !== undefined) merged.progress = Math.max(0, Math.min(100, Math.round(merged.progress)))
     return merged
   })
+  const next = tasks.find((task) => task.id === id)!
+  validateTaskLinks(tasks, next, previous)
+  if (patch.status === 'doing') assertTaskExecutable({ ...db, tasks }, id)
+  assertLiveWorkPreserved(db, { ...db, tasks })
+  return tasks
 }
 
 /** 列をまたぐ移動と並び替え。移動先の列（と、列が変わるときは移動元の列）の order を振り直す。 */
 export function moveTask(db: Database, id: ID, status: TaskStatus, index: number): Task[] {
   const target = db.tasks.find((t) => t.id === id)
-  if (!target) return db.tasks
+  if (!target) throw new Error('タスクが見つからない')
   const from = target.status
   const tasks = updateTask(db, id, { status })
   const moved = tasks.find((t) => t.id === id)!
@@ -133,7 +153,9 @@ export function descendantIds(db: Database, id: ID): ID[] {
 
 export function deleteTask(db: Database, id: ID): Task[] {
   const ids = new Set([id, ...descendantIds(db, id)])
-  return db.tasks.filter((t) => !ids.has(t.id))
+  const tasks = db.tasks.filter((t) => !ids.has(t.id))
+  assertLiveWorkPreserved(db, { ...db, tasks })
+  return tasks
 }
 
 /** タスクが実績時間を持つか（削除確認の材料）。 */

@@ -6,6 +6,8 @@
  */
 import { app } from 'electron'
 import { PresenceCandidatesSchema } from '@white-box/contracts'
+import { TaskControlSchema } from '@white-box/contracts'
+import { validateTaskGraph } from '@white-box/core/task-control'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Database, Settings } from '@white-box/core/types'
@@ -14,6 +16,9 @@ import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-m
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 
 const DB_VERSION = 1
+const RENAME_RETRY_LIMIT = 3
+const RENAME_RETRY_DELAY_MS = 20
+const RENAME_RETRY_SIGNAL = new Int32Array(new SharedArrayBuffer(4))
 
 export const DEFAULT_SETTINGS: Settings = {
   displayName: '',
@@ -50,9 +55,11 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
   const goalMap = parsed.goalMap === undefined ? emptyGoalMap() : parseGoalMap(parsed.goalMap)
   const tasks = parsed.tasks ?? []
   for (const task of tasks) {
+    TaskControlSchema.parse({ blocked: task.blocked, blockReason: task.blockReason, hardDependencies: task.hardDependencies, recommendedPredecessors: task.recommendedPredecessors, externalBlock: task.externalBlock })
     validGoalDue(task.due)
     if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
   }
+  validateTaskGraph(tasks)
   if (parsed.goalMapImports !== undefined && (!Array.isArray(parsed.goalMapImports) || parsed.goalMapImports.some((item) => typeof item !== 'string'))) {
     throw new Error('道標の取込履歴が不正です')
   }
@@ -121,7 +128,16 @@ export class Store {
   save(): void {
     const tmp = `${this.dbPath}.tmp`
     fs.writeFileSync(tmp, JSON.stringify(this.db, null, 2), 'utf-8')
-    fs.renameSync(tmp, this.dbPath)
+    for (let attempt = 0; ; attempt++) {
+      try {
+        fs.renameSync(tmp, this.dbPath)
+        break
+      } catch (cause) {
+        const code = (cause as NodeJS.ErrnoException)?.code
+        if (attempt >= RENAME_RETRY_LIMIT || !['EPERM', 'EBUSY', 'EACCES'].includes(code ?? '')) throw cause
+        Atomics.wait(RENAME_RETRY_SIGNAL, 0, 0, RENAME_RETRY_DELAY_MS)
+      }
+    }
     this.backupOncePerDay()
   }
 
@@ -166,7 +182,8 @@ export class Store {
   replace(next: Database): void {
     const normalized = normalizeDatabase(next)
     fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), 'utf-8')
+    const before = this.db
     this.db = normalized
-    this.save()
+    try { this.save() } catch (cause) { this.db = before; throw cause }
   }
 }

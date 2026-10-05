@@ -4,6 +4,8 @@
  */
 import type { ArgsOf, CommandName, ResultOf } from '@white-box/contracts'
 import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
+import { assertTaskExecutable } from '@white-box/core/task-control'
+import { restoreOpenSession } from './lifecycle.js'
 import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import * as goalOps from '../domain/goal-ops.js'
@@ -35,45 +37,37 @@ export function createHandlers(ctx: Ctx): Handlers {
     // ── Project
     'project:create': (a) => {
       const r = taskOps.createProject(db(), { name: a.name })
-      db().projects = r.projects
-      ctx.publish()
+      commitChanges(ctx, { projects: r.projects })
       return r.project
     },
     'project:update': (a) => {
-      db().projects = taskOps.updateProject(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { projects: taskOps.updateProject(db(), a.id, a.patch) })
       return null
     },
     'project:delete': (a) => {
       const r = taskOps.deleteProject(db(), a.id)
-      db().projects = r.projects
-      db().tasks = r.tasks
-      ctx.publish()
+      commitChanges(ctx, r)
       return null
     },
 
     // ── Task
     'task:create': (a) => {
       const r = taskOps.createTask(db(), a)
-      db().tasks = r.tasks
       const s = liveSession(db())
-      if (s && a.fromSession) replaceSession(db(), ops.noteTaskCreated(s, r.task.title, r.task.id, ctx.now()))
-      ctx.publish()
+      const sessions = s && a.fromSession ? db().sessions.map((item) => item.id === s.id ? ops.noteTaskCreated(s, r.task.title, r.task.id, ctx.now()) : item) : db().sessions
+      commitChanges(ctx, { tasks: r.tasks, sessions })
       return r.task
     },
     'task:update': (a) => {
-      db().tasks = taskOps.updateTask(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { tasks: taskOps.updateTask(db(), a.id, a.patch) })
       return null
     },
     'task:move': (a) => {
-      db().tasks = taskOps.moveTask(db(), a.id, a.status, a.index)
-      ctx.publish()
+      commitChanges(ctx, { tasks: taskOps.moveTask(db(), a.id, a.status, a.index) })
       return null
     },
     'task:delete': (a) => {
-      db().tasks = taskOps.deleteTask(db(), a.id)
-      ctx.publish()
+      commitChanges(ctx, { tasks: taskOps.deleteTask(db(), a.id) })
       return null
     },
     'task:hasTime': (a) => taskOps.hasRecordedTime(db(), a.id),
@@ -139,31 +133,32 @@ export function createHandlers(ctx: Ctx): Handlers {
       if (liveSession(db())) return null
       const now = ctx.now()
       let taskId = a.taskId
+      let tasks = db().tasks
       if (!taskId && a.newTask) {
         const r = taskOps.createTask(db(), {
           title: a.newTask.title,
           projectId: a.newTask.projectId ?? null,
           status: 'doing',
         })
-        db().tasks = r.tasks
+        tasks = r.tasks
         taskId = r.task.id
       }
       if (!taskId) return null
+      const staged = { ...db(), tasks }
+      assertTaskExecutable(staged, taskId)
       const minutes = a.minutes ?? db().settings.defaultSessionMinutes
       if (!Number.isFinite(minutes) || minutes <= 0) throw new Error('作業時間は1分以上にする')
       const session = ops.createSession({
         taskId,
-        taskTitle: taskTitle(db(), taskId),
+        taskTitle: taskTitle(staged, taskId),
         plannedMs: minutes * MINUTE,
         mode: a.mode ?? db().settings.defaultSessionMode ?? 'timer',
         pomodoroBreakMs: (a.breakMinutes ?? db().settings.pomodoroBreakMinutes ?? 5) * MINUTE,
         pomodoroAutoResume: a.autoResume ?? db().settings.pomodoroAutoResume ?? false,
         now,
       })
-      db().sessions.push(session)
-      if (ctx.runtime.currentWorkOpen) replaceSession(db(), ops.pauseSession(session, now, 'task-management'))
-      db().tasks = taskOps.updateTask(db(), taskId, { status: 'doing' })
-      ctx.publish()
+      const started = ctx.runtime.currentWorkOpen ? ops.pauseSession(session, now, 'task-management') : session
+      commitChanges(ctx, { sessions: [...db().sessions, started], tasks: taskOps.updateTask(staged, taskId, { status: 'doing' }) })
       ctx.windows.open('hud', false)
       ctx.ticker.start()
       ctx.windows.closeLater('start')
@@ -183,13 +178,13 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:resume': () => {
       const s = currentSession()
       if (!s) return null
+      assertTaskExecutable(db(), activeTaskId(s))
       const next = ops.resumeSession(s, ctx.now())
       if (next === s) {
         if (s.expiredNotifiedAt !== null) ctx.windows.open('expire')
         return null
       }
-      replaceSession(db(), next)
-      ctx.publish()
+      commitChanges(ctx, { sessions: db().sessions.map((item) => item.id === s.id ? next : item) })
       ctx.windows.closeLater('expire')
       return null
     },
@@ -204,9 +199,10 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:extend': (a) => {
       const s = currentSession()
       if (!s) return null
+      assertTaskExecutable(db(), activeTaskId(s))
       const minutes = a.minutes || db().settings.defaultExtendMinutes
-      replaceSession(db(), ops.extendSession(s, minutes, ctx.now()))
-      ctx.publish()
+      const next = ops.extendSession(s, minutes, ctx.now())
+      commitChanges(ctx, { sessions: db().sessions.map((item) => item.id === s.id ? next : item) })
       ctx.windows.closeLater('expire')
       return null
     },
@@ -225,15 +221,17 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:switchTask': (a) => {
       const s = currentSession()
       if (!s) return null
+      assertTaskExecutable(db(), a.taskId)
       const now = ctx.now()
       const prev = activeTaskId(s)
-      replaceSession(db(), ops.switchTask(s, a.taskId, taskTitle(db(), a.taskId), now))
-      db().tasks = taskOps.updateTask(db(), a.taskId, { status: 'doing' })
+      const sessions = db().sessions.map((item) => item.id === s.id ? ops.switchTask(s, a.taskId, taskTitle(db(), a.taskId), now) : item)
+      let staged = { ...db(), sessions }
+      staged = { ...staged, tasks: taskOps.updateTask(staged, a.taskId, { status: 'doing' }) }
       if (prev && prev !== a.taskId) {
-        const prevTask = db().tasks.find((t) => t.id === prev)
-        if (prevTask && prevTask.status === 'doing') db().tasks = taskOps.updateTask(db(), prev, { status: 'todo' })
+        const prevTask = staged.tasks.find((t) => t.id === prev)
+        if (prevTask && prevTask.status === 'doing') staged = { ...staged, tasks: taskOps.updateTask(staged, prev, { status: 'todo' }) }
       }
-      ctx.publish()
+      commitChanges(ctx, { sessions, tasks: staged.tasks })
       return null
     },
     'session:end': (a) => {
@@ -253,16 +251,23 @@ export function createHandlers(ctx: Ctx): Handlers {
       if (!s) return null
       const updated = ops.recordProgress(s, a.changes, ctx.now())
       updated.note = a.note ?? ''
-      replaceSession(db(), updated)
+      const sessions = db().sessions.map((item) => item.id === s.id ? updated : item)
+      let staged = { ...db(), sessions }
       for (const c of a.changes) {
-        db().tasks = taskOps.updateTask(db(), c.taskId, {
+        staged = { ...staged, tasks: taskOps.updateTask(staged, c.taskId, {
           progress: c.to,
           ...(c.markedDone ? { status: 'done' as const } : {}),
-        })
+        }) }
       }
       const thenStart = ctx.runtime.pendingReview?.thenStart ?? false
+      const pendingReview = ctx.runtime.pendingReview
       ctx.runtime.pendingReview = null
-      ctx.publish()
+      try {
+        commitChanges(ctx, { sessions, tasks: staged.tasks })
+      } catch (cause) {
+        ctx.runtime.pendingReview = pendingReview
+        throw cause
+      }
       if (thenStart) ctx.windows.open('start')
       ctx.windows.closeLater('review')
       return null
@@ -276,6 +281,7 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:update': (a) => {
       const s = db().sessions.find((x) => x.id === a.id)
       if (!s) return null
+      if (s.endedAt === null && a.segmentTaskId) throw new Error('現在のタスク変更にはセッションの切替を使う')
       // 先に db を書き換えてから検証しない（申告が拒否されたときに記録が半分だけ変わる）
       replaceSession(db(), ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, ctx.now()))
       ctx.publish()
@@ -301,13 +307,17 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'recovery:resume': () => {
       const s = db().sessions.find((x) => x.id === ctx.runtime.recovery?.sessionId)
-      if (s) {
-        const next = ops.resumeSession(s, ctx.now())
-        replaceSession(db(), next)
-        if (next === s && s.expiredNotifiedAt !== null) ctx.windows.open('expire')
-      }
+      if (s) assertTaskExecutable(db(), activeTaskId(s))
+      const next = s ? ops.resumeSession(s, ctx.now()) : null
+      const recovery = ctx.runtime.recovery
       ctx.runtime.recovery = null
-      ctx.publish()
+      try {
+        commitChanges(ctx, { sessions: db().sessions.map((item) => item.id === s?.id ? next! : item) })
+      } catch (cause) {
+        ctx.runtime.recovery = recovery
+        throw cause
+      }
+      if (s && next === s && s.expiredNotifiedAt !== null) ctx.windows.open('expire')
       ctx.ticker.start()
       return null
     },
@@ -361,7 +371,13 @@ export function createHandlers(ctx: Ctx): Handlers {
     'data:export': () => ctx.dataIO.exportData(),
     'data:import': async () => {
       const p = await ctx.dataIO.importData()
-      if (p) ctx.publish()
+      if (p) {
+        ctx.ticker.stop()
+        ctx.runtime.recovery = null
+        ctx.runtime.pendingReview = null
+        restoreOpenSession(ctx)
+        ctx.publish()
+      }
       return p
     },
     'data:reveal': () => {
