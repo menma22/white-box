@@ -37,7 +37,7 @@ Windows の rename が EPERM / EBUSY / EACCES を返す場合だけ、20ms 間�
 
 ## 検証
 
-`pnpm typecheck`、`pnpm lint`、`pnpm test`（38ファイル・328件）、`pnpm build`、`pnpm pack` が成功した。入力境界・グラフ・遷移・復旧の回帰は [contracts](../../packages/contracts/tests/task-control.test.ts)、[core](../../packages/core/tests/task-control.test.ts)、[desktop](../../apps/desktop/tests/task-control.test.ts)、[旧データ](../../apps/desktop/tests/task-control-store.test.ts)、[実 Store の保存故障](../../apps/desktop/tests/store-save.test.ts) で確認する。開始ガードを一時的に無効化した検算では対象テストが11件失敗し、復元後は全件成功した。
+`pnpm run typecheck`、`pnpm run lint`、`pnpm run test`（38ファイル・328件）、`pnpm run build`、`pnpm run pack` が成功した。入力境界・グラフ・遷移・復旧の回帰は [contracts](../../packages/contracts/tests/task-control.test.ts)、[core](../../packages/core/tests/task-control.test.ts)、[desktop](../../apps/desktop/tests/task-control.test.ts)、[旧データ](../../apps/desktop/tests/task-control-store.test.ts)、[実 Store の保存故障](../../apps/desktop/tests/store-save.test.ts) で確認する。開始ガードを一時的に無効化した検算では対象テストが11件失敗し、復元後は全件成功した。
 
 [隔離 UI スクリプト](../../scripts/e2e-dependencies.mjs) を [共通 mutex](../../scripts/run-ui-e2e.ps1) 経由で実行した。最終ソース版 [run-BY6cPJ](../../.e2e-dependencies/run-BY6cPJ/report.json)、配布版 [run-gUYQuY](../../.e2e-dependencies/run-gUYQuY/report.json) は各60項目成功、renderer exception / console error 0。各8枚の実画面と撮影対象 URL・可視状態を記録し、外部待ち、削除参照の解除、開始候補、循環エラー、再起動後の復旧表示を目視確認した。所有する各3プロセスは `app:quit` で終了し、強制終了なし・残存なし・mutex 解放を確認した。実アプリログに未処理例外・fatal・保存競合エラーは無かった。これらの run ディレクトリはローカル検証証拠であり、リポジトリには含めない。
 
