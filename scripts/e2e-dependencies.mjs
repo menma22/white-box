@@ -425,4 +425,3 @@ try {
   fs.writeFileSync(path.join(RUN, 'report.json'), JSON.stringify({ executable: electron, checks, errors, run: RUN }, null, 2))
   console.log(`Evidence: ${RUN}`)
 }
-
