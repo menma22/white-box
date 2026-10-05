@@ -37,7 +37,7 @@ function check(name, passed) {
   assert.ok(passed, name)
 }
 function processSnapshot() {
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], { encoding: 'utf8', windowsHide: true })
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', '[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name | ConvertTo-Json -Compress'], { encoding: 'utf8', windowsHide: true })
   if (result.status !== 0) throw new Error(result.stderr)
   const all = JSON.parse(result.stdout)
   let added

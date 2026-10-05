@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 
@@ -14,6 +15,11 @@ const RUN = fs.mkdtempSync(path.join(OUTPUT, 'phase2-planning-run-'))
 const DATA = path.join(RUN, 'data')
 fs.mkdirSync(DATA)
 const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : createRequire(import.meta.url)('electron')
+const startedAt = new Date().toISOString()
+const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
+const runtimeFiles = ['dist-electron/presentation/main.js', 'apps/desktop/src/presentation/preload.cjs', 'dist-electron/app/handlers.js', 'dist-electron/app/state.js', 'dist-electron/infra/renderer-flush.js', 'dist-electron/infra/windows.js', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist', 'assets')).filter((file) => file.endsWith('.js')).map((file) => 'dist/assets/' + file)]
+const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
+fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const checks = [], errors = [], ownedPids = new Set(), pages = new Set(), expectedErrorWindows = []
 let child, page, port, appLog, faultLog, faultOwned = false
@@ -84,7 +90,6 @@ async function windowPage(kind) {
     const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })
     return (await response.json()).find((item) => item.type === 'page' && item.url.endsWith('#' + kind))
   }, kind + ' window', 20000)
-  const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
   const expected = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
   check(`${kind}: CDP is attached to this build`, decodeURI(target.url) === decodeURI(expected), target.url)
   const connection = await connect(target.webSocketDebuggerUrl)
@@ -99,9 +104,10 @@ async function windowClosed(kind) {
   }, kind + ' window closed')
 }
 function processSnapshot() {
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], { encoding: 'utf8', windowsHide: true })
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', '[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name | ConvertTo-Json -Compress'], { encoding: 'utf8', windowsHide: true })
   if (result.status !== 0) throw new Error(result.stderr || 'Cannot inspect owned processes')
-  const all = JSON.parse(result.stdout)
+  let all
+  try { all = JSON.parse(result.stdout) } catch { throw new Error('Owned-process inventory did not return valid UTF-8 JSON') }
   let added
   do {
     added = false
@@ -149,8 +155,9 @@ async function call(name, args = {}) { const response = await raw(name, args); a
 const savedTask = (id) => read().tasks.find((task) => task.id === id)
 const exposedDatabaseFields = ['projects', 'tasks', 'sessions', 'settings', 'dayNotes', 'taskSuggestions', 'notes', 'goalMap', 'presenceCandidates', 'weeklyBudgets', 'weeklyBudgetDefaults', 'fixedWork']
 const stateMatchesDatabase = (state, database) => exposedDatabaseFields.every((field) => isDeepStrictEqual(state[field], database[field]))
-async function screenshot(name) {
+async function screenshot(name, selector, alignment = 'start') {
   await page.send('Page.bringToFront')
+  if (selector) await page.evaluate(`(() => { const target=document.querySelector(${JSON.stringify(selector)}); if(!target) throw Error('Missing screenshot target'); target.scrollIntoView({block:${JSON.stringify(alignment)}}); })()`)
   await wait(350)
   const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
@@ -161,7 +168,7 @@ async function key(key, code, modifiers = 0) {
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', ...params })
 }
 async function click(selector) {
-  const point = await until(() => page.evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if(!el || el.disabled) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const p={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && p.x>0 && p.x<innerWidth && p.y>0 && p.y<innerHeight && el.contains(document.elementFromPoint(p.x,p.y)) ? p : null })()`), selector)
+  const point = await until(() => page.evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if(!el || el.disabled) return null; for(let ancestor=el;ancestor;ancestor=ancestor.parentElement) if(ancestor.getAnimations().some(animation=>animation.playState==='running' && animation.effect?.getTiming().iterations!==Infinity)) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const p={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && p.x>0 && p.x<innerWidth && p.y>0 && p.y<innerHeight && el.contains(document.elementFromPoint(p.x,p.y)) ? p : null })()`), selector)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
@@ -183,7 +190,7 @@ async function select(selector, value) {
 async function disclose(selector) { if (!await page.evaluate(`document.querySelector(${JSON.stringify(selector)})?.open`)) await click(selector + ' > summary') }
 async function tab(number, selector) { await key(String(number), 'Digit' + number, 2); await until(() => page.evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`), selector) }
 async function board() { await tab(2, '.board'); if (!await page.evaluate('Boolean(document.querySelector(".board-cols"))')) await button('ボード', '.board-head .segmented') }
-async function detail(id) { await click(`[data-card][data-task-id="${id}"]`); await until(() => page.evaluate(`document.querySelector('[data-task-context-id="${id}"]')`), id + ' detail') }
+async function detail(id) { await click(`[data-card][data-task-id="${id}"]`); await until(() => page.evaluate(`Boolean(document.querySelector('[data-task-context-id="${id}"]'))`), id + ' detail') }
 const faultPath = path.join(DATA, 'data.json.tmp')
 function beginExpectedErrors(label, commands, kind) {
   const observation = { label, file: path.basename(appLog), start: fs.statSync(appLog).size, end: null, commands, kind }
@@ -254,6 +261,11 @@ async function contextEdit(field, text, scope = contextScope) {
   if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(scope + ' [aria-label="文脈の種類"]')}))`)) await button('手がかりを残す', scope)
   await select(scope + ' [aria-label="文脈の種類"]', field)
   await fill(scope + ` [aria-label="${contextLabels[field]}"]`, text)
+}
+async function openContextRecord(field, scope = contextScope) {
+  const selector = await page.evaluate(`(() => { const el=[...document.querySelectorAll(${JSON.stringify(scope + ' .task-context-record')})].find(record=>record.querySelector('summary').textContent===${JSON.stringify(contextLabels[field])}); if(!el) return null; el.setAttribute('data-phase2-record',${JSON.stringify(field)}); return ${JSON.stringify(scope + ` [data-phase2-record="${field}"]`)}; })()`)
+  assert.ok(selector, 'saved context record ' + field)
+  await disclose(selector)
 }
 async function linkedEditor() { await disclose(contextScope + ' details.phase2-disclosure'); await button('● 既存の関連資料', contextScope); await until(() => page.evaluate('Boolean(document.querySelector(".note-editor"))'), 'linked Note editor') }
 function localDateTime(at) { const date = new Date(at); return `${calendar(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
@@ -329,7 +341,8 @@ async function verifyBudget() {
     await key('2', 'Digit2', 2)
     check('Budget failed save retains all input and blocks leaving the Week tab', await page.evaluate(`Boolean(document.querySelector('.week')) && document.querySelector(${JSON.stringify(sleepInput)}).value==='56' && document.querySelectorAll('.weekly-allocation').length===4 && document.querySelector('.weekly-budget form input[type=checkbox]').checked`))
     await unchangedAfterFailure(before, 'Weekly Budget failure', memoryBefore)
-    await screenshot('02-budget-save-failure')
+    await screenshot('02-budget-save-failure', '.weekly-budget [role="alert"]', 'center')
+    await screenshot('02a-budget-retained-upper-inputs', '.weekly-budget-inputs')
   } finally { endSaveFault() }
   await button('時間配分を保存', budgetScope)
   await until(() => read().weeklyBudgets?.length === 1, 'budget retry')
@@ -340,7 +353,7 @@ async function verifyBudget() {
   ] }
   check('All four allocation modes and personal defaults persist exactly', isDeepStrictEqual(read().weeklyBudgetDefaults, plan) && Object.keys(plan).every((field) => isDeepStrictEqual(read().weeklyBudgets[0][field], plan[field])))
   check('Budget displays 91h available and the minimum allocation shortage', await page.evaluate(`document.querySelector('.weekly-budget-equation').innerText.includes('91h') && document.querySelector('.weekly-budget .phase2-constraint').innerText.includes('29h')`))
-  await screenshot('03-budget-four-modes')
+  await screenshot('03-budget-four-modes', '.weekly-budget')
   await button('次の週', '.week-navigation')
   await disclose(budgetScope)
   await button('既定の配分を使う', budgetScope)
@@ -356,7 +369,12 @@ async function verifyProjectAndFixedWork() {
   await button(projectNames[0], '.board-projects')
   await button('プロジェクトを編集', '.board-project-context')
   check('Legacy Project Priority stays unset in the real editor', await page.evaluate(`document.querySelector('[role=dialog] .segmented-item.is-active').textContent==='未設定'`))
+  await page.evaluate(`(() => { window.__phase2ClickTrace=[]; for(const type of ['pointerdown','mousedown','mouseup','click']) document.addEventListener(type,event=>window.__phase2ClickTrace.push({type,target:event.target.textContent.trim(),tag:event.target.tagName,x:event.clientX,y:event.clientY,defaultPrevented:event.defaultPrevented}),{capture:true,once:true}); })()`)
   await button('重要', '[role="dialog"] .segmented')
+  const priorityDraft = await page.evaluate(`({ active:document.querySelector('[role=dialog] .segmented-item.is-active')?.textContent, focus:{tag:document.activeElement?.tagName,label:document.activeElement?.getAttribute('aria-label')}, frozen:document.querySelector('.main').inert, events:window.__phase2ClickTrace, buttons:[...document.querySelectorAll('[role=dialog] .segmented button')].map(button=>({text:button.textContent,active:button.classList.contains('is-active'),type:button.type})) })`)
+  fs.writeFileSync(path.join(RUN, 'project-click-observation.json'), JSON.stringify(priorityDraft, null, 2))
+  check('Selecting Project Priority updates the unsaved editor draft', priorityDraft.active === '重要', priorityDraft)
+  await screenshot('04a-project-selected-priority')
   const before = read()
   beginSaveFault('Project Priority isolated write rejection', ['project:update'])
   try {
@@ -397,7 +415,8 @@ async function verifyProjectAndFixedWork() {
   check('Next week counts overlapping external schedules once: 150 minutes', await page.evaluate(`document.querySelector('.weekly-budget-equation').innerText.includes('外部固定作業 2h 30m') && document.querySelector('.weekly-budget-equation strong').textContent==='88h 30m'`))
   await disclose('.week > .fixed-work-overview > details')
   check('Week exposes both real external schedules', await page.evaluate(`document.querySelectorAll('.week [data-fixed-work-id]').length===2`))
-  await screenshot('05-week-boundary-overlap')
+  await screenshot('05-week-boundary-overlap', '.weekly-budget')
+  await screenshot('05b-week-overlapping-fixed-work', '.week > .fixed-work-overview')
   await board()
   await disclose('.board > .fixed-work-overview > details')
   await button('予定を取り消す', `[data-fixed-work-id="${second.id}"]`)
@@ -412,7 +431,7 @@ async function verifyProjectAndFixedWork() {
   await disclose('.today .fixed-work-overview > details')
   const expectedToday = calendar(todayStart) === calendar(Date.now())
   check('Today lists external work only when its interval belongs to today', await page.evaluate(`Boolean(document.querySelector('[data-fixed-work-id="${todayWork.id}"]'))`) === expectedToday)
-  await screenshot('06-today-fixed-work')
+  await screenshot('06-today-fixed-work', '.today .fixed-work-overview')
   await wait(500)
   check('Schedule registration and display still leave the app idle', read().sessions.length === 0 && (await call('state:get')).live === null)
 }
@@ -420,6 +439,7 @@ async function verifyProjectAndFixedWork() {
 async function verifyTaskContext() {
   await board()
   await detail('task-a')
+  await openContextRecord('notes')
   check('Existing free Notes and linked Note are preserved before editing structured context', savedTask('task-a').notes === seed.tasks[0].notes && isDeepStrictEqual(read().notes, [linkedNote]) && await page.evaluate(`document.querySelector(${JSON.stringify(contextScope)}).innerText.includes('既存の自由メモは保持する。')`))
   for (const [field, text] of [['problems', 'まだ未解決の API 応答。'], ['decisions', '結果は独立した呼び出しで確認する。'], ['nextContext', 'API の資料を開き、失敗ケースから再開する。']]) await contextEdit(field, text)
   await button('文脈を保存', contextScope)
@@ -452,7 +472,7 @@ async function verifyTaskContext() {
     await until(() => page.evaluate('Boolean(document.querySelector(".note-save-error"))'), 'linked Note save failure')
     check('A failed linked Note save blocks tab navigation and retains the full draft', await page.evaluate(`Boolean(document.querySelector('.board')) && document.querySelector('[aria-label="ノートの本文"]').value==='失敗した関連ノートの全文を、再試行まで保持する。'`))
     await unchangedAfterFailure(before, 'Linked Note failure')
-    await screenshot('07-linked-note-save-failure')
+    await screenshot('07-linked-note-save-failure', '.note-editor')
   } finally { endSaveFault() }
   await tab(8, '.week')
   check('Retry flushes the linked Note and then permits navigation', read().notes[0].body === '失敗した関連ノートの全文を、再試行まで保持する。')
@@ -480,7 +500,7 @@ async function verifyTaskContext() {
     await click('.detail-foot .btn-primary')
     check('Failed Task context blocks tab, close, Task switch and start while retaining input', await page.evaluate(`Boolean(document.querySelector('.board')) && document.querySelector('${contextScope} [aria-label="次にすること・再開の手がかり"]').value==='保存失敗の入力から、調査を確実に開始する。'`) && read().sessions.length === 0 && (await call('state:get')).live === null)
     await unchangedAfterFailure(startBefore, 'Task Context failure')
-    await screenshot('09-task-context-save-failure')
+    await screenshot('09-task-context-save-failure', contextScope + ' [role="alert"]', 'center')
   } finally { endSaveFault() }
   await click('.detail-foot .btn-primary')
   await until(() => read().sessions.length === 1, 'retry starts real Session')
@@ -505,7 +525,7 @@ async function verifyTaskContext() {
     await until(() => fs.readFileSync(appLog, 'utf8').slice(0).includes('[white-box] 入力の保存を待つため窓を閉じません:'), 'external Current Work native close veto')
     check('An external close request reaches the native close event and retains the failed draft', await page.evaluate(`Boolean(document.querySelector('.current')) && document.querySelector('${contextScope} [aria-label="次にすること・再開の手がかり"]').value==='現在の仕事を切り替える直前の、最新の手がかり。'`) && (await call('state:get')).live?.activeTaskId === 'task-a')
     check('Current Work failed update keeps persisted context unchanged', savedTask('task-a').nextContext === endBefore.tasks[0].nextContext)
-    await screenshot('10-current-context-save-failure')
+    await screenshot('10-current-context-save-failure', contextScope + ' [role="alert"]', 'center')
   } finally { endSaveFault() }
   const switched = await main.evaluate('window.whitebox.call("session:switchTask", {taskId:"task-b"})')
   assert.equal(switched.ok, true, JSON.stringify(switched))
@@ -521,9 +541,10 @@ async function verifyTaskContext() {
   page = await windowPage('current')
   await until(() => page.evaluate('Boolean(document.querySelector("[data-task-context-id=task-b]"))'), 'Current Work reopened')
   await disclose('.current-body > details.phase2-disclosure')
-  check('Closing and reopening Current Work retains the latest decision', await page.evaluate(`document.querySelector('[data-task-context-id=task-b]').innerText.includes('現在の仕事を閉じても、判断を保存しておく。')`))
+  await openContextRecord('decisions', '[data-task-context-id="task-b"]')
+  check('Closing and reopening Current Work retains the latest decision', savedTask('task-b').decisions === '現在の仕事を閉じても、判断を保存しておく。' && await page.evaluate(`document.querySelector('[data-task-context-id=task-b]').innerText.includes('現在の仕事を閉じても、判断を保存しておく。')`))
   await contextEdit('nextContext', '終了後は、この比較結果を再確認して続ける。', '[data-task-context-id="task-b"]')
-  await screenshot('11-current-restart-context')
+  await screenshot('11-current-restart-context', '.current-body > details.phase2-disclosure')
   const ended = await main.evaluate('window.whitebox.call("session:end")')
   assert.equal(ended.ok, true, JSON.stringify(ended))
   page = main
@@ -583,13 +604,14 @@ try {
   if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(sleepInput)}))`)) await budgetEdit()
   await fill(sleepInput, '9')
   check('An incomplete new week draft does not invent the remaining living hours or commit a budget', !read().weeklyBudgets.some((budget) => budget.weekStart === laterWeek) && await page.evaluate(`document.querySelector('[aria-label="食事（週の合計時間）"]').value==='' && document.querySelector('[aria-label="その他の固定時間（週の合計時間）"]').value===''`))
-  await screenshot('14-budget-unsaved-before-quit')
+  await screenshot('14-budget-unsaved-before-quit', '.weekly-budget')
   await board()
   await detail('task-a')
+  await openContextRecord('notes')
   await contextEdit('problems', '終了直前の未保存の問題も、自然終了で保存する。')
   const beforeQuit = read()
   check('The final context draft is still unsaved before the actual quit request', savedTask('task-a').problems !== '終了直前の未保存の問題も、自然終了で保存する。')
-  await screenshot('15-context-unsaved-before-quit')
+  await screenshot('15-context-unsaved-before-quit', contextScope)
   fs.writeFileSync(path.join(RUN, 'before-quit.json'), JSON.stringify(beforeQuit, null, 2))
   await stop('first')
   const persisted = read()
@@ -605,10 +627,12 @@ try {
   check('Restart deeply restores the full saved file and every exposed Database field', isDeepStrictEqual(read(), persisted) && stateMatchesDatabase(restored, persisted))
   await board()
   await detail('task-a')
+  await openContextRecord('notes')
   check('Restarted Task detail shows saved Next Context and legacy Notes', await page.evaluate(`document.querySelector('${contextScope}').innerText.includes('現在の仕事を切り替える直前') && document.querySelector('${contextScope}').innerText.includes('既存の自由メモは保持する')`))
+  await screenshot('12a-restarted-structured-context', contextScope)
   await linkedEditor()
   check('Restarted linked Note editor retains the entire recovered draft', await page.evaluate(`document.querySelector('[aria-label="ノートの本文"]').value==='失敗した関連ノートの全文を、再試行まで保持する。'`))
-  await screenshot('12-restarted-task-context')
+  await screenshot('12-restarted-task-context', '.note-editor')
   await tab(8, '.week')
   await disclose(budgetScope)
   check('Restarted Week keeps personal budgets and default reuse available', await page.evaluate(`Boolean(document.querySelector('.weekly-budget-equation')) && [...document.querySelectorAll('.weekly-budget button')].some(button=>button.textContent==='既定の配分を使う')`))
@@ -619,13 +643,13 @@ try {
   await disclose(budgetScope)
   if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(sleepInput)}))`)) await budgetEdit()
   check('Restart also restores a partially entered new week with the missing hours still blank', await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='9' && document.querySelector('[aria-label="食事（週の合計時間）"]').value==='' && document.querySelector('[aria-label="その他の固定時間（週の合計時間）"]').value===''`) && !read().weeklyBudgets.some((budget) => budget.weekStart === laterWeek))
-  await screenshot('13-restarted-week-budget')
+  await screenshot('13-restarted-week-budget', '.weekly-budget')
   await stop('restart')
   check('Final natural quit preserves the full restarted Database', isDeepStrictEqual(read(), persisted))
   const appErrors = applicationErrors()
   fs.writeFileSync(path.join(RUN, 'application-errors.json'), JSON.stringify(appErrors, null, 2))
   check('Every monitored renderer has no console errors or uncaught exceptions', errors.length === 0, errors)
-  check('App logs contain no unexpected application errors', appErrors.unexpected.length === 0, appErrors)
+  check('App logs contain no unexpected application errors', appErrors.unexpected.length === 0, { unexpected: appErrors.unexpected, expectedRejections: appErrors.expected.length })
   check('No owned Electron PID remains after both natural shutdowns', processSnapshot().length === 0)
   exitCode = 0
 } catch (error) {
@@ -644,7 +668,7 @@ try {
     }
   }
   for (const connection of pages) connection.close()
-  fs.writeFileSync(path.join(RUN, 'result.json'), JSON.stringify({ exitCode, executable: electron, checks, errors, expectedErrorWindows, artifacts: fs.readdirSync(RUN) }, null, 2))
+  fs.writeFileSync(path.join(RUN, 'result.json'), JSON.stringify({ exitCode, startedAt, completedAt: new Date().toISOString(), executable: electron, checks, errors, expectedErrorWindows, artifacts: fs.readdirSync(RUN) }, null, 2))
   console.log(`Evidence: ${RUN}`)
   process.exit(exitCode)
 }
