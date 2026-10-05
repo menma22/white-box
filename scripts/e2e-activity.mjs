@@ -245,6 +245,7 @@ async function recorded(taskId, startedAt, endedAt, note) {
 }
 async function verifyMinimum(scope, name) {
   await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
+  await page.evaluate("document.querySelector('.main-content').scrollTop=0")
   const layout = await page.evaluate(`(() => {
     const root=document.querySelector(${JSON.stringify(scope)}), content=document.querySelector('.main-content');
     return {width:innerWidth,height:innerHeight,documentOverflow:document.documentElement.scrollWidth-innerWidth,
@@ -302,7 +303,11 @@ async function verifyWeek(expectedToday = 0) {
   const sessionTimes = await page.evaluate(`[...document.querySelectorAll('.week-day[open] .srow-focus')].map(el=>{const copy=el.cloneNode(true);copy.querySelector('small')?.remove();return copy.textContent.trim()})`)
   check('In-period session values sum to the same 185 minutes', sessionTimes.length === 5 && sessionTimes.reduce((sum, value) => sum + durationMinutes(value), 0) === 185, sessionTimes)
   check('Original 60-minute boundary session is distinguished from the 30-minute daily portion', await page.evaluate(`(() => { const row=[...document.querySelectorAll('.week-day[open] .srow')].find(el=>el.textContent.includes('月曜4時の前後に30分ずつ')); return row.querySelector('.srow-scope').textContent.includes('全体 1h') && row.querySelector('.srow-focus').firstChild.textContent.trim()==='30m' && document.querySelector('.week').textContent.includes('タスク完了は目標の成果達成とは別'); })()`))
+  for (let index = 0; index < 7; index++) await click(`.week-day:nth-of-type(${index + 1}) > summary`)
+  await page.evaluate("document.querySelector('.main-content').scrollTop=0")
   await screenshot('01-previous-week')
+  await page.evaluate("document.querySelector('.week > .activity-breakdown').scrollIntoView({block:'center'})")
+  await screenshot('01b-week-breakdown')
   await verifyMinimum('.week', '02-minimum-week')
   await button('前の週', '.week-navigation')
   const preceding = await amounts('.week')
