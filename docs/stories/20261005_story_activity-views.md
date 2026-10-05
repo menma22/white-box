@@ -14,6 +14,7 @@
 - [x] 時刻編集で重なったセッションの同じ瞬間を二度計上しない。帰属は開始時刻、ID、区間順の安定した順で決め、画面に重複の扱いを明記する。
 - [x] 過去のタスクが削除されても時間と履歴を残し、進捗・目標成果を自動変更しない。
 - [x] 旧データの読込み、実IPCによる時刻編集・保存・再起動、ソースと隔離した配布版、最小幅の実画面を検証する。
+- [ ] 見積・停滞の警告を結合したToday・今週でも実績を確認しやすくする。現在の件数と最上位理由を要約し、本人の展開後は全警告と操作を表示する。過去・未来週へ現在の警告を混ぜず、作業中の初期折り畳み・手動展開保持・折り畳み中の保存エラー表示を確認する。
 
 ## やらないこと
 
@@ -23,13 +24,19 @@
 
 期間の境界・時間の帰属・集計は`packages/core`の純関数を正本とする。rendererはその結果を描画し、停止減算や満了上限を再実装しない。履歴の操作は元のセッションIDへ届き、範囲内の値とセッション全体の値を表示上区別する。データ形式の変更は不要。日付だけの見出しは集計キーへ合わせ、既存の日境界修正と同じ要件を満たす。
 
-## 検証
+## 個別実装時の検証（統合前の履歴）
 
 依存機能を含む型検査・lint・39ファイル337テスト・build/packが成功。coreの9テストは日/週境界、各帰属の和、重複・停止・除外・整理、満了、削除参照、年越しを確認する。別記録の実作業に停止を重ねる回帰は修正前に一時停止10分となる失敗を観測し、修正後は実作業50分・一時停止0分・除外10分でTimelineの合計60分と一致した。
 
 ソースと隔離した配布EXEで `e2e-activity.mjs` 各50確認が成功。公開IPCで編集した記録を、独立に手計算した週185分・Project/Task別の和・隣の週30分と比較した。停止・除外・満了の実操作、940×620で横溢れ0、最近14日の0日、保存・再起動、目標未判定を確認。renderer errorは0、全起動は強制終了なし・所有PID消滅を確認した。
 
-- [ソースの結果](../../.e2e/activity-run-P00UOL/result.json)
-- [配布版の結果](../../.e2e/activity-run-qy6SVQ/result.json) / [週合計](../../.e2e/activity-run-qy6SVQ/01-previous-week.png) / [週の帰属](../../.e2e/activity-run-qy6SVQ/01b-week-breakdown.png) / [今日の最小幅](../../.e2e/activity-run-qy6SVQ/04-minimum-today.png)
+- [ソースの結果](../../../phase-2-implementation-and-production-backlog-au/.e2e/activity-run-P00UOL/result.json)
+- [配布版の結果](../../../phase-2-implementation-and-production-backlog-au/.e2e/activity-run-qy6SVQ/result.json) / [週合計](../../../phase-2-implementation-and-production-backlog-au/.e2e/activity-run-qy6SVQ/01-previous-week.png) / [週の帰属](../../../phase-2-implementation-and-production-backlog-au/.e2e/activity-run-qy6SVQ/01b-week-breakdown.png) / [今日の最小幅](../../../phase-2-implementation-and-production-backlog-au/.e2e/activity-run-qy6SVQ/04-minimum-today.png)
 
 初回のナビゲーション検証はタブ内のglyphとショートカットを名前に含めて失敗し、実際のlabelへ合わせて修正した。次の実行で観測したWindowsのrename EPERMは依存機能側の限定再試行と保存故障テストで対処した。撮影は展開した日一覧の末尾ではなく、週合計と帰属へ明示的に戻して確認した。
+
+## 警告との結合状態（2026-10-05）
+
+Today・今週のヘッダー下に共通の `TaskWarnings` を要約表示し、実績を長文警告で押し下げない。Weekの表示週が現在から離れた場合は現在の行動警告を表示しない。展開後は全警告を操作でき、タイトルから一般詳細、整理ボタンから既存の待ち編集欄へ直接進む。作業中は未操作の警告を折り畳み、本人が展開した状態と操作中の展開は保持する。保存エラーは折り畳みの外に表示する。実績の集計規則は変更しない。
+
+Cの結合状態で型検査・lint・43ファイル397テスト・Storybook build・pack（本体buildを含む）が成功した。最終UXで実績E2Eは[ソース版](../../.e2e/activity-run-CnWK4n/result.json)・[配布版](../../.e2e/activity-run-dTQYy0/result.json)各50項目成功・renderer error0、各2起動は強制終了なし・所有PID消滅。週185分・各帰属・隣週30分、[週合計](../../.e2e/activity-run-dTQYy0/01-previous-week.png)・[帰属](../../.e2e/activity-run-dTQYy0/01b-week-breakdown.png)・[940×620のToday](../../.e2e/activity-run-dTQYy0/04-minimum-today.png)を実読した。新UX56項目と配布版11本の結果は[結合ゲートと終了失敗の未確定事項](20261005_story_effort-slack-aging-and-risk.md)へ記録した。上のAの個別検証結果は歴史として保持する。Phase 2全体の完了・本番適用を示す状態ではない。

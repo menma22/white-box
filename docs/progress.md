@@ -73,9 +73,13 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | External Blocked / Follow-up | 実装 | 同story、`apps/renderer/src/features/board/ExternalWaiting.tsx`。本人が確認日・連絡日を記録する |
 | Recommended Order | 実装 | 同story。先行未完でも開始可能 |
 | Estimated Effort / Slack | 実装 | [見積・停滞・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)、`packages/core/src/task-priority.ts`。残作業と安全余裕の欠損は不明 |
-| Aging / Warning Escalation / 通常画面の警告 | 実装 | 同story。確かなTodoの起点と実作業を使い、Welcome・Board・Today・Weekで表示 |
+| Aging / Warning Escalation / 通常画面の警告 | 実装・実UI検証済み | 同story。確かなTodoの起点と実作業を使い、Welcome・Board・Today・今週で現在の警告を確認する |
 | Project Priority / Weekly Time Budget / Fixed Work | 未実装・今回の対象外 | 仕様の後続項目 |
 | Task Notes / Problems の後続体系 | 一部実装・今回の対象外 | 既存のタスクnotes・ノート・道標の問題を保持。Phase 2全体の体系としては未完了 |
+
+3storyの結合状態では、警告の件数と最上位理由を要約し、展開すれば全警告を操作できる。Today・今週は初期要約とし、過去・未来週へ現在の行動警告を混ぜない。Welcome・Boardも作業中または警告が4件以上なら初期折り畳み。本人の開閉と操作中の展開を保持し、保存エラーは折り畳んでも表示する。警告タイトルは一般詳細、整理操作は既存の待ち編集欄へ直接進む。
+
+Cの結合版は型検査・lint・43ファイル397テスト・Storybook build・pack（本体buildを含む）を通過した。最終UXのソース版・配布版でpriority56・activity50・dependencies60項目が成功し、配布版の共通mutex検証は11本、変更影響のソース版5本も通過。[見積・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)へ実際のQA結果・画像・保存・再起動証拠を記録した。ソース版道標の終了失敗と再測定成功、配布版を含む間欠的QUIT timeoutの未確定事項は同storyで追跡する。個別storyの過去の成功と今回の結合検証を区別する。本番未適用・Phase 2全体未完了の状態は変わらない。
 
 ## 仕様の Phase 1 に無いが入れたもの
 
