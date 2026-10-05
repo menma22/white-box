@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { dayKey } from '@white-box/core/engine'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import net from 'node:net'
@@ -322,7 +323,7 @@ try {
   const extraWarnings=[]
   for (const title of ['additional-warning-one','additional-warning-two']) extraWarnings.push(await call('task:create',{title,status:'todo',due:calendar(now-DAY)}))
   const expectedFive=['deadline-overdue','negative-slack','aging-warning',...extraWarnings.map(task=>task.id)].sort()
-  await call('settings:update',{patch:{lastWelcomeDate:calendar(now-DAY)}})
+  await call('settings:update',{patch:{lastWelcomeDate:dayKey(now-DAY,read().settings.dayStartHour)}})
   await page.send('Page.reload')
   await until(()=>page.evaluate(`Boolean(document.querySelector('.welcome .task-warnings'))`),'new-day five warning context')
   check('Five warnings initially stay summarized at the daily welcome',await page.evaluate(`!document.querySelector('.welcome [data-warning-disclosure]').open && document.querySelector('.welcome .task-warnings').innerText.includes('5件')`))
