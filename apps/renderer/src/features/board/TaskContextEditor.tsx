@@ -30,10 +30,11 @@ export const TaskContextEditor = forwardRef<NoteEditorHandle, { task: Task }>(fu
 
   useEffect(() => {
     const incoming = contextDraft(task)
+    const previous = saved.current
+    saved.current = incoming
     setDraft((current) => {
       const next = { ...current }
-      for (const field of fields) if (current[field] === saved.current[field]) next[field] = incoming[field]
-      saved.current = incoming
+      for (const field of fields) if (current[field] === previous[field]) next[field] = incoming[field]
       return next
     })
   }, [task.notes, task.problems, task.decisions, task.nextContext])
