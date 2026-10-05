@@ -16,6 +16,7 @@ import { TaskSuggestions } from '@/features/agents/TaskSuggestions'
 import { remainingLabel, shortcutLabel } from '@/lib/format'
 import { NotesView, type NotesViewHandle } from '@/features/notes/NotesView'
 import { ReminderPanel } from '@/features/notes/ReminderPanel'
+import { taskExecutionProblem } from '@white-box/core/task-control'
 
 type Tab = 'today' | 'board' | 'history' | 'settings' | 'goals' | 'issues' | 'notes'
 
@@ -163,9 +164,11 @@ export function MainWindow() {
 
 function RecoveryBanner() {
   const state = useData()
+  const [error, setError] = useState('')
   const rec = state.recovery!
   const session = state.sessions.find((s) => s.id === rec.sessionId)
   const task = taskById(state, session?.segments.at(-1)?.taskId ?? null)
+  const problem = taskExecutionProblem(state, task?.id ?? null)
   const when = new Date(rec.lastKnownAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   return (
@@ -175,12 +178,13 @@ function RecoveryBanner() {
         <span>
           「{task?.title ?? '不明なタスク'}」を計測中にアプリが終了している。最後に記録が取れたのは {when}。
         </span>
+        {(error || problem) && <span className="task-control-hint" role="alert">{error || problem}</span>}
       </div>
       <div className="recovery-actions">
         <button type="button" className="btn btn-solid btn-sm" onClick={() => void invoke('recovery:close')}>
           その時刻で終了する
         </button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('recovery:resume')}>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={Boolean(problem)} onClick={() => { setError(''); void invoke('recovery:resume').catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, ''))) }}>
           続きから再開する
         </button>
       </div>
