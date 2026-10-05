@@ -182,7 +182,7 @@ async function stop() {
 async function screenshot(name) {
   await page.send('Page.bringToFront')
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 

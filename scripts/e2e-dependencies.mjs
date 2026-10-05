@@ -188,7 +188,7 @@ async function screenshot(name) {
   console.log(`Screenshot state: ${name} ${JSON.stringify(viewport)}`)
   fs.writeFileSync(path.join(RUN, `${name}-viewport.json`), JSON.stringify(viewport, null, 2))
   assert.ok(viewport.visibility === 'visible' && !viewport.hidden && viewport.width > 0 && viewport.height > 0, 'Screenshot target is visible')
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 

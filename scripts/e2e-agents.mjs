@@ -135,7 +135,7 @@ async function screenshot(name) {
   const state = await page.evaluate('({ visibility: document.visibilityState, hidden: document.hidden, focused: document.hasFocus(), width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio })')
   fs.writeFileSync(path.join(RUN, `${name}-state.json`), JSON.stringify(state, null, 2))
   console.log(`Screenshot state: ${name} ${JSON.stringify(state)}`)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: false }, 30000)
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 
