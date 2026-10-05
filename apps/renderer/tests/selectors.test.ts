@@ -109,8 +109,8 @@ describe('selectors', () => {
     const now = 10 * 86_400_000
     const s = state({
       tasks: [
-        task({ id: 'stalled', priority: 'high', status: 'todo', createdAt: 0 }),
-        task({ id: 'fresh', priority: 'high', status: 'todo', createdAt: now - 86_400_000 }),
+        task({ id: 'stalled', priority: 'high', status: 'todo', createdAt: 0, committedAt: 0 }),
+        task({ id: 'fresh', priority: 'high', status: 'todo', createdAt: now - 86_400_000, committedAt: now - 86_400_000 }),
         task({ id: 'normal-old', priority: 'normal', status: 'todo', createdAt: 0 }),
         task({ id: 'inbox-high', priority: 'high', status: 'inbox', createdAt: 0 }),
         task({ id: 'done-high', priority: 'high', status: 'done', createdAt: 0 }),

@@ -77,13 +77,15 @@ export const COMMANDS = {
       sessionId: IdSchema.nullable().optional(),
       due: z.string().nullable().optional(),
       goalNodeId: IdSchema.nullable().optional(),
+      remainingEffortMinutes: TaskSchema.shape.remainingEffortMinutes,
+      safetyBufferMinutes: TaskSchema.shape.safetyBufferMinutes,
       /** true なら実行中セッションのログに「タスク追加」を残す */
       fromSession: z.boolean().optional(),
     }),
     result: TaskSchema,
   },
   'task:update': {
-    args: z.strictObject({ id: IdSchema, patch: TaskSchema.partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ committedAt: true, lastProgressAt: true }).partial().strict() }),
     result: z.null(),
   },
   'task:move': {

@@ -16,6 +16,9 @@ import { Chip, ProgressBar, Segmented } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import { TaskDetail } from './TaskDetail'
 import { GoalTasks } from '@/features/goals/GoalTasks'
+import { TaskWarnings } from '@/features/task-control/TaskWarnings'
+import { taskControl } from '@white-box/core/task-priority'
+import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 
 export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, onTaskJumpHandled }: {
   onJumpGoal?: (id: string) => void; initialView?: 'board' | 'list'; initialTaskId?: string | null
@@ -84,6 +87,8 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
         </div>
         <Segmented value={view} onChange={setView} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
       </header>
+
+      <TaskWarnings state={state} now={now} projectId={filter} onOpenTask={(id) => { setView('board'); setSelected(id) }} />
 
       {view === 'list' ? <GoalTasks onJump={onJumpGoal} initialTaskId={initialTaskId} onJumpHandled={onTaskJumpHandled} projectId={filter} /> : <>
       <div className="board-cols">
@@ -180,6 +185,7 @@ function Card({
   dragId: string | null
 }) {
   const state = useData()
+  const now = useApp((s) => s.now)
   const project = projectById(state, task.projectId)
   const children = nestedChildren(state, task)
   const [open, setOpen] = useState(true)
@@ -191,6 +197,7 @@ function Card({
     <>
       <article
         data-card
+        data-task-id={task.id}
         className={`card ${selected ? 'is-selected' : ''} ${dragging ? 'is-dragging' : ''} ${task.status === 'done' ? 'is-done' : ''}`}
         style={{ marginLeft: depth * 14 }}
         draggable
@@ -230,6 +237,8 @@ function Card({
             </span>
           )}
         </div>
+
+        {task.status !== 'done' && task.status !== 'inbox' && <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />}
 
         {task.status !== 'done' && (task.progress > 0 || task.status === 'doing') && (
           <div className="card-progress">

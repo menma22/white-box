@@ -43,6 +43,12 @@ export interface Task {
   createdInSessionId: ID | null
   due?: string | null
   goalNodeId?: ID | null
+  /** 残作業の見積。セッション実績から自動で減らさない。 */
+  remainingEffortMinutes?: number | null
+  safetyBufferMinutes?: number | null
+  /** 現在のコミット期間の開始。Inbox の滞在期間は含めない。 */
+  committedAt?: number | null
+  lastProgressAt?: number | null
 }
 
 export type OutcomeStatus = 'pending' | 'achieved' | 'not-achieved'

@@ -5,6 +5,10 @@
   "type": "module",
   "description": "両プロセスで使う純粋な時間計算と型。外部依存ゼロ",
   "exports": {
+    "./task-priority": {
+      "types": "./dist/task-priority.d.ts",
+      "default": "./dist/task-priority.js"
+    },
     "./engine": {
       "types": "./dist/engine.d.ts",
       "default": "./dist/engine.js"

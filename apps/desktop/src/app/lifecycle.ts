@@ -5,6 +5,7 @@ import { isPaused } from '@white-box/core/engine'
 import * as ops from '../domain/session-ops.js'
 import type { Ctx } from './ports.js'
 import { buildBreakTimer, liveSession, replaceSession } from './state.js'
+import { commitChanges } from './commit.js'
 
 /**
  * 異常終了で開いたままのセッションの扱いを決める。
@@ -57,17 +58,16 @@ export function checkExpire(ctx: Ctx): void {
   const now = ctx.now()
   const expired = ops.markExpired(s, now)
   if (expired !== s) {
-    replaceSession(ctx.store.data, expired)
+    commitChanges(ctx, { sessions: ctx.store.data.sessions.map((session) => session.id === expired.id ? expired : session) })
     s = expired
-    ctx.publish()
     if (s.mode !== 'pomodoro') ctx.windows.open('expire')
   }
   const breakTimer = buildBreakTimer(ctx.store.data)
   if (breakTimer && now >= breakTimer.endsAt) {
     const automatic = s.mode === 'pomodoro' && s.pomodoroAutoResume && !ctx.runtime.currentWorkOpen && !ctx.runtime.recovery && !s.pauses.some((p) => p.endedAt === null && p.reason !== 'break')
     if (!automatic && breakTimer.notifiedAt !== null) return
-    replaceSession(ctx.store.data, automatic ? ops.resumeSession(s, now) : ops.markBreakExpired(s, now))
-    ctx.publish()
+    const next = automatic ? ops.resumeSession(s, now) : ops.markBreakExpired(s, now)
+    commitChanges(ctx, { sessions: ctx.store.data.sessions.map((session) => session.id === next.id ? next : session) })
     if (!automatic) ctx.windows.open('expire')
     return
   }

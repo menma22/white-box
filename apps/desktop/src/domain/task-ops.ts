@@ -6,6 +6,7 @@
  */
 import type { Database, ID, Priority, Project, Task, TaskStatus } from '@white-box/core/types'
 import { validGoalDue } from '@white-box/core/goal-map'
+import { validateTaskPlanning } from '@white-box/core/task-priority'
 import { newId } from './session-ops.js'
 import { requireGoal } from './goal-ops.js'
 
@@ -49,11 +50,14 @@ export function createTask(
     sessionId?: ID | null
     due?: string | null
     goalNodeId?: ID | null
+    remainingEffortMinutes?: number | null
+    safetyBufferMinutes?: number | null
   },
+  now = Date.now(),
 ): { tasks: Task[]; task: Task } {
+  validateTaskPlanning(input)
   const due = validGoalDue(input.due)
   const goalNodeId = input.goalNodeId == null ? null : requireGoal(db, input.goalNodeId).id
-  const now = Date.now()
   const status = input.status ?? 'inbox'
   const siblings = db.tasks.filter((t) => t.status === status)
   const task: Task = {
@@ -72,17 +76,20 @@ export function createTask(
     createdInSessionId: input.sessionId ?? null,
     due,
     goalNodeId,
+    ...(input.remainingEffortMinutes !== undefined ? { remainingEffortMinutes: input.remainingEffortMinutes } : {}),
+    ...(input.safetyBufferMinutes !== undefined ? { safetyBufferMinutes: input.safetyBufferMinutes } : {}),
+    ...(status === 'todo' || status === 'doing' ? { committedAt: now } : {}),
   }
   return { tasks: [...db.tasks, task], task }
 }
 
-export function updateTask(db: Database, id: ID, patch: Partial<Task>): Task[] {
+export function updateTask(db: Database, id: ID, patch: Partial<Task>, now = Date.now()): Task[] {
+  validateTaskPlanning(patch)
   if (patch.title !== undefined && !patch.title.trim()) throw new Error('タスク名を入力してください')
   if (patch.due !== undefined) validGoalDue(patch.due)
   if (patch.goalNodeId != null) requireGoal(db, patch.goalNodeId)
   return db.tasks.map((t) => {
     if (t.id !== id) return t
-    const now = Date.now()
     const nextStatus = patch.status ?? t.status
     const merged: Task = { ...t, ...patch, id: t.id, updatedAt: now }
     if (nextStatus === 'done' && merged.doneAt === null) {
@@ -91,16 +98,19 @@ export function updateTask(db: Database, id: ID, patch: Partial<Task>): Task[] {
     }
     if (nextStatus !== 'done') merged.doneAt = null
     merged.progress = Math.max(0, Math.min(100, Math.round(merged.progress)))
+    if ((nextStatus === 'todo' || nextStatus === 'doing') && (t.status === 'inbox' || t.status === 'done' || (nextStatus !== t.status && t.committedAt == null))) merged.committedAt = now
+    if (nextStatus === 'inbox') merged.committedAt = null
+    if (merged.progress !== t.progress) merged.lastProgressAt = now
     return merged
   })
 }
 
 /** 列をまたぐ移動と並び替え。移動先の列（と、列が変わるときは移動元の列）の order を振り直す。 */
-export function moveTask(db: Database, id: ID, status: TaskStatus, index: number): Task[] {
+export function moveTask(db: Database, id: ID, status: TaskStatus, index: number, now = Date.now()): Task[] {
   const target = db.tasks.find((t) => t.id === id)
   if (!target) return db.tasks
   const from = target.status
-  const tasks = updateTask(db, id, { status })
+  const tasks = updateTask(db, id, { status }, now)
   const moved = tasks.find((t) => t.id === id)!
 
   const column = tasks.filter((t) => t.status === status && t.id !== id).sort((a, b) => a.order - b.order)

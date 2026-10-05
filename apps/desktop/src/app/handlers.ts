@@ -54,21 +54,19 @@ export function createHandlers(ctx: Ctx): Handlers {
 
     // ── Task
     'task:create': (a) => {
-      const r = taskOps.createTask(db(), a)
-      db().tasks = r.tasks
+      const now = ctx.now()
+      const r = taskOps.createTask(db(), a, now)
       const s = liveSession(db())
-      if (s && a.fromSession) replaceSession(db(), ops.noteTaskCreated(s, r.task.title, r.task.id, ctx.now()))
-      ctx.publish()
+      const sessions = s && a.fromSession ? db().sessions.map((session) => session.id === s.id ? ops.noteTaskCreated(s, r.task.title, r.task.id, now) : session) : db().sessions
+      commitChanges(ctx, { tasks: r.tasks, sessions })
       return r.task
     },
     'task:update': (a) => {
-      db().tasks = taskOps.updateTask(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { tasks: taskOps.updateTask(db(), a.id, a.patch, ctx.now()) })
       return null
     },
     'task:move': (a) => {
-      db().tasks = taskOps.moveTask(db(), a.id, a.status, a.index)
-      ctx.publish()
+      commitChanges(ctx, { tasks: taskOps.moveTask(db(), a.id, a.status, a.index, ctx.now()) })
       return null
     },
     'task:delete': (a) => {
@@ -111,10 +109,7 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'goal:import': (a) => {
       const r = goalOps.importGoals(db(), a.data)
-      db().goalMap = r.goalMap
-      db().tasks = r.tasks
-      db().goalMapImports = r.goalMapImports
-      ctx.publish()
+      commitChanges(ctx, { goalMap: r.goalMap, tasks: r.tasks, goalMapImports: r.goalMapImports })
       return r.counts
     },
     'issue:create': (a) => {
@@ -139,13 +134,14 @@ export function createHandlers(ctx: Ctx): Handlers {
       if (liveSession(db())) return null
       const now = ctx.now()
       let taskId = a.taskId
+      let tasks = db().tasks
       if (!taskId && a.newTask) {
         const r = taskOps.createTask(db(), {
           title: a.newTask.title,
           projectId: a.newTask.projectId ?? null,
           status: 'doing',
-        })
-        db().tasks = r.tasks
+        }, now)
+        tasks = r.tasks
         taskId = r.task.id
       }
       if (!taskId) return null
@@ -153,17 +149,16 @@ export function createHandlers(ctx: Ctx): Handlers {
       if (!Number.isFinite(minutes) || minutes <= 0) throw new Error('作業時間は1分以上にする')
       const session = ops.createSession({
         taskId,
-        taskTitle: taskTitle(db(), taskId),
+        taskTitle: tasks.find((task) => task.id === taskId)?.title ?? taskTitle(db(), taskId),
         plannedMs: minutes * MINUTE,
         mode: a.mode ?? db().settings.defaultSessionMode ?? 'timer',
         pomodoroBreakMs: (a.breakMinutes ?? db().settings.pomodoroBreakMinutes ?? 5) * MINUTE,
         pomodoroAutoResume: a.autoResume ?? db().settings.pomodoroAutoResume ?? false,
         now,
       })
-      db().sessions.push(session)
-      if (ctx.runtime.currentWorkOpen) replaceSession(db(), ops.pauseSession(session, now, 'task-management'))
-      db().tasks = taskOps.updateTask(db(), taskId, { status: 'doing' })
-      ctx.publish()
+      const started = ctx.runtime.currentWorkOpen ? ops.pauseSession(session, now, 'task-management') : session
+      tasks = taskOps.updateTask({ ...db(), tasks }, taskId, { status: 'doing' }, now)
+      commitChanges(ctx, { sessions: [...db().sessions, started], tasks })
       ctx.windows.open('hud', false)
       ctx.ticker.start()
       ctx.windows.closeLater('start')
@@ -227,23 +222,28 @@ export function createHandlers(ctx: Ctx): Handlers {
       if (!s) return null
       const now = ctx.now()
       const prev = activeTaskId(s)
-      replaceSession(db(), ops.switchTask(s, a.taskId, taskTitle(db(), a.taskId), now))
-      db().tasks = taskOps.updateTask(db(), a.taskId, { status: 'doing' })
+      const next = ops.switchTask(s, a.taskId, taskTitle(db(), a.taskId), now)
+      let tasks = taskOps.updateTask(db(), a.taskId, { status: 'doing' }, now)
       if (prev && prev !== a.taskId) {
         const prevTask = db().tasks.find((t) => t.id === prev)
-        if (prevTask && prevTask.status === 'doing') db().tasks = taskOps.updateTask(db(), prev, { status: 'todo' })
+        if (prevTask && prevTask.status === 'doing') tasks = taskOps.updateTask({ ...db(), tasks }, prev, { status: 'todo' }, now)
       }
-      ctx.publish()
+      commitChanges(ctx, { tasks, sessions: db().sessions.map((session) => session.id === s.id ? next : session) })
       return null
     },
     'session:end': (a) => {
       const s = currentSession()
       if (!s) return null
       const ended = ops.endSession(s, ctx.now())
-      replaceSession(db(), ended)
-      ctx.ticker.stop()
+      const beforeReview = ctx.runtime.pendingReview
       ctx.runtime.pendingReview = { sessionId: ended.id, thenStart: Boolean(a.thenStart) }
-      ctx.publish()
+      try {
+        commitChanges(ctx, { sessions: db().sessions.map((session) => session.id === s.id ? ended : session) })
+      } catch (cause) {
+        ctx.runtime.pendingReview = beforeReview
+        throw cause
+      }
+      ctx.ticker.stop()
       ctx.windows.open('review')
       ctx.windows.closeLater('expire', 'hud', 'current')
       return null
@@ -251,18 +251,25 @@ export function createHandlers(ctx: Ctx): Handlers {
     'session:review': (a) => {
       const s = db().sessions.find((x) => x.id === a.sessionId)
       if (!s) return null
-      const updated = ops.recordProgress(s, a.changes, ctx.now())
+      const now = ctx.now()
+      const updated = ops.recordProgress(s, a.changes, now)
       updated.note = a.note ?? ''
-      replaceSession(db(), updated)
+      let tasks = db().tasks
       for (const c of a.changes) {
-        db().tasks = taskOps.updateTask(db(), c.taskId, {
+        tasks = taskOps.updateTask({ ...db(), tasks }, c.taskId, {
           progress: c.to,
           ...(c.markedDone ? { status: 'done' as const } : {}),
-        })
+        }, now)
       }
       const thenStart = ctx.runtime.pendingReview?.thenStart ?? false
+      const beforeReview = ctx.runtime.pendingReview
       ctx.runtime.pendingReview = null
-      ctx.publish()
+      try {
+        commitChanges(ctx, { tasks, sessions: db().sessions.map((session) => session.id === s.id ? updated : session) })
+      } catch (cause) {
+        ctx.runtime.pendingReview = beforeReview
+        throw cause
+      }
       if (thenStart) ctx.windows.open('start')
       ctx.windows.closeLater('review')
       return null
@@ -277,8 +284,8 @@ export function createHandlers(ctx: Ctx): Handlers {
       const s = db().sessions.find((x) => x.id === a.id)
       if (!s) return null
       // 先に db を書き換えてから検証しない（申告が拒否されたときに記録が半分だけ変わる）
-      replaceSession(db(), ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, ctx.now()))
-      ctx.publish()
+      const next = ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, ctx.now())
+      commitChanges(ctx, { sessions: db().sessions.map((session) => session.id === s.id ? next : session) })
       return null
     },
     'session:delete': (a) => {
@@ -331,20 +338,23 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
 
     'settings:update': (a) => {
-      const previous = { ...db().settings }
-      Object.assign(db().settings, a.patch)
-      if (a.patch.shortcuts) {
-        try {
+      const previous = db().settings
+      const next = { ...previous, ...a.patch }
+      db().settings = next
+      try {
+        if (a.patch.shortcuts) {
           const unavailable = ctx.system.applyShortcuts()
           if (unavailable.length > 0) throw new Error(`ショートカットを登録できません: ${unavailable.join(', ')}`)
-        } catch (err) {
-          Object.assign(db().settings, previous)
-          ctx.system.applyShortcuts()
-          throw err
         }
+        ctx.system.applyLoginItem()
+        db().settings = previous
+        commitChanges(ctx, { settings: next })
+      } catch (err) {
+        db().settings = previous
+        if (a.patch.shortcuts) ctx.system.applyShortcuts()
+        ctx.system.applyLoginItem()
+        throw err
       }
-      ctx.system.applyLoginItem()
-      ctx.publish()
       return null
     },
     'day:note': (a) => {

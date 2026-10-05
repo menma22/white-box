@@ -134,7 +134,7 @@ export function SettingsView() {
             />
             <span className="set-unit">時</span>
           </Row>
-          <Row label="停滞とみなす日数" hint="「重要」にしたタスクがこの日数動いていなければ、朝の画面で聞く。">
+          <Row label="Todo の警告までの日数" hint="作業・進捗の記録がない期間。この日数で Warning、2 倍で High Risk。Inbox は数えない。">
             <input
               className="input num set-num"
               type="number"

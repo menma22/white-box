@@ -5,6 +5,9 @@ import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, S
 import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { Priority, Task, TaskStatus } from '@white-box/core/types'
+import { taskControl } from '@white-box/core/task-priority'
+import { OptionalDurationField } from '@/features/task-control/OptionalDurationField'
+import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 
 export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const state = useData()
@@ -106,6 +109,12 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             <span className="label">締切</span>
             <input className="input" type="date" value={task.due ?? ''} onChange={(e) => patch({ due: e.target.value || null })} />
           </label>
+          <OptionalDurationField label="残作業の見積（任意）" value={task.remainingEffortMinutes} onSave={(remainingEffortMinutes) => invoke('task:update', { id: task.id, patch: { remainingEffortMinutes } })} />
+          <OptionalDurationField label="安全余裕（任意）" value={task.safetyBufferMinutes} onSave={(safetyBufferMinutes) => invoke('task:update', { id: task.id, patch: { safetyBufferMinutes } })} />
+          <div className="detail-field">
+            <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />
+            <p className="task-control-hint">見積は残作業。セッションを記録しても自動で減らさない。Slack は締切日末までの暦時間から見積と安全余裕を引いた値。休息や他の仕事は引かない。安全余裕なしなら 0 を入力する。</p>
+          </div>
           <label className="detail-field">
             <span className="label">目標（道標）</span>
             <select className="input" value={task.goalNodeId ?? ''} onChange={(e) => patch({ goalNodeId: e.target.value || null })}>
