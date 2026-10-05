@@ -51,7 +51,7 @@ if (!app.requestSingleInstanceLock()) {
       if (typeof ready === 'boolean') editors.setReady(event.sender.id, ready)
     })
     ipcMain.on('whitebox:flush-reply', (event, reply: unknown) => editors.reply(event.sender.id, reply))
-    setWindowCloseGuard((kind) => editors.prepare('close', [kind]), () => runtime.quitting)
+    setWindowCloseGuard((kind) => editors.prepare('close', [kind]), () => runtime.quitting, () => !runtime.preparingQuit)
     let handlers: Handlers
     let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
@@ -105,7 +105,7 @@ if (!app.requestSingleInstanceLock()) {
         },
         quit: () => app.quit(),
       },
-      dataIO: createDataIO(store),
+      dataIO: createDataIO(store, () => !runtime.preparingQuit && !runtime.quitting),
       runtime,
       now: () => Date.now(),
       publish: (persist = true) => {

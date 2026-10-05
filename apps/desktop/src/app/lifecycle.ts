@@ -24,7 +24,7 @@ const CRASH_GAP_MS = 90_000
  * その時刻で一時停止して人間に聞く（recovery）。短ければそのまま計測を続ける。
  */
 export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS): void {
-  if (ctx.runtime.quitting) return
+  if (ctx.runtime.quitting || ctx.runtime.preparingQuit) return
   const s = liveSession(ctx.store.data)
   if (!s) return
   if (taskExecutionProblem(ctx.store.data, activeTaskId(s)) && !isPaused(s)) {
@@ -77,7 +77,7 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS): void {
  * それ以外は停止を維持して確認窓を出す。ストップウォッチには作業満了がない。
  */
 export function checkExpire(ctx: Ctx): void {
-  if (ctx.runtime.quitting) return
+  if (ctx.runtime.quitting || ctx.runtime.preparingQuit) return
   let s = liveSession(ctx.store.data)
   if (!s) return
   const now = ctx.now()

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { openWindow, setWindowOpeningGuard, setWindowCloseGuard, toggleWindow } from '../src/infra/windows.js'
+import { allWindows, getWindow, openWindow, setWindowOpeningGuard, setWindowCloseGuard, toggleWindow } from '../src/infra/windows.js'
 
 const native = vi.hoisted(() => ({ created: 0, shows: 0 }))
 vi.mock('electron', async () => {
@@ -29,9 +29,89 @@ vi.mock('electron', async () => {
   }
 })
 
-afterEach(() => { setWindowOpeningGuard(() => true); setWindowCloseGuard(async () => () => {}) })
+afterEach(() => {
+  setWindowCloseGuard(async () => () => {}, () => true)
+  for (const win of allWindows()) win.close()
+  setWindowOpeningGuard(() => true)
+  setWindowCloseGuard(async () => () => {})
+})
 
 describe('終了中の窓', () => {
+  it('does not begin native close preparation while quit preparation is active', async () => {
+    const win = openWindow('current')!
+    const prepare = vi.fn(async () => () => {})
+    const closed = vi.fn()
+    win.on('closed', closed)
+    setWindowCloseGuard(prepare, () => false, () => false)
+    win.close()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(prepare).not.toHaveBeenCalled()
+    expect(closed).not.toHaveBeenCalled()
+    expect(getWindow('current')).toBe(win)
+  })
+
+  it('releases input without closing when quit preparation starts during the save acknowledgement', async () => {
+    const win = openWindow('current')!
+    let allowed = true
+    let acknowledge!: (release: (closing?: string[]) => void) => void
+    const pending = new Promise<(closing?: string[]) => void>((resolve) => { acknowledge = resolve })
+    const prepare = vi.fn(() => pending)
+    const release = vi.fn()
+    const closed = vi.fn()
+    win.on('closed', closed)
+    setWindowCloseGuard(prepare, () => false, () => allowed)
+    win.close()
+    expect(prepare).toHaveBeenCalledOnce()
+    allowed = false
+    acknowledge(release)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(release).toHaveBeenCalledOnce()
+    expect(release).toHaveBeenCalledWith()
+    expect(closed).not.toHaveBeenCalled()
+    expect(getWindow('current')).toBe(win)
+  })
+
+  it('allows retrying native close after quit preparation is cancelled', async () => {
+    const win = openWindow('current')!
+    let allowed = true
+    let acknowledge!: (release: (closing?: string[]) => void) => void
+    const pending = new Promise<(closing?: string[]) => void>((resolve) => { acknowledge = resolve })
+    const release = vi.fn()
+    const prepare = vi.fn().mockImplementationOnce(() => pending).mockResolvedValue(release)
+    const closed = vi.fn()
+    win.on('closed', closed)
+    setWindowCloseGuard(prepare, () => false, () => allowed)
+    win.close()
+    allowed = false
+    acknowledge(release)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(getWindow('current')).toBe(win)
+    allowed = true
+    win.close()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(prepare).toHaveBeenCalledTimes(2)
+    expect(release).toHaveBeenNthCalledWith(1)
+    expect(release).toHaveBeenNthCalledWith(2, ['current'])
+    expect(closed).toHaveBeenCalledOnce()
+    expect(getWindow('current')).toBeNull()
+  })
+
+  it('allows native close after the final quit save without another editor preparation', () => {
+    const win = openWindow('current')!
+    const prepare = vi.fn(async () => () => {})
+    const closed = vi.fn()
+    win.on('closed', closed)
+    setWindowCloseGuard(prepare, () => true, () => false)
+    win.close()
+    expect(prepare).not.toHaveBeenCalled()
+    expect(closed).toHaveBeenCalledOnce()
+    expect(getWindow('current')).toBeNull()
+  })
+
   it('native close waits for input and a failed save keeps the window open for retry', async () => {
     const win = openWindow('current')!
     const closed = vi.fn()

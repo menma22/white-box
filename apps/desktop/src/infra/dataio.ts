@@ -7,7 +7,7 @@ import type { Database } from '@white-box/core/types'
 import type { DataIOPort } from '../app/ports.js'
 import type { Store } from './store.js'
 
-export function createDataIO(store: Store): DataIOPort {
+export function createDataIO(store: Store, isReady: () => boolean = () => true): DataIOPort {
   return {
     async exportData() {
       const res = await dialog.showSaveDialog({
@@ -27,6 +27,7 @@ export function createDataIO(store: Store): DataIOPort {
         properties: ['openFile'],
       })
       if (res.canceled || !res.filePaths[0]) return null
+      if (!isReady()) throw new Error('アプリを終了中です')
       const confirm = await dialog.showMessageBox({
         type: 'warning',
         buttons: ['読み込む', 'やめる'],
@@ -36,6 +37,7 @@ export function createDataIO(store: Store): DataIOPort {
         detail: '直前のデータは backups フォルダに残ります。',
       })
       if (confirm.response !== 0) return null
+      if (!isReady()) throw new Error('アプリを終了中です')
       const parsed = JSON.parse(fs.readFileSync(res.filePaths[0], 'utf-8')) as Database
       store.replace(parsed)
       return res.filePaths[0]
