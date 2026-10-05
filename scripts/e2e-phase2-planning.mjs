@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
@@ -7,6 +7,7 @@ import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
+import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUTPUT = path.join(ROOT, '.e2e')
@@ -18,11 +19,11 @@ const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EX
 const startedAt = new Date().toISOString()
 const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
 const runtimeFiles = ['dist-electron/presentation/main.js', 'apps/desktop/src/presentation/preload.cjs', 'dist-electron/app/handlers.js', 'dist-electron/app/lifecycle.js', 'dist-electron/app/state.js', 'dist-electron/infra/agent-service.js', 'dist-electron/infra/dataio.js', 'dist-electron/infra/renderer-flush.js', 'dist-electron/infra/windows.js', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist', 'assets')).filter((file) => file.endsWith('.js')).map((file) => 'dist/assets/' + file)]
-const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
+const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-const checks = [], errors = [], ownedPids = new Set(), pages = new Set(), expectedErrorWindows = []
-let child, page, port, appLog, faultLog, faultOwned = false
+const checks = [], errors = [], ownedProcesses = new OwnedProcesses(), pages = new Set(), expectedErrorWindows = []
+let child, childIdentity, processObservation, page, port, appLog, faultLog, faultOwned = false
 
 function check(name, condition, detail) {
   checks.push({ name, passed: Boolean(condition), ...(detail === undefined ? {} : { detail }) })
@@ -103,17 +104,10 @@ async function windowClosed(kind) {
     return !(await response.json()).some((item) => item.type === 'page' && item.url.endsWith('#' + kind))
   }, kind + ' window closed')
 }
-function processSnapshot() {
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', '[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name | ConvertTo-Json -Compress'], { encoding: 'utf8', windowsHide: true })
-  if (result.status !== 0) throw new Error(result.stderr || 'Cannot inspect owned processes')
-  let all
-  try { all = JSON.parse(result.stdout) } catch { throw new Error('Owned-process inventory did not return valid UTF-8 JSON') }
-  let added
-  do {
-    added = false
-    for (const item of all) if (ownedPids.has(item.ParentProcessId) && !ownedPids.has(item.ProcessId)) { ownedPids.add(item.ProcessId); added = true }
-  } while (added)
-  return all.filter((item) => ownedPids.has(item.ProcessId))
+function processSnapshot(inventory = readWindowsProcesses()) {
+  processObservation = ownedProcesses.observe(inventory)
+  fs.writeFileSync(path.join(RUN, 'owned-process-observation.json'), JSON.stringify(processObservation, null, 2))
+  return processObservation.remaining
 }
 async function launch(label) {
   port = await freePort()
@@ -124,11 +118,16 @@ async function launch(label) {
   const log = fs.openSync(appLog, 'a')
   const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
   if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
+  const launchStartedAt = Date.now()
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   fs.closeSync(log)
   child.once('error', (error) => { errors.push({ launch: label, error: error.message }) })
   assert.ok(child.pid, 'Electron has an owned PID')
-  ownedPids.add(child.pid)
+  const inventory = readWindowsProcesses()
+  childIdentity = inventory.find((process) => process.ProcessId === child.pid)
+  assert.ok(childIdentity && child.exitCode === null && child.signalCode === null, 'Launched Electron is live when its identity is registered')
+  ownedProcesses.registerRoot(childIdentity, { parentPid: process.pid, name: path.basename(electron), notBefore: launchStartedAt })
+  processSnapshot(inventory)
   page = await windowPage('main')
   await until(() => page.evaluate('Boolean(document.querySelector(".rail-tabs"))'), 'main navigation ready')
   fs.writeFileSync(path.join(RUN, `${label}-processes.json`), JSON.stringify(processSnapshot(), null, 2))
@@ -143,7 +142,7 @@ async function stop(label) {
   pages.clear()
   await until(() => current.exitCode !== null || current.signalCode !== null, 'natural process exit', 15000)
   const remaining = await until(() => { const alive = processSnapshot(); return alive.length === 0 ? [] : false }, 'owned descendants exit', 10000)
-  const observation = { pid: current.pid, quitError, exitCode: current.exitCode, signalCode: current.signalCode, forcedCleanup: false, remaining }
+  const observation = { pid: current.pid, creationDate: childIdentity.CreationDate, quitError, exitCode: current.exitCode, signalCode: current.signalCode, forcedCleanup: false, remaining, reused: processObservation.reused }
   fs.writeFileSync(path.join(RUN, `${label}-shutdown.json`), JSON.stringify(observation, null, 2))
   check(`${label}: natural quit exits with zero and leaves no owned PID`, current.exitCode === 0 && current.signalCode === null && remaining.length === 0, observation)
   child = undefined
@@ -650,7 +649,9 @@ try {
   fs.writeFileSync(path.join(RUN, 'application-errors.json'), JSON.stringify(appErrors, null, 2))
   check('Every monitored renderer has no console errors or uncaught exceptions', errors.length === 0, errors)
   check('App logs contain no unexpected application errors', appErrors.unexpected.length === 0, { unexpected: appErrors.unexpected, expectedRejections: appErrors.expected.length })
-  check('No owned Electron PID remains after both natural shutdowns', processSnapshot().length === 0)
+  const remaining = processSnapshot()
+  fs.writeFileSync(path.join(RUN, 'remaining-processes.json'), JSON.stringify(processObservation, null, 2))
+  check('No owned Electron PID remains after both natural shutdowns', remaining.length === 0, processObservation)
   exitCode = 0
 } catch (error) {
   console.error(error)
@@ -662,9 +663,17 @@ try {
     try { await stop('failure') } catch (error) {
       console.error(error)
       exitCode = 1
-      const remaining = processSnapshot()
+    }
+  }
+  if (exitCode !== 0) {
+    const remaining = processSnapshot()
+    fs.writeFileSync(path.join(RUN, 'failure-owned-processes.json'), JSON.stringify(processObservation, null, 2))
+    if (remaining.length) {
       fs.writeFileSync(path.join(RUN, 'forced-cleanup-processes.json'), JSON.stringify(remaining, null, 2))
-      for (const item of remaining.reverse()) try { process.kill(item.ProcessId, 'SIGKILL') } catch (error) { if (error.code !== 'ESRCH') throw error }
+      for (const item of remaining.reverse()) {
+        const current = processSnapshot().find((process) => sameProcess(process, item))
+        if (current) try { process.kill(current.ProcessId, 'SIGKILL') } catch (error) { if (error.code !== 'ESRCH') throw error }
+      }
     }
   }
   for (const connection of pages) connection.close()
