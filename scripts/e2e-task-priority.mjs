@@ -408,8 +408,11 @@ try {
     await openWarnings('.board')
     await detail('legacy-inbox')
   } finally { fs.rmdirSync(faultPath) }
+  await page.evaluate(`(() => { const select=document.querySelector('select[aria-label="残作業の見積（任意）の単位"]'); select.value='60'; select.dispatchEvent(new Event('change',{bubbles:true})); })()`)
+  await until(() => page.evaluate(`document.querySelector(${JSON.stringify(effortInput)}).value==='2'`), 'reopened detail uses hours')
   await fill(effortInput,'2')
   await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===120,'reopened detail keeps the two-hour estimate')
   await until(() => page.evaluate(`!document.querySelector('.detail [role="alert"]')`), 'save failure corrected')
   const before=read().tasks.find(item=>item.id==='legacy-inbox')
   for (const patch of [{remainingEffortMinutes:-1},{safetyBufferMinutes:'0'},{remainingEffortMinute:1},{committedAt:0}]) {
