@@ -5,6 +5,7 @@ import { projectById, projectColor, taskById, todayKey } from '@/lib/selectors'
 import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Kbd } from '@/components/ui'
 import { BoardView } from '@/features/board/BoardView'
+import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 import { TodayView } from '@/features/today/TodayView'
 import { WeekView } from '@/features/today/WeekView'
 import { HistoryView } from '@/features/history/HistoryView'
@@ -47,12 +48,13 @@ export function MainWindow() {
   const [onboarding, setOnboarding] = useState(state.settings.onboardedAt === null)
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
+  const [selectedTaskTarget, setSelectedTaskTarget] = useState<TaskDetailTarget>()
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const goNote = useCallback((id: string) => { setSelectedNote(id); setTab('notes') }, [])
   const noteJumpHandled = useCallback(() => setSelectedNote(null), [])
   const [boardView, setBoardView] = useState<'board' | 'list'>('board')
   const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); void navigate('goals') }, [navigate])
-  const goTasks = useCallback((id?: string) => { setSelectedTask(id ?? null); setBoardView('list'); void navigate('board') }, [navigate])
+  const goTasks = useCallback((id?: string, target?: TaskDetailTarget) => { setSelectedTask(id ?? null); setSelectedTaskTarget(target); setBoardView(target ? 'board' : 'list'); void navigate('board') }, [navigate])
   const goIssues = useCallback(() => { void navigate('issues') }, [navigate])
   const jumpHandled = useCallback(() => setSelectedGoal(null), [])
   const taskJumpHandled = useCallback(() => setSelectedTask(null), [])
@@ -150,7 +152,7 @@ export function MainWindow() {
           {tab === 'today' && <ReminderPanel notes={state.notes ?? []} now={now} onOpen={goNote} onDismiss={(id) => void invoke('note:update', { id, patch: { remindAt: null } })} />}
           {tab === 'today' && <TodayView onOpenTask={goTasks} />}
           {tab === 'week' && <WeekView onOpenTask={goTasks} />}
-          {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} onTaskJumpHandled={taskJumpHandled} />}
+          {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} initialTaskTarget={selectedTaskTarget} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}
           {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}

@@ -1,17 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ExternalBlock, Task } from '@white-box/core/types'
 import { taskBlockReasons, type TaskControl } from '@white-box/core/task-control'
 import { useData } from '@/stores/app'
 import { STATUS_LABEL } from '@/lib/selectors'
+import type { TaskDetailTarget } from './TaskDetail'
 
-export function TaskControlEditor({ task, save, onRelated }: { task: Task; save: (patch: TaskControl) => Promise<boolean>; onRelated?: (id: string) => void }) {
+export function TaskControlEditor({ task, save, onRelated, focusRequest }: { task: Task; save: (patch: TaskControl) => Promise<boolean>; onRelated?: (id: string) => void; focusRequest?: TaskDetailTarget }) {
   const state = useData()
+  const section = useRef<HTMLElement>(null)
   const [reason, setReason] = useState(task.blockReason ?? '')
   const [editingExternal, setEditingExternal] = useState(false)
   const [external, setExternal] = useState<ExternalBlock>(task.externalBlock ?? { who: '', what: '', since: localDate(), lastContactOn: null, nextFollowUpOn: null })
   const reasons = taskBlockReasons(state, task)
 
-  return <section className="task-control" aria-label="待ち状態と先行タスク">
+  useEffect(() => {
+    if (!focusRequest) return
+    section.current?.scrollIntoView({ block: 'start' })
+    section.current?.focus({ preventScroll: true })
+  }, [focusRequest, task.id])
+
+  return <section ref={section} className="task-control" aria-label="待ち状態と先行タスク" tabIndex={-1} data-task-detail-section="waiting">
     <div className="detail-field">
       <label><input type="checkbox" checked={task.blocked ?? false} onChange={(event) => void save({ blocked: event.target.checked })} /> Blocked</label>
       <input className="input" aria-label="Blocked の理由" placeholder="何が進行を止めている？" value={reason} onChange={(event) => setReason(event.target.value)} onBlur={() => { if (reason !== (task.blockReason ?? '')) void save({ blockReason: reason }) }} />

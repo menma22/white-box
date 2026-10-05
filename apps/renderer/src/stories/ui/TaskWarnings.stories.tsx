@@ -19,6 +19,12 @@ const meta = { title: 'task control/Warnings', component: TaskWarnings,
 export default meta
 type Story = StoryObj<typeof meta>
 export const Levels: Story = { args: { state, now } }
+export const Compact: Story = { args: { state, now, compact: true } }
+export const Working: Story = { args: { state: { ...state, live: devFixture().live }, now } }
+export const ManyWarnings: Story = { args: { state: { ...state, tasks: [...state.tasks,
+  task('確認が必要な四つ目の仕事', { due: '2026-10-04' }),
+  task('確認が必要な五つ目の仕事', { due: '2026-10-04' }),
+] }, now } }
 export const Empty: Story = { args: { state: { ...state, tasks: [task('未入力', {})] }, now } }
 export const BlockedAndArchived: Story = { args: { state: { ...state,
   projects: [{ id: 'archived', name: 'アーカイブした仕事', hue: 150, archived: true, order: 0, createdAt: now, updatedAt: now }],

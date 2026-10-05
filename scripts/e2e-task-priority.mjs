@@ -226,17 +226,24 @@ async function warningSnapshot(surface) {
     disabled:row.querySelector('.btn-primary').disabled, problem:row.querySelector('[data-warning-execution]')?.textContent ?? ''
   }))`)
 }
-async function waitingDetail(label) {
+async function openWarnings(surface) {
+  if (!await page.evaluate(`document.querySelector(${JSON.stringify(surface+' [data-warning-disclosure]')})?.open`)) {
+    await click(surface+' [data-warning-toggle]')
+  }
+  await until(() => page.evaluate(`document.querySelector(${JSON.stringify(surface+' [data-warning-disclosure]')})?.open`), 'warning details opened')
+}
+async function waitingDetail(label, focused = true) {
   await until(() => page.evaluate(`document.querySelector('.detail-title')?.value==='deadline-overdue'`), label+' detail')
   check(label+' opens the shared detail with readable Blocked reason and disabled start',await page.evaluate(`
     document.querySelector('.detail [data-execution-problem]').textContent.includes('承認待ち') &&
     document.querySelector('.detail-foot .btn-primary').disabled &&
     document.querySelector('.task-control input[type="checkbox"]').checked
   `))
-  await page.evaluate(`document.querySelector('.task-control').scrollIntoView({block:'center'})`)
-  check(label+' reaches the waiting and predecessor editor',await page.evaluate(`(() => {
+  if (!focused) return
+  await until(() => page.evaluate(`document.querySelector('.task-control')?.contains(document.activeElement)`), label+' waiting editor focused')
+  check(label+' click itself focuses the visible waiting and predecessor editor',await page.evaluate(`(() => {
     const r=document.querySelector('input[aria-label="Blocked の理由"]').getBoundingClientRect();
-    return r.top>=0 && r.bottom<=innerHeight && Boolean(document.querySelector('.task-control .external-summary'));
+    return r.top>=0 && r.bottom<=innerHeight && document.querySelector('.task-control').contains(document.activeElement) && Boolean(document.querySelector('.task-control .external-summary'));
   })()`))
 }
 const effortInput='input[aria-label="残作業の見積（任意）"]'
@@ -264,6 +271,31 @@ try {
   for (const surface of [{key:'1',code:'Digit1',selector:'.today',name:'Today'}, {key:'8',code:'Digit8',selector:'.week',name:'Week'}]) {
     await key(surface.key,surface.code,2)
     await until(()=>page.evaluate(`Boolean(document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')}))`),surface.name+' warnings')
+    check(surface.name+' initially keeps current warning context compact and the activity metrics visible',await page.evaluate(`(() => {
+      const panel=document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')});
+      const strip=document.querySelector(${JSON.stringify(surface.selector+' .today-strip')}).getBoundingClientRect();
+      return !panel.querySelector('[data-warning-disclosure]').open && panel.innerText.includes('現在') && panel.innerText.includes('締切') && panel.getBoundingClientRect().height<150 && strip.top>=0 && strip.bottom<innerHeight;
+    })()`))
+    await screenshot('01-'+surface.name.toLowerCase()+'-compact')
+    await page.send('Emulation.setDeviceMetricsOverride',{width:940,height:620,deviceScaleFactor:1,mobile:false})
+    const minimum=await page.evaluate(`(() => {
+      const view=document.querySelector(${JSON.stringify(surface.selector)});
+      const strip=view.querySelector('.today-strip').getBoundingClientRect();
+      return {width:innerWidth,height:innerHeight,overflow:Math.max(0,document.documentElement.scrollWidth-innerWidth,view.scrollWidth-view.clientWidth),metricsBottom:strip.bottom};
+    })()`)
+    check(surface.name+' keeps activity metrics visible without horizontal overflow at 940x620',minimum.width===940 && minimum.height===620 && minimum.overflow===0 && minimum.metricsBottom<620,minimum)
+    await screenshot('01-'+surface.name.toLowerCase()+'-compact-minimum')
+    await page.send('Emulation.clearDeviceMetricsOverride')
+    if (surface.name === 'Week') {
+      await click('.week-navigation button:first-child')
+      check('Past week keeps present warnings out of historical activity',await page.evaluate(`!document.querySelector('.week .task-warnings')`))
+      await click('.week-navigation button:last-child')
+      await click('.week-navigation button:last-child')
+      check('Future week keeps present warnings out of future activity',await page.evaluate(`!document.querySelector('.week .task-warnings')`))
+      await click('.week-navigation button:nth-child(2)')
+      await until(()=>page.evaluate(`Boolean(document.querySelector('.week .task-warnings'))`),'current week warnings restored')
+    }
+    await openWarnings(surface.selector)
     const current=await warningSnapshot(surface.selector)
     check(surface.name+' shows the same warnings, Blocked guard and archive exclusion',JSON.stringify(current)===JSON.stringify(expectedWarnings),current)
     await screenshot('01-'+surface.name.toLowerCase()+'-warnings')
@@ -278,12 +310,35 @@ try {
   await click('.board-head .segmented-item:nth-child(2)')
   await click('[data-warning-task="deadline-overdue"] .task-warning-title')
   check('Warning title opens detail from the list view too',await page.evaluate(`Boolean(document.querySelector('.board-cols')) && document.querySelector('.detail-title').value==='deadline-overdue'`))
-  await waitingDetail('Board warning')
+  await waitingDetail('Board title', false)
+  await click('.detail-close')
+  await click('.board [data-warning-task="deadline-overdue"] [data-warning-organize]')
+  await waitingDetail('Board organize')
   await fill('input[aria-label="Blocked の理由"]','次の確認日を調整している')
   await click('.detail-title')
   await until(()=>read().tasks.find(item=>item.id==='deadline-overdue').blockReason==='次の確認日を調整している','waiting reason saved from UI')
   check('Warning detail lets the user save waiting information',read().tasks.find(item=>item.id==='deadline-overdue').blocked===true)
   await click('.detail-close')
+  const extraWarnings=[]
+  for (const title of ['additional-warning-one','additional-warning-two']) extraWarnings.push(await call('task:create',{title,status:'todo',due:calendar(now-DAY)}))
+  const expectedFive=['deadline-overdue','negative-slack','aging-warning',...extraWarnings.map(task=>task.id)].sort()
+  await call('settings:update',{patch:{lastWelcomeDate:calendar(now-DAY)}})
+  await page.send('Page.reload')
+  await until(()=>page.evaluate(`Boolean(document.querySelector('.welcome .task-warnings'))`),'new-day five warning context')
+  check('Five warnings initially stay summarized at the daily welcome',await page.evaluate(`!document.querySelector('.welcome [data-warning-disclosure]').open && document.querySelector('.welcome .task-warnings').innerText.includes('5件')`))
+  await openWarnings('.welcome')
+  check('Welcome disclosure exposes all five warnings and their actions',await page.evaluate(`Array.from(document.querySelectorAll('.welcome [data-warning-task]')).every(row=>row.getBoundingClientRect().height>0 && row.querySelector('.btn-primary') && row.querySelector('[data-warning-organize]')) && document.querySelectorAll('.welcome [data-warning-task]').length===5`))
+  await click('.welcome-close')
+  for (const surface of [{key:'1',code:'Digit1',selector:'.today',name:'Today'}, {key:'8',code:'Digit8',selector:'.week',name:'Week'}, {key:'2',code:'Digit2',selector:'.board',name:'Board'}]) {
+    await key(surface.key,surface.code,2)
+    await until(()=>page.evaluate(`Boolean(document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')}))`),surface.name+' five warning context')
+    await openWarnings(surface.selector)
+    const shown=await page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(surface.selector+' [data-warning-task]')}),row=>({id:row.dataset.warningTask,visible:row.getBoundingClientRect().height>0,start:Boolean(row.querySelector('.btn-primary')),organize:Boolean(row.querySelector('[data-warning-organize]'))}))`)
+    check(surface.name+' disclosure exposes all five warnings and their actions',JSON.stringify(shown.map(row=>row.id).sort())===JSON.stringify(expectedFive) && shown.every(row=>row.visible && row.start && row.organize),shown)
+    if (surface.name==='Today') await screenshot('01-today-five-warning-actions')
+  }
+  for (const task of extraWarnings) await call('task:delete',{id:task.id})
+  await board()
   await key('4','Digit4',2)
   await until(() => page.evaluate('Boolean(document.querySelector(".settings"))'), 'settings view')
   await page.evaluate(`(() => { const row=[...document.querySelectorAll('.set-row')].find(item=>item.querySelector('.set-row-label')?.textContent==='Todo の警告までの日数'); if(!row) throw Error('Warning threshold setting missing'); row.querySelector('input').setAttribute('data-aging-threshold','true'); })()`)
@@ -336,6 +391,22 @@ try {
     check('Actual save failure restores task state and keeps disk data unchanged',JSON.stringify(current.tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeFailure) && JSON.stringify(read().tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeFailure))
     await page.evaluate(`document.querySelector('.detail [role="alert"]').scrollIntoView({block:'center'})`)
     await screenshot('02b-save-failure-visible')
+    await click('.detail-close')
+    await page.evaluate(`(() => {
+      const select=document.querySelector('[data-warning-task="deadline-overdue"] select');
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'high');
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    })()`)
+    await until(()=>page.evaluate(`Boolean(document.querySelector('.task-warnings [role="alert"]'))`),'warning action save failure shown')
+    await click('.board [data-warning-toggle]')
+    check('Folding warning details preserves the visible save error and the saved priority',await page.evaluate(`(() => {
+      const panel=document.querySelector('.board .task-warnings');
+      const r=panel.querySelector('[role="alert"]').getBoundingClientRect();
+      return !panel.querySelector('[data-warning-disclosure]').open && r.height>0 && r.top>=0 && r.bottom<=innerHeight;
+    })()`) && read().tasks.find(item=>item.id==='deadline-overdue').priority==='normal')
+    await screenshot('02c-folded-warning-save-error')
+    await openWarnings('.board')
+    await detail('legacy-inbox')
   } finally { fs.rmdirSync(faultPath) }
   await fill(effortInput,'2')
   await click('.detail-title')
@@ -362,7 +433,15 @@ try {
   await click('.detail-foot .btn-primary')
   await until(()=>read().sessions.length===1,'chosen session saved')
   check('User can start a chosen task even when another is Overdue',read().sessions[0].segments[0].taskId==='legacy-inbox')
+  await click('.detail-close')
+  await key('1','Digit1',2)
+  await until(()=>page.evaluate(`Boolean(document.querySelector('.today'))`),'active work activity view')
+  await board()
+  await until(()=>page.evaluate(`!document.querySelector('.board [data-warning-disclosure]').open`),'working warnings initially folded')
+  check('Active work initially folds warnings while retaining current context',await page.evaluate(`document.querySelector('.board .task-warnings').innerText.includes('現在')`))
+  await openWarnings('.board')
   await wait(1200)
+  check('The user can keep warning details open during active work',await page.evaluate(`document.querySelector('.board [data-warning-disclosure]').open`))
   await call('session:end')
   const sessionId=read().sessions[0].id
   await call('session:review',{sessionId,changes:[{taskId:'legacy-inbox',from:0,to:20,markedDone:false}]})

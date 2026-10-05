@@ -15,7 +15,7 @@ export function SettingsView() {
   const [saved, setSaved] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
+  // Record<string, unknown> はキーの綴り違いを型検査で拾えないため、送信する patch は Partial<Settings> で縛る。
   const patch = (p: Partial<Settings>) => {
     setError(null)
     void invoke('settings:update', { patch: p }).catch((err) => setError(String(err).replace(/^(Error:\s*)+/, '')))

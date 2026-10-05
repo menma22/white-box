@@ -11,7 +11,9 @@ import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 import { taskExecutionProblem } from '@white-box/core/task-control'
 import { TaskControlEditor } from './TaskControlEditor'
 
-export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void }) {
+export type TaskDetailTarget = { section: 'waiting' }
+
+export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void; target?: TaskDetailTarget }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
@@ -19,6 +21,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
   const [notes, setNotes] = useState(task?.notes ?? '')
   const editingTitle = useRef(false)
   const editingNotes = useRef(false)
+  const body = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
@@ -32,6 +35,9 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
   useEffect(() => {
     if (!editingNotes.current) setNotes(task?.notes ?? '')
   }, [taskId, task?.notes])
+  useEffect(() => {
+    if (!target) body.current?.scrollTo({ top: 0 })
+  }, [taskId, target])
 
   if (!task) return null
 
@@ -69,7 +75,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
 
       {error && <p className="task-command-error" role="alert">{error}</p>}
 
-      <div className="detail-body">
+      <div className="detail-body" ref={body}>
         <textarea
           className="detail-title"
           value={title}
@@ -167,7 +173,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
           </div>
         </div>
 
-        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} />
+        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} focusRequest={target} />
 
         <div className="detail-field">
           <span className="label">メモ</span>

@@ -9,8 +9,9 @@ import { DayRibbon } from './DayRibbon'
 import { ActivityBreakdown } from './ActivityBreakdown'
 import { ActivityTrend } from './ActivityTrend'
 import { TaskWarnings } from '@/features/task-control/TaskWarnings'
+import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 
-export function TodayView({ onOpenTask }: { onOpenTask?: (id: string) => void }) {
+export function TodayView({ onOpenTask }: { onOpenTask?: (id: string, target?: TaskDetailTarget) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const key = todayKey(state, now)
@@ -33,7 +34,7 @@ export function TodayView({ onOpenTask }: { onOpenTask?: (id: string) => void })
         </div>
       </header>
 
-      <TaskWarnings state={state} now={now} onOpenTask={onOpenTask} />
+      <TaskWarnings state={state} now={now} onOpenTask={onOpenTask} compact />
 
       <div className="today-strip">
         <Metric label="セッション" value={`${sessions.length}`} />
