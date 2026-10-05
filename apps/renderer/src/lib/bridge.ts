@@ -7,8 +7,11 @@ interface RawBridge {
   call(name: string, args?: unknown): Promise<{ ok: boolean; data?: unknown; error?: string }>
   onState(cb: (state: AppState) => void): () => void
   onTick(cb: (tick: LiveTick | null) => void): () => void
+  onFlushRequested(cb: (request: EditorFlushRequest) => Promise<boolean>, release: (id: string) => void): () => void
+  draftProfileKey(): string | null
   windowKind(): string
 }
+export interface EditorFlushRequest { id: string; reason: 'close' | 'quit' | 'end' | 'switch' | 'import' }
 
 declare global {
   interface Window {
@@ -26,6 +29,8 @@ const browserStub: RawBridge = {
   call: async (name) => (name === 'state:get' ? { ok: true, data: devFixture() } : { ok: true, data: null }),
   onState: () => () => {},
   onTick: () => () => {},
+  onFlushRequested: () => () => {},
+  draftProfileKey: () => 'browser-preview',
   windowKind: () => location.hash.replace('#', '') || 'main',
 }
 
@@ -48,6 +53,8 @@ export async function invoke<N extends CommandName>(
 
 export const onState = bridge.onState
 export const onTick = bridge.onTick
+export const onFlushRequested = bridge.onFlushRequested
+export const draftProfileKey = () => bridge.draftProfileKey()
 export const windowKind = () => bridge.windowKind() as WindowKind
 
 export const cmd = {

@@ -11,6 +11,7 @@ import { PRESENCE_COMMANDS } from './presence.js'
 import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
 import { NOTE_COMMANDS } from './notes.js'
 import { TaskControlSchema } from './task-control.js'
+import { PLANNING_COMMANDS } from './planning.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -35,6 +36,7 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...PLANNING_COMMANDS,
   ...PRESENCE_COMMANDS,
   'agent:config': { args: NoArgs, result: z.string() },
   'agent:context': {
@@ -61,7 +63,7 @@ export const COMMANDS = {
   // ── Project
   'project:create': { args: z.strictObject({ name: z.string() }), result: ProjectSchema },
   'project:update': {
-    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.omit({ id: true, createdAt: true, updatedAt: true }).partial().strict() }),
     result: z.null(),
   },
   'project:delete': { args: z.strictObject({ id: IdSchema }), result: z.null() },
@@ -76,6 +78,9 @@ export const COMMANDS = {
       status: TaskStatusSchema.optional(),
       priority: PrioritySchema.optional(),
       notes: z.string().optional(),
+      problems: z.string().optional(),
+      decisions: z.string().optional(),
+      nextContext: z.string().optional(),
       sessionId: IdSchema.nullable().optional(),
       due: z.string().nullable().optional(),
       goalNodeId: IdSchema.nullable().optional(),
@@ -87,7 +92,7 @@ export const COMMANDS = {
     result: TaskSchema,
   },
   'task:update': {
-    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ committedAt: true, lastProgressAt: true }).partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ id: true, createdAt: true, updatedAt: true, committedAt: true, lastProgressAt: true }).partial().strict() }),
     result: z.null(),
   },
   'task:move': {

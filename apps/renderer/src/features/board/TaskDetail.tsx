@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '@/lib/selectors'
@@ -10,31 +10,35 @@ import { OptionalDurationField } from '@/features/task-control/OptionalDurationF
 import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 import { taskExecutionProblem } from '@white-box/core/task-control'
 import { TaskControlEditor } from './TaskControlEditor'
+import { TaskContextEditor } from './TaskContextEditor'
+import type { NoteEditorHandle } from '@/features/notes/NoteEditor'
+import { FixedWorkOverview } from './FixedWorkOverview'
 
 export type TaskDetailTarget = { section: 'waiting' }
+export interface TaskDetailHandle { flush(): Promise<boolean> }
 
-export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void; target?: TaskDetailTarget }) {
+export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void; target?: TaskDetailTarget }>(function TaskDetail({ taskId, onClose, onSelectTask, target }, ref) {
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
   const [title, setTitle] = useState(task?.title ?? '')
-  const [notes, setNotes] = useState(task?.notes ?? '')
   const editingTitle = useRef(false)
-  const editingNotes = useRef(false)
+  const context = useRef<NoteEditorHandle | null>(null)
   const body = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
   const [error, setError] = useState('')
 
-  useEscape(!confirmDelete, onClose)
+  const flush = () => context.current?.flush() ?? Promise.resolve(true)
+  useImperativeHandle(ref, () => ({ flush }))
+  const close = () => { void flush().then((saved) => { if (saved) onClose() }) }
+  const related = (id: string) => { void flush().then((saved) => { if (saved) onSelectTask?.(id) }) }
+  useEscape(!confirmDelete, () => { if (!document.querySelector('[role="dialog"]')) close() })
 
   useEffect(() => {
     if (!editingTitle.current) setTitle(task?.title ?? '')
   }, [taskId, task?.title])
-  useEffect(() => {
-    if (!editingNotes.current) setNotes(task?.notes ?? '')
-  }, [taskId, task?.notes])
   useEffect(() => {
     if (!target) body.current?.scrollTo({ top: 0 })
   }, [taskId, target])
@@ -68,7 +72,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: 
           {path.length > 0 && <span className="detail-path-text">{path.join(' / ')} /</span>}
           <span className="label">タスク</span>
         </div>
-        <button type="button" className="detail-close" onClick={onClose} title="閉じる (Esc)">
+        <button type="button" className="detail-close" onClick={close} title="閉じる (Esc)">
           ✕
         </button>
       </header>
@@ -131,7 +135,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: 
           <OptionalDurationField label="残作業の見積（任意）" value={task.remainingEffortMinutes} onSave={(remainingEffortMinutes) => invoke('task:update', { id: task.id, patch: { remainingEffortMinutes } })} />
           <OptionalDurationField label="安全余裕（任意）" value={task.safetyBufferMinutes} onSave={(safetyBufferMinutes) => invoke('task:update', { id: task.id, patch: { safetyBufferMinutes } })} />
           <div className="detail-field">
-            <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />
+            <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays, state.projects)} />
             <p className="task-control-hint">見積は残作業。セッションを記録しても自動で減らさない。Slack は締切日末までの暦時間から見積と安全余裕を引いた値。休息や他の仕事は引かない。安全余裕なしなら 0 を入力する。</p>
           </div>
           <label className="detail-field">
@@ -173,23 +177,10 @@ export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: 
           </div>
         </div>
 
-        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} focusRequest={target} />
+        <TaskControlEditor key={task.id} task={task} save={save} onRelated={related} focusRequest={target} />
 
-        <div className="detail-field">
-          <span className="label">メモ</span>
-          <textarea
-            className="input detail-notes"
-            rows={3}
-            placeholder="次に再開するときの手がかり"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onFocus={() => { editingNotes.current = true }}
-            onBlur={() => {
-              editingNotes.current = false
-              if (notes !== task.notes) patch({ notes })
-            }}
-          />
-        </div>
+        <TaskContextEditor ref={context} key={task.id} task={task} />
+        <FixedWorkOverview taskId={task.id} />
 
         <div className="detail-field">
           <span className="label">分解（任意）</span>
@@ -225,7 +216,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: 
         <button
           type="button"
           className="btn btn-primary btn-md"
-          onClick={() => void run(() => invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes }))}
+          onClick={() => void flush().then((saved) => { if (saved) void run(() => invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })) })}
           disabled={Boolean(state.live) || Boolean(executionProblem)}
           title={executionProblem ?? (state.live ? 'すでにセッションが動いている' : '')}
         >
@@ -264,4 +255,4 @@ export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: 
       </Modal>
     </aside>
   )
-}
+})

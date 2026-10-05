@@ -105,12 +105,12 @@ async function stateData() { const { revision, ...data } = await state(); return
 
 async function launch(label) {
   port = await freePort()
-  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }
+  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA, WHITEBOX_QUIT_TRACE_DIR: RUN }
   delete env.VITE_DEV_SERVER_URL
   delete env.ELECTRON_RUN_AS_NODE
   const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
   const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
-  if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
+  if (!process.env.WHITEBOX_EXE) args.unshift(process.env.WHITEBOX_QUIT_OBSERVER === '1' ? path.join(ROOT, 'scripts', 'quit-observer.mjs') : ROOT)
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   console.log(`Electron PID: ${child.pid}`)
   fs.closeSync(log)

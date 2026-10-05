@@ -15,6 +15,7 @@ import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 import { stallWarningDays, validateTaskPlanning } from '@white-box/core/task-priority'
+import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema, PrioritySchema } from '@white-box/contracts'
 
 const DB_VERSION = 1
 const RENAME_RETRY_LIMIT = 3
@@ -55,8 +56,14 @@ function emptyDb(): Database {
 export function normalizeDatabase(parsed: Partial<Database>): Database {
   const goalMap = parsed.goalMap === undefined ? emptyGoalMap() : parseGoalMap(parsed.goalMap)
   const tasks = parsed.tasks ?? []
+  for (const project of parsed.projects ?? []) {
+    if (project.priority !== undefined) PrioritySchema.parse(project.priority)
+  }
   for (const task of tasks) {
     validateTaskPlanning(task)
+    for (const field of ['problems', 'decisions', 'nextContext'] as const) {
+      if (task[field] !== undefined && typeof task[field] !== 'string') throw new Error('タスクの文脈が不正です')
+    }
     TaskControlSchema.parse({ blocked: task.blocked, blockReason: task.blockReason, hardDependencies: task.hardDependencies, recommendedPredecessors: task.recommendedPredecessors, externalBlock: task.externalBlock })
     validGoalDue(task.due)
     if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
@@ -78,7 +85,22 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     goalMap,
     presenceCandidates: PresenceCandidatesSchema.parse(parsed.presenceCandidates ?? []),
     goalMapImports: parsed.goalMapImports ?? [],
+    ...(parsed.weeklyBudgets !== undefined ? { weeklyBudgets: parseWeeklyBudgets(parsed.weeklyBudgets) } : {}),
+    ...(parsed.weeklyBudgetDefaults !== undefined ? { weeklyBudgetDefaults: WeeklyBudgetPlanSchema.parse(parsed.weeklyBudgetDefaults) } : {}),
+    ...(parsed.fixedWork !== undefined ? { fixedWork: parseFixedWork(parsed.fixedWork) } : {}),
   }
+}
+
+function parseWeeklyBudgets(value: unknown): NonNullable<Database['weeklyBudgets']> {
+  const budgets = WeeklyTimeBudgetSchema.array().parse(value)
+  if (new Set(budgets.map((budget) => budget.weekStart)).size !== budgets.length) throw new Error('同じ週の予算が重複しています')
+  return budgets
+}
+
+function parseFixedWork(value: unknown): NonNullable<Database['fixedWork']> {
+  const work = FixedWorkSchema.array().parse(value)
+  if (new Set(work.map((item) => item.id)).size !== work.length) throw new Error('固定予定のIDが重複しています')
+  return work
 }
 
 function hasBeenUsed(db: Database): boolean {

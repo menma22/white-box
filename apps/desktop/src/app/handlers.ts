@@ -4,6 +4,7 @@
  */
 import type { ArgsOf, CommandName, ResultOf } from '@white-box/contracts'
 import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
+import type { WindowKind } from '@white-box/core/types'
 import { assertTaskExecutable } from '@white-box/core/task-control'
 import { restoreOpenSession } from './lifecycle.js'
 import * as ops from '../domain/session-ops.js'
@@ -16,6 +17,7 @@ import { checkExpire } from './lifecycle.js'
 import { commitChanges } from './commit.js'
 import { createAgentHandlers } from './agent-handlers.js'
 import { createNoteHandlers } from './note-handlers.js'
+import { createPlanningHandlers } from './planning-handlers.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -32,16 +34,17 @@ export function createHandlers(ctx: Ctx): Handlers {
     ...createPresenceHandlers(ctx),
     ...createAgentHandlers(ctx),
     ...createNoteHandlers(ctx),
+    ...createPlanningHandlers(ctx),
     'state:get': () => buildState(db(), ctx.runtime, ctx.now()),
 
     // ── Project
     'project:create': (a) => {
-      const r = taskOps.createProject(db(), { name: a.name })
+      const r = taskOps.createProject(db(), { name: a.name }, ctx.now())
       commitChanges(ctx, { projects: r.projects })
       return r.project
     },
     'project:update': (a) => {
-      commitChanges(ctx, { projects: taskOps.updateProject(db(), a.id, a.patch) })
+      commitChanges(ctx, { projects: taskOps.updateProject(db(), a.id, a.patch, ctx.now()) })
       return null
     },
     'project:delete': (a) => {
@@ -396,6 +399,26 @@ export function createHandlers(ctx: Ctx): Handlers {
       ctx.system.quit()
       return null
     },
+  }
+  function guard<N extends CommandName>(name: N, reason?: 'end' | 'switch' | 'import') {
+    const original = handlers[name] as (args: ArgsOf<N>) => ResultOf<N> | Promise<ResultOf<N>>
+    handlers[name] = ((args: ArgsOf<N>) => {
+      if (ctx.runtime.quitting && name !== 'state:get') throw new Error('アプリを終了中です')
+      if (!reason || !ctx.windows.prepareEditors) return original(args)
+      return ctx.windows.prepareEditors(reason, reason === 'import' ? undefined : ['current']).then(async (release) => {
+        let closing: WindowKind[] = []
+        try {
+          if (ctx.runtime.quitting) throw new Error('アプリを終了中です')
+          const endsCurrent = name === 'session:end' && Boolean(currentSession())
+          const result = await original(args)
+          if (endsCurrent) closing = ['current']
+          return result
+        } finally { release(closing) }
+      })
+    }) as Handlers[N]
+  }
+  for (const name of Object.keys(handlers) as CommandName[]) {
+    guard(name, name === 'session:end' ? 'end' : name === 'session:switchTask' ? 'switch' : name === 'data:import' ? 'import' : undefined)
   }
   return handlers
 }

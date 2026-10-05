@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { Priority, Task } from '@white-box/core/types'
 import { dayKey } from '@white-box/core/engine'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { Modal } from '@/components/ui'
-import { TaskDetail } from '@/features/board/TaskDetail'
+import { TaskDetail, type TaskDetailHandle } from '@/features/board/TaskDetail'
 import type { GoalRun } from './GoalFields'
 
-export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJumpHandled }: {
+export interface GoalTasksHandle { flush(): Promise<boolean> }
+export const GoalTasks = forwardRef<GoalTasksHandle, {
   onJump: (id: string) => void; initialTaskId?: string | null; projectId?: string | null
   onJumpHandled?: () => void
-}) {
+}>(function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJumpHandled }, ref) {
   const state = useData()
   const now = useApp((s) => s.now)
   const [title, setTitle] = useState('')
@@ -18,6 +19,9 @@ export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJu
   const [adding, setAdding] = useState(false)
   const [deleting, setDeleting] = useState<Task | null>(null)
   const [detailId, setDetailId] = useState<string | null>(initialTaskId)
+  const detail = useRef<TaskDetailHandle | null>(null)
+  useImperativeHandle(ref, () => ({ flush: () => detail.current?.flush() ?? Promise.resolve(true) }), [])
+  const selectTask = (id: string) => { void (async () => { if (await detail.current?.flush() !== false) setDetailId(id) })() }
   useEffect(() => {
     if (!initialTaskId) return
     setDetailId(initialTaskId)
@@ -64,7 +68,7 @@ export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJu
         <input type="date" className={`input gm-task-due ${dueClass}`} aria-label={`締切: ${task.title}`}
           title={dueClass === 'is-overdue' ? '締切を過ぎている' : dueClass === 'is-today' ? '今日が締切' : '締切'}
           value={task.due ?? ''} onChange={(e) => void run('task:update', { id: task.id, patch: { due: e.target.value || null } })} />
-        <button type="button" className="btn btn-quiet btn-sm gm-task-action" onClick={() => setDetailId(task.id)}>詳細</button>
+        <button type="button" className="btn btn-quiet btn-sm gm-task-action" onClick={() => selectTask(task.id)}>詳細</button>
         <button type="button" className="btn btn-danger btn-sm gm-task-action" aria-label={`削除: ${task.title}`} onClick={() => setDeleting(task)}>削除</button>
       </div>
     )
@@ -97,7 +101,7 @@ export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJu
         </button>
         {state.goalMap.ui.doneOpen && done.map(row)}
       </div>
-      {detailId && <TaskDetail key={detailId} taskId={detailId} onClose={() => setDetailId(null)} onSelectTask={setDetailId} />}
+      {detailId && <TaskDetail ref={detail} key={detailId} taskId={detailId} onClose={() => setDetailId(null)} onSelectTask={selectTask} />}
       <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} labelledBy="gm-task-delete-title">
         <h3 id="gm-task-delete-title">「{deleting?.title}」を削除する？</h3>
         <p className="modal-text">{descendants.size > 1 ? `子タスク ${descendants.size - 1} 件も削除する。` : ''}ボードからも消える。これまでのセッション記録は残る。</p>
@@ -110,7 +114,7 @@ export function GoalTasks({ onJump, initialTaskId = null, projectId = null, onJu
       </Modal>
     </section>
   )
-}
+})
 
 function TaskTitle({ value, onSave }: { value: string; onSave: (value: string) => void }) {
   const [draft, setDraft] = useState(value)

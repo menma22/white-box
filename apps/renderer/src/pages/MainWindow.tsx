@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { invoke, cmd } from '@/lib/bridge'
+import { invoke, cmd, draftProfileKey } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById, todayKey } from '@/lib/selectors'
 import { liveTimerPresentation } from '@/lib/liveTimer'
 import { Kbd } from '@/components/ui'
-import { BoardView } from '@/features/board/BoardView'
+import { BoardView, type BoardViewHandle } from '@/features/board/BoardView'
 import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 import { TodayView } from '@/features/today/TodayView'
-import { WeekView } from '@/features/today/WeekView'
+import { WeekView, type WeekViewHandle } from '@/features/today/WeekView'
+import type { BudgetDraftCache } from '@/features/today/WeeklyBudget'
+import { BudgetDraftStorage } from '@/features/today/budget-drafts'
+import { flushDraftParticipants, useEditorFlush } from '@/lib/useEditorFlush'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { GoalMapView } from '@/features/goals/GoalMapView'
@@ -39,8 +42,24 @@ export function MainWindow() {
   const now = useApp((s) => s.now)
   const [tab, setTab] = useState<Tab>('today')
   const notes = useRef<NotesViewHandle | null>(null)
+  const board = useRef<BoardViewHandle | null>(null)
+  const week = useRef<WeekViewHandle | null>(null)
+  const [budgetDraftStorage] = useState(() => new BudgetDraftStorage(window.localStorage, draftProfileKey()))
+  const budgetDrafts = useRef<BudgetDraftCache>(budgetDraftStorage.drafts)
+  const editorFlush = useEditorFlush(async () => {
+    if (!budgetDraftStorage.persist(budgetDrafts.current)) return false
+    if (await board.current?.flush() === false) return false
+    if (await notes.current?.flush() === false) return false
+    if (await week.current?.flush() === false) return false
+    return true
+  })
   const navigate = useCallback(async (destination: Tab) => {
+    if (editorFlush.isFrozen()) return
+    if (destination !== tab && document.querySelector('[role="dialog"]')) return
     if (tab === 'notes' && destination !== 'notes' && await notes.current?.flush() === false) return
+    if (tab === 'board' && destination !== 'board' && await board.current?.flush() === false) return
+    if (tab === 'week' && destination !== 'week' && await week.current?.flush() === false) return
+    if (destination !== tab && !await flushDraftParticipants()) return
     setTab(destination)
   }, [tab])
   const contentRef = useRef<HTMLElement>(null)
@@ -50,7 +69,7 @@ export function MainWindow() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
   const [selectedTaskTarget, setSelectedTaskTarget] = useState<TaskDetailTarget>()
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
-  const goNote = useCallback((id: string) => { setSelectedNote(id); setTab('notes') }, [])
+  const goNote = useCallback((id: string) => { setSelectedNote(id); void navigate('notes') }, [navigate])
   const noteJumpHandled = useCallback(() => setSelectedNote(null), [])
   const [boardView, setBoardView] = useState<'board' | 'list'>('board')
   const jumpGoal = useCallback((id: string) => { setSelectedGoal(id); void navigate('goals') }, [navigate])
@@ -81,7 +100,9 @@ export function MainWindow() {
   const liveTimer = tick ? liveTimerPresentation(tick, state.breakTimer, now) : null
 
   return (
-    <div className="win main">
+    <div className="win main" inert={editorFlush.frozen} aria-busy={editorFlush.frozen}>
+      {editorFlush.error && <p className="task-command-error" role="alert">{editorFlush.error}</p>}
+      {editorFlush.frozen && <p className="editor-flush-status" role="status">入力を保存している…</p>}
       <div className="main-titlebar drag">
         <span className="brand">
           <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden>
@@ -151,8 +172,8 @@ export function MainWindow() {
           {tab === 'today' && <TaskSuggestions suggestions={state.taskSuggestions ?? []} sessions={state.sessions} />}
           {tab === 'today' && <ReminderPanel notes={state.notes ?? []} now={now} onOpen={goNote} onDismiss={(id) => void invoke('note:update', { id, patch: { remindAt: null } })} />}
           {tab === 'today' && <TodayView onOpenTask={goTasks} />}
-          {tab === 'week' && <WeekView onOpenTask={goTasks} />}
-          {tab === 'board' && <BoardView onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} initialTaskTarget={selectedTaskTarget} onTaskJumpHandled={taskJumpHandled} />}
+          {tab === 'week' && <WeekView ref={week} onOpenTask={goTasks} budgetDrafts={budgetDrafts} budgetDraftStorage={budgetDraftStorage} />}
+          {tab === 'board' && <BoardView ref={board} onJumpGoal={jumpGoal} initialView={boardView} initialTaskId={selectedTask} initialTaskTarget={selectedTaskTarget} onTaskJumpHandled={taskJumpHandled} />}
           {tab === 'history' && <HistoryView />}
           {tab === 'settings' && <SettingsView />}
           {tab === 'goals' && <GoalMapView onGoTasks={goTasks} onGoIssues={goIssues} initialNodeId={selectedGoal} onJumpHandled={jumpHandled} />}

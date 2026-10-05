@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import {
@@ -14,18 +14,21 @@ import {
 import type { Task, TaskStatus } from '@white-box/core/types'
 import { Chip, ProgressBar, Segmented } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
-import { TaskDetail, type TaskDetailTarget } from './TaskDetail'
-import { GoalTasks } from '@/features/goals/GoalTasks'
+import { TaskDetail, type TaskDetailHandle, type TaskDetailTarget } from './TaskDetail'
+import { GoalTasks, type GoalTasksHandle } from '@/features/goals/GoalTasks'
 import { TaskWarnings } from '@/features/task-control/TaskWarnings'
 import { taskControl } from '@white-box/core/task-priority'
 import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 import { ExternalWaiting } from './ExternalWaiting'
 import { taskBlockReasons, unfinishedPredecessors } from '@white-box/core/task-control'
+import { ProjectEditor } from './ProjectEditor'
+import { FixedWorkOverview } from './FixedWorkOverview'
 
-export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, initialTaskTarget, onTaskJumpHandled }: {
+export interface BoardViewHandle { flush(): Promise<boolean> }
+export const BoardView = forwardRef<BoardViewHandle, {
   onJumpGoal?: (id: string) => void; initialView?: 'board' | 'list'; initialTaskId?: string | null
   initialTaskTarget?: TaskDetailTarget; onTaskJumpHandled?: () => void
-}) {
+}>(function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, initialTaskTarget, onTaskJumpHandled }, ref) {
   const state = useData()
   const now = useApp((s) => s.now)
   const [filter, setFilter] = useState<string | null>(null)
@@ -35,10 +38,18 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
   const [dropAt, setDropAt] = useState<{ status: TaskStatus; index: number } | null>(null)
   const [newProject, setNewProject] = useState('')
   const [addingProject, setAddingProject] = useState(false)
+  const [editingProject, setEditingProject] = useState<string | null>(null)
+  const projectSaving = useRef(false)
+  const detail = useRef<TaskDetailHandle | null>(null)
+  const list = useRef<GoalTasksHandle | null>(null)
+  const flush = async () => await detail.current?.flush() !== false && await list.current?.flush() !== false
+  useImperativeHandle(ref, () => ({ flush }))
   const [view, setView] = useState<'board' | 'list'>(initialView)
   const [error, setError] = useState('')
 
   const spent = useMemo(() => focusByTask(state, now), [state.sessions, now])
+  const activeProject = state.projects.find((project) => project.id === filter)
+  const projectToEdit = state.projects.find((project) => project.id === editingProject)
 
   useEffect(() => {
     if (!initialTaskId) return
@@ -55,9 +66,12 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
   }, [initialTaskId, initialTaskTarget, onTaskJumpHandled])
 
   function openTask(id: string, target?: TaskDetailTarget) {
-    setView('board')
-    setSelected(id)
-    setSelectedTarget(target)
+    void (async () => {
+      if (!await flush()) return
+      setView('board')
+      setSelected(id)
+      setSelectedTarget(target)
+    })()
   }
 
   function visible(tasks: Task[]): Task[] {
@@ -66,13 +80,15 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
 
   async function createProject() {
     const name = newProject.trim()
-    if (!name) return
+    if (!name || projectSaving.current) return
+    projectSaving.current = true
     setError('')
     try {
       await invoke('project:create', { name })
       setNewProject('')
       setAddingProject(false)
     } catch (cause) { setError(String(cause).replace(/^(Error:\s*)+/, '')) }
+    finally { projectSaving.current = false }
   }
 
   return (
@@ -87,10 +103,12 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
               key={p.id}
               type="button"
               className={`board-proj disp ${filter === p.id ? 'is-active' : ''}`}
+              title={`プロジェクトの重要度: ${p.priority === 'high' ? '重要' : p.priority === 'low' ? '低' : p.priority === 'normal' ? '普通' : '未設定'}`}
               onClick={() => setFilter(filter === p.id ? null : p.id)}
             >
               <i style={{ background: projectColor(p) }} />
               {p.name}
+              {p.priority === 'high' && <span aria-label="重要なプロジェクト">◆</span>}
             </button>
           ))}
           {addingProject ? (
@@ -112,14 +130,17 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
             </button>
           )}
         </div>
-        <Segmented value={view} onChange={setView} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
+        <Segmented value={view} onChange={(value) => { void (async () => { if (await flush()) setView(value) })() }} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
       </header>
+
+      {activeProject && <div className="board-project-context"><span>{activeProject.name} · 重要度 {activeProject.priority === 'high' ? '重要' : activeProject.priority === 'low' ? '低' : activeProject.priority === 'normal' ? '普通' : '未設定'}</span><button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingProject(activeProject.id)}>プロジェクトを編集</button></div>}
 
       <TaskWarnings state={state} now={now} projectId={filter} onOpenTask={openTask} />
 
       {error && <p className="task-command-error" role="alert">{error}</p>}
       <ExternalWaiting projectId={filter} onSelect={(id) => openTask(id, { section: 'waiting' })} />
-      {view === 'list' ? <GoalTasks onJump={onJumpGoal} initialTaskId={initialTaskId} onJumpHandled={onTaskJumpHandled} projectId={filter} /> : <>
+      <FixedWorkOverview projectId={filter} onOpenTask={openTask} />
+      {view === 'list' ? <GoalTasks ref={list} onJump={onJumpGoal} initialTaskId={initialTaskId} onJumpHandled={onTaskJumpHandled} projectId={filter} /> : <>
       <div className="board-cols">
         {STATUS_ORDER.map((status) => {
           const roots = visible(columnRoots(state, status))
@@ -168,10 +189,11 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
       </div>
 
       </>}
-      {selected && <TaskDetail key={selected} taskId={selected} target={selectedTarget} onClose={() => setSelected(null)} onSelectTask={openTask} />}
+      {selected && <TaskDetail ref={detail} key={selected} taskId={selected} target={selectedTarget} onClose={() => setSelected(null)} onSelectTask={openTask} />}
+      {projectToEdit && <ProjectEditor key={projectToEdit.id} project={projectToEdit} onClose={() => setEditingProject(null)} />}
     </div>
   )
-}
+})
 
 function QuickAdd({ status, projectId }: { status: TaskStatus; projectId: string | null }) {
   const [value, setValue] = useState('')
@@ -277,7 +299,7 @@ function Card({
           )}
         </div>
 
-        {task.status !== 'done' && task.status !== 'inbox' && <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />}
+        {task.status !== 'done' && task.status !== 'inbox' && <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays, state.projects)} />}
 
         {task.status !== 'done' && (task.progress > 0 || task.status === 'doing') && (
           <div className="card-progress">

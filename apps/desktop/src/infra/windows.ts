@@ -16,6 +16,19 @@ const DEV_URL = process.env['VITE_DEV_SERVER_URL']
 
 const windows = new Map<WindowKind, BrowserWindow>()
 let onCurrentWorkOpen: (open: boolean) => void = () => undefined
+let canOpenWindow = () => true
+let draftProfile = ''
+
+export function setWindowDraftProfile(key: string): void { draftProfile = key }
+let prepareClose: (kind: WindowKind) => Promise<(closing?: WindowKind[]) => void> = async () => () => {}
+
+export function setWindowCloseGuard(prepare: typeof prepareClose): void {
+  prepareClose = prepare
+}
+
+export function setWindowOpeningGuard(allowed: () => boolean): void {
+  canOpenWindow = allowed
+}
 
 export function observeCurrentWorkWindow(callback: (open: boolean) => void): void {
   onCurrentWorkOpen = callback
@@ -155,7 +168,8 @@ export function getWindow(kind: WindowKind): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
 }
 
-export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
+export function openWindow(kind: WindowKind, focus = true): BrowserWindow | null {
+  if (!canOpenWindow()) return null
   const existing = getWindow(kind)
   if (existing) {
     if (existing.isMinimized()) existing.restore()
@@ -191,6 +205,7 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
       nodeIntegration: false,
       sandbox: false,
       spellcheck: false,
+      additionalArguments: [`--whitebox-draft-profile=${draftProfile}`],
     },
   })
 
@@ -211,6 +226,7 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
   }
 
   win.once('ready-to-show', () => {
+    if (!canOpenWindow() || win.isDestroyed()) return
     place(kind, win)
     if (focus) win.show()
     else win.showInactive()
@@ -226,6 +242,25 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
     if (kind === 'current') onCurrentWorkOpen(false)
   })
   windows.set(kind, win)
+  if (kind === 'main' || kind === 'current') {
+    let closing = false
+    let approved = false
+    win.on('close', (event: Electron.Event) => {
+      if (!canOpenWindow() || approved) return
+      event.preventDefault()
+      if (closing) return
+      closing = true
+      void prepareClose(kind).then((release) => {
+        if (win.isDestroyed()) { release(); return }
+        approved = true
+        release([kind])
+        win.close()
+      }).catch((cause) => {
+        closing = false
+        console.error('[white-box] 入力の保存を待つため窓を閉じません:', cause)
+      })
+    })
+  }
   if (kind === 'current') onCurrentWorkOpen(true)
   return win
 }

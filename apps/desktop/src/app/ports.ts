@@ -15,6 +15,7 @@ export interface StorePort {
 }
 
 export interface WindowPort {
+  prepareEditors?(reason: 'close' | 'quit' | 'end' | 'switch' | 'import', kinds?: WindowKind[]): Promise<(closing?: WindowKind[]) => void>
   open(kind: WindowKind, focus?: boolean): void
   close(kind: WindowKind): void
   toggle(kind: WindowKind): void

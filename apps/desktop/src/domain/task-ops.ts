@@ -12,8 +12,7 @@ import { newId } from './session-ops.js'
 import { requireGoal } from './goal-ops.js'
 import { assertLiveWorkPreserved } from './task-control.js'
 
-export function createProject(db: Database, input: { name: string; hue?: number }): { projects: Project[]; project: Project } {
-  const now = Date.now()
+export function createProject(db: Database, input: { name: string; hue?: number }, now = Date.now()): { projects: Project[]; project: Project } {
   const used = db.projects.map((p) => p.hue)
   const palette = [18, 200, 150, 265, 42, 330, 96, 228]
   const hue = input.hue ?? (palette.find((h) => !used.includes(h)) ?? Math.floor(Math.random() * 360))
@@ -29,8 +28,9 @@ export function createProject(db: Database, input: { name: string; hue?: number 
   return { projects: [...db.projects, project], project }
 }
 
-export function updateProject(db: Database, id: ID, patch: Partial<Project>): Project[] {
-  const projects = db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, updatedAt: Date.now() } : p))
+export function updateProject(db: Database, id: ID, patch: Partial<Project>, now = Date.now()): Project[] {
+  if (patch.priority !== undefined && !['low', 'normal', 'high'].includes(patch.priority)) throw new Error('プロジェクト重要度が不正です')
+  const projects = db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, createdAt: p.createdAt, updatedAt: now } : p))
   assertLiveWorkPreserved(db, { ...db, projects })
   return projects
 }
@@ -51,6 +51,9 @@ export function createTask(
     status?: TaskStatus
     priority?: Priority
     notes?: string
+    problems?: string
+    decisions?: string
+    nextContext?: string
     sessionId?: ID | null
     due?: string | null
     goalNodeId?: ID | null
@@ -70,6 +73,9 @@ export function createTask(
     parentId: input.parentId ?? null,
     title: input.title.trim() || '無題のタスク',
     notes: input.notes ?? '',
+    ...(input.problems !== undefined ? { problems: input.problems } : {}),
+    ...(input.decisions !== undefined ? { decisions: input.decisions } : {}),
+    ...(input.nextContext !== undefined ? { nextContext: input.nextContext } : {}),
     status,
     progress: 0,
     priority: input.priority ?? 'normal',
@@ -106,7 +112,7 @@ export function updateTask(db: Database, id: ID, patch: Partial<Task>, now = Dat
   const tasks = db.tasks.map((t) => {
     if (t.id !== id) return t
     const nextStatus = patch.status ?? t.status
-    const merged: Task = normalizeTaskControl({ ...t, ...patch, id: t.id, updatedAt: now })
+    const merged: Task = normalizeTaskControl({ ...t, ...patch, id: t.id, createdAt: t.createdAt, updatedAt: now })
     if (patch.status !== undefined && nextStatus === 'done' && merged.doneAt === null) {
       merged.doneAt = now
       if (patch.progress === undefined) merged.progress = 100

@@ -143,6 +143,17 @@ describe('selectors', () => {
     expect(candidateTasks(s).map((t) => t.id)).toEqual(['doing', 'todo-high', 'todo-low', 'inbox'])
   })
 
+  it('candidateTasks は宣言されたプロジェクト重要度も使い、未設定は埋めない', () => {
+    const now = new Date(2026, 9, 5, 12).getTime()
+    const base = { hue: 1, archived: false, order: 0, createdAt: now, updatedAt: now }
+    const s = state({
+      projects: [{ ...base, id: 'important', name: '重要な仕事', priority: 'high' }, { ...base, id: 'unknown', name: '未設定の仕事' }],
+      tasks: [task({ id: 'unknown', projectId: 'unknown', order: 0 }), task({ id: 'important', projectId: 'important', order: 1 })],
+    })
+    expect(candidateTasks(s, now).map((item) => item.id)).toEqual(['important', 'unknown'])
+    expect(s.projects[1]!.priority).toBeUndefined()
+  })
+
   it('リスクが高くてもarchiveは除き、Blockedは理由を見せる候補として残す', () => {
     const now = new Date(2026, 9, 5, 12).getTime()
     const s = state({

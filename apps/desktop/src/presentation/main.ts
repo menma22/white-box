@@ -4,12 +4,13 @@
  *
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
-import { app, BrowserWindow, dialog, powerMonitor } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, powerMonitor } from 'electron'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { dayKey } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
 import { createHandlers, dispatch, type Handlers } from '../app/handlers.js'
-import { checkExpire, restoreOpenSession, setCurrentWorkOpen } from '../app/lifecycle.js'
+import { checkExpire, prepareQuit, restoreOpenSession, setCurrentWorkOpen } from '../app/lifecycle.js'
 import type { Ctx } from '../app/ports.js'
 import { buildState, buildTick, liveSession, newRuntime } from '../app/state.js'
 import { createDataIO } from '../infra/dataio.js'
@@ -19,7 +20,8 @@ import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
 import { createTicker } from '../infra/ticker.js'
-import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow, observeCurrentWorkWindow } from '../infra/windows.js'
+import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow, observeCurrentWorkWindow, setWindowOpeningGuard, setWindowCloseGuard, setWindowDraftProfile, getWindow } from '../infra/windows.js'
+import { RendererFlush } from '../infra/renderer-flush.js'
 import { registerIpc } from './ipc.js'
 import { createAgentService } from '../infra/agent-service.js'
 
@@ -34,7 +36,22 @@ if (!app.requestSingleInstanceLock()) {
     app.setAppUserModelId('dev.whitebox.app')
 
     const store = new Store()
+    setWindowDraftProfile(createHash('sha256').update(path.resolve(store.dir).toLowerCase()).digest('hex'))
     const runtime = newRuntime()
+    setWindowOpeningGuard(() => !runtime.quitting)
+    const editors = new RendererFlush((kinds = ['main', 'current']) => kinds.flatMap((kind) => {
+      const win = getWindow(kind)
+      return win ? [{ id: win.webContents.id, kind,
+        send: (channel: string, payload: unknown) => { if (!win.isDestroyed()) win.webContents.send(channel, payload) },
+        onClosed: (callback: () => void) => { win.once('closed', callback); return () => win.removeListener('closed', callback) },
+        focus: () => { if (!win.isDestroyed()) { win.show(); win.focus() } },
+      }] : []
+    }))
+    ipcMain.on('whitebox:flush-ready', (event, ready: unknown) => {
+      if (typeof ready === 'boolean') editors.setReady(event.sender.id, ready)
+    })
+    ipcMain.on('whitebox:flush-reply', (event, reply: unknown) => editors.reply(event.sender.id, reply))
+    setWindowCloseGuard((kind) => editors.prepare('close', [kind]))
     let handlers: Handlers
     let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
@@ -64,11 +81,12 @@ if (!app.requestSingleInstanceLock()) {
         lastAliveWrite = now
         store.markAlive()
       }
-    })
+    }, () => !runtime.quitting)
 
     const ctx: Ctx = {
       store,
       windows: {
+        prepareEditors: (reason, kinds) => editors.prepare(reason, kinds),
         open: (kind, focus) => void openWindow(kind, focus),
         close: closeWindow,
         toggle: toggleWindow,
@@ -125,11 +143,13 @@ if (!app.requestSingleInstanceLock()) {
     }
 
     const autoPause = (reason: 'suspend' | 'lock') => {
+      if (runtime.quitting) return
       const s = liveSession(store.data)
       if (!s || !store.data.settings.autoPauseOnSuspend) return
       void dispatch(handlers, 'session:pause', { reason }).catch(reportCommandFailure)
     }
     const onWake = () => {
+      if (runtime.quitting) return
       store.markAlive()
       if (liveSession(store.data)) openWindow('hud', false)
       else if (store.data.settings.lastWelcomeDate !== dayKey(Date.now(), store.data.settings.dayStartHour)) openWindow('main')
@@ -139,13 +159,26 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('resume', onWake)
     powerMonitor.on('unlock-screen', onWake)
 
-    app.on('before-quit', () => {
-      runtime.quitting = true
-      startReminderService?.stop()
-      agentService?.stop()
-      noteReminders.stop()
-      store.markAlive()
-      store.save()
+    let quitPrepared = false
+    let preparingQuit = false
+    app.on('before-quit', (event) => {
+      if (quitPrepared) return
+      event.preventDefault()
+      if (preparingQuit) return
+      preparingQuit = true
+      void editors.prepare('quit').then((release) => {
+        try {
+          prepareQuit(ctx)
+          startReminderService?.stop()
+          agentService?.stop()
+          noteReminders.stop()
+          quitPrepared = true
+          app.quit()
+        } catch (cause) { release(); throw cause }
+      }).catch((cause) => {
+        console.error('[white-box] 終了前の保存に失敗:', cause)
+        dialog.showErrorBox('終了できません', `データを保存できなかったため、終了を取り消しました。\n${String(cause)}`)
+      }).finally(() => { preparingQuit = false })
     })
   })
 

@@ -29,6 +29,7 @@ export interface Project {
   name: string
   hue: number
   archived: boolean
+  priority?: Priority
   order: number
   createdAt: number
   updatedAt: number
@@ -40,6 +41,9 @@ export interface Task {
   parentId: ID | null
   title: string
   notes: string
+  problems?: string
+  decisions?: string
+  nextContext?: string
   status: TaskStatus
   /** 人間が宣言する値。子タスクや実績から自動計算しない。 */
   progress: number
@@ -237,6 +241,38 @@ export interface Database {
   goalMap: GoalMap
   presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
+  weeklyBudgets?: WeeklyTimeBudget[]
+  weeklyBudgetDefaults?: WeeklyBudgetPlan
+  fixedWork?: FixedWork[]
+}
+
+export type ProjectAllocation =
+  | { projectId: ID; mode: 'minimum' | 'maximum'; minutes: number }
+  | { projectId: ID; mode: 'range'; minimumMinutes: number; maximumMinutes: number }
+  | { projectId: ID; mode: 'unlimited' }
+
+export interface WeeklyBudgetPlan {
+  sleepMinutes: number
+  mealMinutes: number
+  fixedMinutes: number
+  allocations: ProjectAllocation[]
+}
+
+export interface WeeklyTimeBudget extends WeeklyBudgetPlan {
+  weekStart: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface FixedWork {
+  id: ID
+  taskId: ID
+  startedAt: number
+  endedAt: number
+  externalReason: string
+  cancelled: boolean
+  createdAt: number
+  updatedAt: number
 }
 
 /** 毎秒流す軽い更新。状態全体の再送はミューテーション時だけに限る。 */
@@ -266,6 +302,9 @@ export interface AppState {
   recovery: { sessionId: ID; lastKnownAt: number } | null
   presenceCandidates?: PresenceCandidate[]
   pendingReview: { sessionId: ID; thenStart: boolean } | null
+  weeklyBudgets?: WeeklyTimeBudget[]
+  weeklyBudgetDefaults?: WeeklyBudgetPlan
+  fixedWork?: FixedWork[]
 }
 
 export type WindowKind = 'main' | 'start' | 'hud' | 'expire' | 'review' | 'current'

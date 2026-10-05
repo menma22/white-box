@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 54 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(54)
+  it('コマンドは 58 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(58)
   })
 
   it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
@@ -67,6 +67,10 @@ describe('コマンド契約', () => {
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
   const sample: { [N in CommandName]: ArgsOf<N> } = {
+    'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
+    'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
+    'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },
+    'fixedWork:update': { id: 'fixed1', patch: { cancelled: true } },
     'presence:resolve': { id: 'candidate', decision: 'dismiss' },
     'agent:config': {},
     'agent:context': {},
