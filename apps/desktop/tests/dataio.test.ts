@@ -123,6 +123,42 @@ describe('atomic export', () => {
     expectUnchanged()
   })
 
+  it('reserves new export names inside the backup namespace, including directory aliases', async () => {
+    const backups = path.join(directory, 'backups')
+    const alias = path.join(directory, 'new-backup-alias')
+    fs.symlinkSync(backups, alias, 'junction')
+    for (const folder of [backups, alias]) {
+      const target = path.join(folder, 'my-export.json')
+      dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+      await expect(createDataIO(store).exportData()).rejects.toThrow('別の場所')
+      expect(fs.existsSync(target)).toBe(false)
+    }
+    expectUnchanged()
+  })
+
+  it('preserves the quarantined original when it is selected as the export destination', async () => {
+    const malformed = '{ unreadable database }'
+    fs.writeFileSync(store.dbPath, malformed, 'utf8')
+    expect(() => new Store(directory)).toThrow('読み込めません')
+    const target = path.join(directory, fs.readdirSync(directory).find((name) => name.startsWith('data.corrupt-'))!)
+    expect(fs.readFileSync(target, 'utf8')).toBe(malformed)
+    fs.writeFileSync(store.dbPath, originalFile, 'utf8')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expect(fs.readFileSync(target, 'utf8')).toBe(malformed)
+    expectUnchanged()
+  })
+
+  it('preserves a pending heartbeat file selected as the export destination', async () => {
+    const target = `${store.runtimePath}.tmp`
+    const pending = JSON.stringify({ lastTickAt: 1234 })
+    fs.writeFileSync(target, pending, 'utf8')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expect(fs.readFileSync(target, 'utf8')).toBe(pending)
+    expectUnchanged()
+  })
+
   it('preserves the previous export when replacement fails', async () => {
     const target = path.join(directory, 'previous-export.json')
     fs.writeFileSync(target, 'previous export', 'utf8')

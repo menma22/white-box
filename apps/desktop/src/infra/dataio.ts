@@ -18,11 +18,17 @@ export function createDataIO(store: Store, isReady: () => boolean = () => true):
       })
       if (res.canceled || !res.filePath) return null
       if (!isReady()) throw new Error('アプリを終了中です')
-      const resolved = (file: string) => (fs.existsSync(file) ? fs.realpathSync(file) : path.resolve(file)).toLowerCase()
+      const resolved = (file: string) => {
+        const parent = path.dirname(file)
+        const canonical = fs.existsSync(file) ? fs.realpathSync(file) : fs.existsSync(parent) ? path.join(fs.realpathSync(parent), path.basename(file)) : path.resolve(file)
+        return process.platform === 'win32' ? canonical.toLowerCase() : canonical
+      }
       const destination = resolved(res.filePath)
-      const backup = fs.existsSync(res.filePath) && path.dirname(destination) === resolved(path.join(store.dir, 'backups')) && /^(?:data-\d{4}-\d{2}-\d{2}|before-import-\d+)\.json$/.test(path.basename(destination))
-      if (backup || [store.dbPath, store.runtimePath, `${store.dbPath}.tmp`, path.join(store.dir, 'agent-connection.json')].some((file) => resolved(file) === destination)) {
-        throw new Error('アプリの保存ファイルへ書き出すことはできません。別のファイル名を選んでください。')
+      const withinBackups = path.relative(resolved(path.join(store.dir, 'backups')), destination)
+      const backup = withinBackups === '' || withinBackups !== '..' && !withinBackups.startsWith(`..${path.sep}`) && !path.isAbsolute(withinBackups)
+      const quarantine = path.dirname(destination) === resolved(store.dir) && /^data\.corrupt--?\d+\.json$/.test(path.basename(destination))
+      if (backup || quarantine || [store.dbPath, store.runtimePath, `${store.dbPath}.tmp`, `${store.runtimePath}.tmp`, path.join(store.dir, 'agent-connection.json')].some((file) => resolved(file) === destination)) {
+        throw new Error('アプリの保存ファイルへ書き出すことはできません。別の場所を選んでください。')
       }
       const temporary = `${res.filePath}.whitebox-${randomUUID()}.tmp`
       let created = false

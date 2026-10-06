@@ -143,7 +143,7 @@ export class Store {
       return db
     } catch (err) {
       const broken = path.join(this.dir, `data.corrupt-${Date.now()}.json`)
-      try { fs.copyFileSync(this.dbPath, broken) } catch (copyError) { console.error('[white-box] 退避に失敗:', copyError) }
+      try { fs.copyFileSync(this.dbPath, broken, fs.constants.COPYFILE_EXCL) } catch (copyError) { console.error('[white-box] 退避に失敗:', copyError) }
       throw new Error(`data.json を読み込めません。元のデータは変更していません: ${this.dbPath}`, { cause: err })
     }
   }
@@ -155,9 +155,14 @@ export class Store {
   save(): void {
     const tmp = `${this.dbPath}.tmp`
     fs.writeFileSync(tmp, JSON.stringify(this.db, null, 2), 'utf-8')
+    this.replaceFile(tmp, this.dbPath)
+    this.backupOncePerDay()
+  }
+
+  private replaceFile(source: string, destination: string): void {
     for (let attempt = 0; ; attempt++) {
       try {
-        fs.renameSync(tmp, this.dbPath)
+        fs.renameSync(source, destination)
         break
       } catch (cause) {
         const code = (cause as NodeJS.ErrnoException)?.code
@@ -165,7 +170,6 @@ export class Store {
         Atomics.wait(RENAME_RETRY_SIGNAL, 0, 0, RENAME_RETRY_DELAY_MS)
       }
     }
-    this.backupOncePerDay()
   }
 
   private backupOncePerDay(): void {
@@ -182,7 +186,12 @@ export class Store {
 
   private pruneBackups(): void {
     const dir = path.join(this.dir, 'backups')
-    const files = fs.readdirSync(dir).filter((f) => f.startsWith('data-')).sort()
+    const files = fs.readdirSync(dir, { withFileTypes: true }).filter((entry) => {
+      if (!entry.isFile() || !/^data-\d{4}-\d{2}-\d{2}\.json$/.test(entry.name)) return false
+      const stamp = entry.name.slice(5, -5)
+      const date = new Date(`${stamp}T00:00:00.000Z`)
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === stamp
+    }).map((entry) => entry.name).sort()
     for (const f of files.slice(0, Math.max(0, files.length - 30))) {
       fs.rmSync(path.join(dir, f), { force: true })
     }
@@ -191,7 +200,9 @@ export class Store {
   /** 実行中セッションの復旧用。PC が落ちた時刻の近似値としてだけ使う。 */
   markAlive(): void {
     try {
-      fs.writeFileSync(this.runtimePath, JSON.stringify({ lastTickAt: Date.now() }), 'utf-8')
+      const tmp = `${this.runtimePath}.tmp`
+      fs.writeFileSync(tmp, JSON.stringify({ lastTickAt: Date.now() }), 'utf-8')
+      this.replaceFile(tmp, this.runtimePath)
     } catch {
       /* 実行中の記録が 1 回書けなくても致命ではない */
     }
@@ -209,7 +220,7 @@ export class Store {
   replace(next: unknown): void {
     validateStoredDatabase(next)
     const normalized = normalizeDatabase(next)
-    fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), 'utf-8')
+    fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), { encoding: 'utf-8', flag: 'wx' })
     const before = this.db
     this.db = normalized
     try { this.save() } catch (cause) { this.db = before; throw cause }
