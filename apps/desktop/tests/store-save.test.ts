@@ -7,7 +7,7 @@ import { commitChanges } from '../src/app/commit.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 import { createHandlers } from '../src/app/handlers.js'
 import { receive } from '../src/app/receive.js'
-import { restoreOpenSession } from '../src/app/lifecycle.js'
+import { prepareQuit, restoreOpenSession } from '../src/app/lifecycle.js'
 import { createSession } from '../src/domain/session-ops.js'
 import { focusMs } from '@white-box/core/engine'
 
@@ -157,6 +157,56 @@ describe('atomic Store.save sharing-conflict recovery', () => {
 describe('atomic heartbeat recovery', () => {
   const startedAt = Date.UTC(2026, 9, 6, 0)
   const goodAt = startedAt + 30 * 60_000
+
+  it.each(['write', 'rename'])('cancels actual quit after heartbeat %s failure and preserves recovery on retry', async (operation) => {
+    store.data.tasks[0] = { ...store.data.tasks[0]!, status: 'doing' }
+    store.data.sessions = [createSession({ taskId: 'saved', taskTitle: 'saved', mode: 'stopwatch', plannedMs: 50 * 60_000, now: startedAt })]
+    store.save()
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(goodAt)
+    store.markAlive()
+    const beforeMarker = fs.readFileSync(store.runtimePath, 'utf8')
+    const beforeDatabase = fs.readFileSync(store.dbPath, 'utf8')
+    const quitAt = goodAt + 5 * 60_000
+    clock.mockReturnValue(quitAt)
+    const error = Object.assign(new Error('heartbeat is unavailable'), { code: 'EIO' })
+    const nativeWrite = fs.writeFileSync
+    const nativeRename = fs.renameSync
+    const fault = operation === 'write'
+      ? vi.spyOn(fs, 'writeFileSync').mockImplementation((destination, data, options) => {
+        if (String(destination) === `${store.runtimePath}.tmp`) throw error
+        nativeWrite(destination, data, options)
+      })
+      : vi.spyOn(fs, 'renameSync').mockImplementation((source, destination) => {
+        if (String(destination) === store.runtimePath) throw error
+        nativeRename(source, destination)
+      })
+    const ctx = fakeCtx(store.data)
+    ctx.store = store
+    ctx.now = () => quitAt
+    ctx.system.quit = () => { prepareQuit(ctx); ctx.calls.push('quit') }
+    const handlers = createHandlers(ctx)
+    expect((await receive(handlers, 'app:quit', {}))).toMatchObject({ ok: false, error: String(error) })
+    expect(ctx.runtime.quitting).toBe(false)
+    expect(ctx.runtime.preparingQuit).toBe(false)
+    expect(ctx.calls).not.toContain('ticker:stop')
+    expect(ctx.calls).not.toContain('quit')
+    expect(fs.readFileSync(store.dbPath, 'utf8')).toBe(beforeDatabase)
+    expect(fs.readFileSync(store.runtimePath, 'utf8')).toBe(beforeMarker)
+    fault.mockRestore()
+
+    expect((await receive(handlers, 'app:quit', {})).ok).toBe(true)
+    expect(ctx.calls).toContain('ticker:stop')
+    expect(ctx.calls).toContain('quit')
+    expect(store.readLastAlive()).toBe(quitAt)
+    const reopened = new Store(directory)
+    const restarted = fakeCtx(reopened.data)
+    restarted.store = reopened
+    restarted.now = () => quitAt + 10 * 60_000
+    restarted.publish = () => reopened.save()
+    restoreOpenSession(restarted)
+    expect(restarted.runtime.recovery?.lastKnownAt).toBe(quitAt)
+    expect(focusMs(reopened.data.sessions[0]!, restarted.now())).toBe(35 * 60_000)
+  })
 
   it('keeps the previous heartbeat after a partial write and recovers its known work', async () => {
     store.data.tasks[0] = { ...store.data.tasks[0]!, status: 'doing' }

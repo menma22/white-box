@@ -10,7 +10,7 @@ export interface StorePort {
   save(): void
   replace(next: Database): void
   /** 実行中セッションの復旧用。生きている時刻の記録。 */
-  markAlive(): void
+  markAlive(options?: { requireSuccess?: boolean }): void
   readLastAlive(): number | null
 }
 

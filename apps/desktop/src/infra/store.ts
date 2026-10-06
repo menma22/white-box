@@ -198,12 +198,13 @@ export class Store {
   }
 
   /** 実行中セッションの復旧用。PC が落ちた時刻の近似値としてだけ使う。 */
-  markAlive(): void {
+  markAlive(options: { requireSuccess?: boolean } = {}): void {
     try {
       const tmp = `${this.runtimePath}.tmp`
       fs.writeFileSync(tmp, JSON.stringify({ lastTickAt: Date.now() }), 'utf-8')
       this.replaceFile(tmp, this.runtimePath)
-    } catch {
+    } catch (cause) {
+      if (options.requireSuccess) throw cause
       /* 実行中の記録が 1 回書けなくても致命ではない */
     }
   }

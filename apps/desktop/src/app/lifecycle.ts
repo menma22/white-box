@@ -117,7 +117,7 @@ export function checkExpire(ctx: Ctx): void {
 export function prepareQuit(ctx: Ctx): void {
   ctx.runtime.quitting = true
   try {
-    ctx.store.markAlive()
+    ctx.store.markAlive({ requireSuccess: true })
     ctx.store.save()
   } catch (cause) {
     ctx.runtime.quitting = false
