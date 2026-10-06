@@ -77,6 +77,52 @@ describe('atomic export', () => {
     expectUnchanged()
   })
 
+  it('protects the sole pre-import backup while retaining the imported database', async () => {
+    store.data.tasks[0]!.notes = 'unique work added after the daily backup'
+    store.save()
+    const preImport = structuredClone(store.data)
+    store.replace(importedDatabase())
+    const backups = path.join(directory, 'backups')
+    const target = path.join(backups, fs.readdirSync(backups).find((name) => name.startsWith('before-import-'))!)
+    const savedBackup = fs.readFileSync(target, 'utf8')
+    expect(JSON.parse(savedBackup)).toEqual(preImport)
+    expect(fs.readdirSync(backups).filter((name) => JSON.parse(fs.readFileSync(path.join(backups, name), 'utf8')).tasks[0]?.notes === preImport.tasks[0]!.notes)).toHaveLength(1)
+    const current = structuredClone(store.data)
+    const currentFile = fs.readFileSync(store.dbPath, 'utf8')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expect(fs.readFileSync(target, 'utf8')).toBe(savedBackup)
+    expect(store.data).toEqual(current)
+    expect(fs.readFileSync(store.dbPath, 'utf8')).toBe(currentFile)
+  })
+
+  it('protects a daily backup selected with different Windows path casing', async () => {
+    const backups = path.join(directory, 'backups')
+    const target = path.join(backups, fs.readdirSync(backups).find((name) => name.startsWith('data-'))!)
+    const savedBackup = fs.readFileSync(target, 'utf8')
+    store.data.dayNotes['2026-10-06'] = 'changes newer than the daily backup'
+    store.save()
+    const currentFile = fs.readFileSync(store.dbPath, 'utf8')
+    const selected = process.platform === 'win32' ? target.toUpperCase() : target
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: selected })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expect(fs.readFileSync(target, 'utf8')).toBe(savedBackup)
+    expect(fs.readFileSync(store.dbPath, 'utf8')).toBe(currentFile)
+  })
+
+  it('protects a managed backup reached through a directory alias', async () => {
+    const backups = path.join(directory, 'backups')
+    const name = fs.readdirSync(backups).find((item) => item.startsWith('data-'))!
+    const target = path.join(backups, name)
+    const savedBackup = fs.readFileSync(target, 'utf8')
+    const alias = path.join(directory, 'backup-alias')
+    fs.symlinkSync(backups, alias, 'junction')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: path.join(alias, name) })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expect(fs.readFileSync(target, 'utf8')).toBe(savedBackup)
+    expectUnchanged()
+  })
+
   it('preserves the previous export when replacement fails', async () => {
     const target = path.join(directory, 'previous-export.json')
     fs.writeFileSync(target, 'previous export', 'utf8')

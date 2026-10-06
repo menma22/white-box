@@ -19,7 +19,9 @@ export function createDataIO(store: Store, isReady: () => boolean = () => true):
       if (res.canceled || !res.filePath) return null
       if (!isReady()) throw new Error('アプリを終了中です')
       const resolved = (file: string) => (fs.existsSync(file) ? fs.realpathSync(file) : path.resolve(file)).toLowerCase()
-      if ([store.dbPath, store.runtimePath, `${store.dbPath}.tmp`, path.join(store.dir, 'agent-connection.json')].some((file) => resolved(file) === resolved(res.filePath!))) {
+      const destination = resolved(res.filePath)
+      const backup = fs.existsSync(res.filePath) && path.dirname(destination) === resolved(path.join(store.dir, 'backups')) && /^(?:data-\d{4}-\d{2}-\d{2}|before-import-\d+)\.json$/.test(path.basename(destination))
+      if (backup || [store.dbPath, store.runtimePath, `${store.dbPath}.tmp`, path.join(store.dir, 'agent-connection.json')].some((file) => resolved(file) === destination)) {
         throw new Error('アプリの保存ファイルへ書き出すことはできません。別のファイル名を選んでください。')
       }
       const temporary = `${res.filePath}.whitebox-${randomUUID()}.tmp`
