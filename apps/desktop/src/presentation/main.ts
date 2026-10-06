@@ -4,7 +4,7 @@
  *
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
-import { app, BrowserWindow, powerMonitor } from 'electron'
+import { app, BrowserWindow, dialog, powerMonitor } from 'electron'
 import path from 'node:path'
 import { dayKey } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
@@ -24,8 +24,6 @@ import { registerIpc } from './ipc.js'
 import { createAgentService } from '../infra/agent-service.js'
 
 const ALIVE_WRITE_INTERVAL_MS = 15_000
-/** これより長く記録が途切れていたら、PC が落ちていたとみなす。 */
-const CRASH_GAP_MS = 90_000
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -41,10 +39,14 @@ if (!app.requestSingleInstanceLock()) {
     let agentService: ReturnType<typeof createAgentService> | undefined
     let lastAliveWrite = 0
     let startReminderService: ReturnType<typeof createStartReminderService> | null = null
+    const reportCommandFailure = (cause: unknown) => {
+      try { openWindow('current') } catch (error) { console.error('[white-box] 現在の仕事を開けません:', error) }
+      dialog.showErrorBox('操作を実行できません', String(cause))
+    }
 
     const tray = createTray({
       getDb: () => store.data,
-      onCommand: (name) => void dispatch(handlers, name, {}),
+      onCommand: (name) => void dispatch(handlers, name, {}).catch(reportCommandFailure),
       onQuit: () => app.quit(),
     })
 
@@ -77,7 +79,7 @@ if (!app.requestSingleInstanceLock()) {
       system: {
         agentConfig: () => JSON.stringify({ mcpServers: { 'white-box': { command: process.execPath, args: [path.join(APP_ROOT, 'scripts', 'white-box-mcp.mjs')], env: { ELECTRON_RUN_AS_NODE: '1', WHITEBOX_AGENT_CONFIG: path.join(store.dir, 'agent-connection.json') } } } }, null, 2),
         applyShortcuts: () =>
-          applyShortcuts(store.data.settings.shortcuts, () => void dispatch(handlers, 'session:toggle', {})),
+          applyShortcuts(store.data.settings.shortcuts, () => void dispatch(handlers, 'session:toggle', {}).catch(reportCommandFailure)),
         applyLoginItem: () => {
           const open = store.data.settings.launchAtLogin
           if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: open, args: ['--hidden'] })
@@ -88,8 +90,8 @@ if (!app.requestSingleInstanceLock()) {
       dataIO: createDataIO(store),
       runtime,
       now: () => Date.now(),
-      publish: () => {
-        store.save()
+      publish: (persist = true) => {
+        if (persist) store.save()
         broadcast('whitebox:state', buildState(store.data, runtime, Date.now()))
         tray.update()
         startReminderService?.refresh()
@@ -104,7 +106,7 @@ if (!app.requestSingleInstanceLock()) {
     startReminderService = createStartReminderService(ctx)
     const noteReminders = createNoteReminders(ctx)
 
-    restoreOpenSession(ctx, CRASH_GAP_MS)
+    restoreOpenSession(ctx)
     ctx.system.applyShortcuts()
     ctx.system.applyLoginItem()
     tray.update()
@@ -125,7 +127,7 @@ if (!app.requestSingleInstanceLock()) {
     const autoPause = (reason: 'suspend' | 'lock') => {
       const s = liveSession(store.data)
       if (!s || !store.data.settings.autoPauseOnSuspend) return
-      void dispatch(handlers, 'session:pause', { reason })
+      void dispatch(handlers, 'session:pause', { reason }).catch(reportCommandFailure)
     }
     const onWake = () => {
       store.markAlive()

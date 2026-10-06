@@ -126,7 +126,7 @@ export function candidateTasks(state: AppState): Task[] {
   const weight: Record<TaskStatus, number> = { doing: 0, todo: 1, inbox: 2, done: 9 }
   const prio: Record<Task['priority'], number> = { high: 0, normal: 1, low: 2 }
   return state.tasks
-    .filter((t) => t.status !== 'done')
+    .filter((t) => t.status !== 'done' && !state.projects.some((project) => project.id === t.projectId && project.archived))
     .sort(
       (a, b) =>
         weight[a.status] - weight[b.status] || prio[a.priority] - prio[b.priority] || a.order - b.order,

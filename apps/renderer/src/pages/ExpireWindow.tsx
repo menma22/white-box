@@ -4,6 +4,7 @@ import { useApp, useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Ring } from '@/components/ui'
 import { formatDuration, MINUTE } from '@white-box/core/engine'
+import { taskExecutionProblem } from '@white-box/core/task-control'
 
 export function ExpireWindow() {
   const state = useData()
@@ -11,12 +12,15 @@ export function ExpireWindow() {
   const now = useApp((s) => s.now)
   const [extendMinutes, setExtendMinutes] = useState(state.settings.defaultExtendMinutes)
   const [breakMinutes, setBreakMinutes] = useState(5)
+  const [error, setError] = useState('')
+  const action = (request: Promise<unknown>) => { setError(''); void request.catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, ''))) }
 
   useEffect(() => {
     if (state.settings.soundOnExpire) chime()
   }, [state.settings.soundOnExpire])
 
   if (!tick) return <div className="win expire" />
+  const problem = taskExecutionProblem(state, tick.activeTaskId)
 
   const breakTimer = state.breakTimer
   if (breakTimer) {
@@ -35,9 +39,10 @@ export function ExpireWindow() {
         </div>
         <h2 className="expire-title">{finished ? '休憩が終わった' : '休憩中'}</h2>
         <p className="expire-task">再開するまで実作業時間には入らない</p>
+        {(error || problem) && <p className="task-command-error" role="alert">{error || problem}</p>}
         {finished && (
           <div className="expire-actions no-drag">
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => void (needsExtension ? invoke('session:extend', { minutes: extendMinutes }) : invoke('session:resume'))} autoFocus>
+            <button type="button" className="btn btn-primary btn-lg" disabled={Boolean(problem)} onClick={() => action(needsExtension ? invoke('session:extend', { minutes: extendMinutes }) : invoke('session:resume'))} autoFocus>
               {needsExtension ? `+${extendMinutes}分 続ける` : '再開する'}
             </button>
             <button type="button" className="btn btn-solid btn-lg" onClick={() => void invoke('session:end')}>
@@ -69,6 +74,7 @@ export function ExpireWindow() {
       </p>
       {overMs > 0 && <p className="expire-over num">超過 +{formatDuration(overMs, 'compact')}</p>}
       {overMs === 0 && <p className="expire-over">続けるまで実作業時間は増えない</p>}
+      {(error || problem) && <p className="task-command-error" role="alert">{error || problem}</p>}
 
       <div className="expire-actions no-drag">
         <button type="button" className="btn btn-primary btn-lg" onClick={() => void invoke('session:end')} autoFocus>
@@ -77,7 +83,8 @@ export function ExpireWindow() {
         <button
           type="button"
           className="btn btn-solid btn-lg"
-          onClick={() => void invoke('session:extend', { minutes: extendMinutes })}
+          disabled={Boolean(problem)}
+          onClick={() => action(invoke('session:extend', { minutes: extendMinutes }))}
         >
           +{extendMinutes}分 続ける
         </button>
