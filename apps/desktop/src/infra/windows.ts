@@ -222,19 +222,23 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow | null
     win.webContents.on('dom-ready', () => void win.webContents.insertCSS(TRANSPARENT_PAGE_CSS))
   }
 
+  let shown = false
+  const show = () => {
+    if (shown || !canOpenWindow() || win.isDestroyed()) return
+    shown = true
+    place(kind, win)
+    if (focus) win.show()
+    else win.showInactive()
+  }
+  win.once('ready-to-show', show)
+  if (kind === 'main' || kind === 'current') win.webContents.once('did-finish-load', show)
+
   const hash = `#${kind}`
   if (DEV_URL) {
     void win.loadURL(`${DEV_URL}/${hash}`)
   } else {
     void win.loadFile(path.join(APP_ROOT, 'dist', 'index.html'), { hash: kind })
   }
-
-  win.once('ready-to-show', () => {
-    if (!canOpenWindow() || win.isDestroyed()) return
-    place(kind, win)
-    if (focus) win.show()
-    else win.showInactive()
-  })
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)

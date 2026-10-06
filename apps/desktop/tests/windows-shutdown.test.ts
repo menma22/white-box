@@ -6,7 +6,7 @@ vi.mock('electron', async () => {
   const { EventEmitter } = await import('node:events')
   return {
     BrowserWindow: class extends EventEmitter {
-      webContents = { setWindowOpenHandler: vi.fn() }
+      webContents = Object.assign(new EventEmitter(), { setWindowOpenHandler: vi.fn() })
       destroyed = false
       constructor() { super(); native.created++ }
       isDestroyed() { return this.destroyed }
@@ -31,6 +31,71 @@ vi.mock('electron', async () => {
     },
     screen: { getCursorScreenPoint: () => ({ x: 0, y: 0 }), getDisplayNearestPoint: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } }) },
   }
+})
+
+describe('編集用の窓の初回表示', () => {
+  it.each(['main', 'current'] as const)('shows %s after load without waiting for its first paint event', (kind) => {
+    const win = openWindow(kind)!
+    const position = vi.spyOn(win, 'setPosition')
+    const show = vi.spyOn(win, 'show')
+    win.webContents.emit('did-finish-load')
+    expect(position).toHaveBeenCalledOnce()
+    expect(show).toHaveBeenCalledOnce()
+    win.emit('ready-to-show')
+    win.webContents.emit('did-finish-load')
+    expect(position).toHaveBeenCalledOnce()
+    expect(show).toHaveBeenCalledOnce()
+  })
+
+  it.each(['main', 'current'] as const)('shows %s once when ready-to-show arrives before load, retaining inactive opening', (kind) => {
+    const win = openWindow(kind, false)!
+    const position = vi.spyOn(win, 'setPosition')
+    const show = vi.spyOn(win, 'show')
+    const inactive = vi.spyOn(win, 'showInactive')
+    win.emit('ready-to-show')
+    win.webContents.emit('did-finish-load')
+    expect(position).toHaveBeenCalledOnce()
+    expect(inactive).toHaveBeenCalledOnce()
+    expect(show).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['main', 'preparingQuit'], ['current', 'preparingQuit'],
+    ['main', 'quitting'], ['current', 'quitting'],
+  ] as const)('does not display %s from either load event while %s is active', (kind, phase) => {
+    const runtime = { preparingQuit: false, quitting: false }
+    setWindowOpeningGuard(() => !runtime.preparingQuit && !runtime.quitting)
+    const win = openWindow(kind)!
+    const position = vi.spyOn(win, 'setPosition')
+    const before = native.shows
+    runtime[phase] = true
+    win.webContents.emit('did-finish-load')
+    win.emit('ready-to-show')
+    expect(position).not.toHaveBeenCalled()
+    expect(native.shows).toBe(before)
+  })
+
+  it.each(['main', 'current'] as const)('does not display destroyed %s when either load event arrives late', (kind) => {
+    const win = openWindow(kind)!
+    const position = vi.spyOn(win, 'setPosition')
+    const before = native.shows
+    setWindowCloseGuard(async () => () => {}, () => true)
+    win.close()
+    expect(win.isDestroyed()).toBe(true)
+    win.webContents.emit('did-finish-load')
+    win.emit('ready-to-show')
+    expect(position).not.toHaveBeenCalled()
+    expect(native.shows).toBe(before)
+  })
+
+  it('keeps non-editor review display dependent on ready-to-show', () => {
+    const win = openWindow('review')!
+    const show = vi.spyOn(win, 'show')
+    win.webContents.emit('did-finish-load')
+    expect(show).not.toHaveBeenCalled()
+    win.emit('ready-to-show')
+    expect(show).toHaveBeenCalledOnce()
+  })
 })
 
 afterEach(() => {
