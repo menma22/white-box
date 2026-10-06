@@ -12,6 +12,13 @@ describe('ノートの契約', () => {
     expect(() => NOTE_COMMANDS['note:update'].args.parse({ id: 'n', patch: { remindedAt: 1 } })).toThrow()
     expect(() => NOTE_COMMANDS['note:archive'].args.parse({ id: 'n', archived: true, delete: true })).toThrow()
   })
+  it('項目ごとの期待値を受け取り、その型とキーを厳密に検証する', () => {
+    const args = { id: 'n', patch: { body: '自分の本文' }, expected: { body: '元の本文', taskId: null } }
+    expect(NOTE_COMMANDS['note:update'].args.parse(args)).toEqual(args)
+    expect(() => NOTE_COMMANDS['note:update'].args.parse({ ...args, expected: { body: 1 } })).toThrow()
+    expect(() => NOTE_COMMANDS['note:update'].args.parse({ ...args, expected: { updatedAt: 1 } })).toThrow()
+    expect(() => NOTE_COMMANDS['note:update'].args.parse({ ...args, expected: { boddy: '元の本文' } })).toThrow()
+  })
   it('不正な日時と予定日時を持たない通知完了を拒否する', () => {
     for (const remindAt of [-1, 1.5, Infinity, NaN, 8_640_000_000_000_001]) expect(() => NOTE_COMMANDS['note:create'].args.parse({ remindAt })).toThrow()
     expect(() => NOTE_COMMANDS['note:markReminded'].args.parse({ id: 'n' })).toThrow()

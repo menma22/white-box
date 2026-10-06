@@ -4,15 +4,10 @@ import { invoke } from '@/lib/bridge'
 import type { NoteEditorHandle } from '@/features/notes/NoteEditor'
 import { TaskLinkedNotes } from './TaskLinkedNotes'
 import { useDraftParticipant } from '@/lib/useEditorFlush'
+import { acknowledgeContext, contextDraft, contextFields as fields, receiveContext, type ContextDraft } from './context-draft'
 
-const fields = ['notes', 'problems', 'decisions', 'nextContext'] as const
-type ContextDraft = Record<typeof fields[number], string>
 const labels: Record<typeof fields[number], string> = { notes: 'メモ', problems: '問題', decisions: '決定', nextContext: '次にすること・再開の手がかり' }
 const placeholders: Record<typeof fields[number], string> = { notes: 'このタスクについて残しておくこと', problems: 'まだ解けていないこと、試して分かったこと', decisions: '何を決めたか、その理由', nextContext: '戻ったら最初にすること、開く資料、覚えておく注意点' }
-
-function contextDraft(task: Task): ContextDraft {
-  return { notes: task.notes, problems: task.problems ?? '', decisions: task.decisions ?? '', nextContext: task.nextContext ?? '' }
-}
 
 export const TaskContextEditor = forwardRef<NoteEditorHandle, { task: Task }>(function TaskContextEditor({ task }, ref) {
   const [draft, setDraft] = useState(() => contextDraft(task))
@@ -24,6 +19,9 @@ export const TaskContextEditor = forwardRef<NoteEditorHandle, { task: Task }>(fu
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<typeof fields[number] | null>(null)
   const running = useRef<Promise<boolean> | null>(null)
+  const pending = useRef<Partial<ContextDraft> | null>(null)
+  const conflict = useRef(false)
+  const [conflicted, setConflicted] = useState(false)
   const flushingRequest = useRef<Promise<boolean> | null>(null)
   const notes = useRef<NoteEditorHandle | null>(null)
   const dirty = fields.some((field) => draft[field] !== saved.current[field])
@@ -31,25 +29,30 @@ export const TaskContextEditor = forwardRef<NoteEditorHandle, { task: Task }>(fu
   useEffect(() => {
     const incoming = contextDraft(task)
     const previous = saved.current
+    const received = receiveContext(currentDraft.current, previous, incoming, pending.current)
     saved.current = incoming
-    setDraft((current) => {
-      const next = { ...current }
-      for (const field of fields) if (current[field] === previous[field]) next[field] = incoming[field]
-      return next
-    })
+    if (received.conflict) { conflict.current = true; setConflicted(true) }
+    setDraft(received.draft)
   }, [task.notes, task.problems, task.decisions, task.nextContext])
 
-  function save(): Promise<boolean> {
+  function save(confirmOverwrite = false): Promise<boolean> {
     if (running.current) return running.current
+    if (conflict.current && !confirmOverwrite) return Promise.resolve(false)
+    if (confirmOverwrite) { conflict.current = false; setConflicted(false) }
     const value = { ...currentDraft.current }
     const patch = Object.fromEntries(fields.filter((field) => value[field] !== saved.current[field]).map((field) => [field, value[field]])) as Partial<ContextDraft>
     if (!Object.keys(patch).length) return Promise.resolve(true)
     setSaving(true)
     setError('')
-    running.current = invoke('task:update', { id: task.id, patch })
-      .then(() => { saved.current = { ...saved.current, ...patch }; return true })
+    pending.current = patch
+    const expectedContext = Object.fromEntries(Object.keys(patch).map((key) => [key, saved.current[key as keyof ContextDraft]])) as Partial<ContextDraft>
+    running.current = invoke('task:update', { id: task.id, patch, expectedContext })
+      .then(() => {
+        saved.current = acknowledgeContext(saved.current, expectedContext, patch)
+        return !conflict.current
+      })
       .catch((cause) => { setError(String(cause).replace(/^(Error:\s*)+/, '')); return false })
-      .finally(() => { running.current = null; setSaving(false) })
+      .finally(() => { pending.current = null; running.current = null; setSaving(false) })
     return running.current
   }
 
@@ -74,7 +77,10 @@ export const TaskContextEditor = forwardRef<NoteEditorHandle, { task: Task }>(fu
       <label>{labels[editing]}<textarea className="input" rows={4} aria-label={labels[editing]} placeholder={placeholders[editing]} value={draft[editing]} disabled={saving || flushing} onChange={(event) => { if (flushingRequest.current) return; setDraft({ ...draft, [editing]: event.target.value }); setError('') }} /></label>
     </div>}
     {error && <p className="task-command-error" role="alert">保存できなかった。{error} 入力は残っている。</p>}
-    {(editing || dirty) && <div className="phase2-actions"><button type="button" className="btn btn-primary btn-sm" disabled={saving || !dirty} onClick={() => void save().then((ok) => { if (ok) setEditing(null) })}>{saving ? '保存中…' : '文脈を保存'}</button><span role="status">{saving ? '保存中' : error ? '未保存' : dirty ? '未保存の変更あり' : '保存済み'}</span>{!dirty && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>編集を閉じる</button>}</div>}
+    {conflicted && <div className="task-command-error" role="alert"><p>別の画面で同じ文脈が変更された。入力は残っている。保存するとこの入力を使う。</p>
+      {fields.filter((field) => draft[field] !== saved.current[field]).map((field) => <details className="task-context-record" key={field}><summary>最新の保存内容: {labels[field]}</summary><p>{saved.current[field] || '空欄'}</p></details>)}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setDraft({ ...saved.current }); conflict.current = false; setConflicted(false); setError('') }}>最新の保存内容へ戻す</button></div>}
+    {(editing || dirty) && <div className="phase2-actions"><button type="button" className="btn btn-primary btn-sm" disabled={saving || !dirty} onClick={() => void save(true).then((ok) => { if (ok) setEditing(null) })}>{saving ? '保存中…' : conflicted ? 'この入力で文脈を保存' : '文脈を保存'}</button><span role="status">{saving ? '保存中' : error || conflicted ? '未保存' : dirty ? '未保存の変更あり' : '保存済み'}</span>{!dirty && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>編集を閉じる</button>}</div>}
     <TaskLinkedNotes ref={notes} task={task} />
     </fieldset>
   </section>

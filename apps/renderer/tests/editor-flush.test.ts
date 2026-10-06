@@ -49,4 +49,32 @@ describe('EditorFlush', () => {
     expect(controller.snapshot().frozen).toBe(false)
     expect(controller.snapshot().error).toContain('disk unavailable')
   })
+
+  it('local navigation stays frozen across later saves and until navigation completes', async () => {
+    const laterSave = deferred<boolean>()
+    const navigation = deferred<void>()
+    const actionStarted = deferred<void>()
+    let firstSaved = false
+    let navigated = false
+    const controller = new EditorFlush(async () => { firstSaved = true; return laterSave.promise }, () => {})
+    const leaving = controller.run('local', async () => { navigated = true; actionStarted.resolve(); await navigation.promise })
+    expect(firstSaved).toBe(true)
+    expect(controller.snapshot().frozen).toBe(true)
+    expect(await controller.run('second navigation', () => {})).toBe(false)
+    laterSave.resolve(true)
+    await actionStarted.promise
+    expect(navigated).toBe(true)
+    expect(controller.snapshot().frozen).toBe(true)
+    navigation.resolve()
+    expect(await leaving).toBe(true)
+    expect(controller.snapshot().frozen).toBe(false)
+  })
+
+  it('a failed local save retains input and cancels navigation', async () => {
+    let navigated = false
+    const controller = new EditorFlush(async () => false, () => {})
+    expect(await controller.run('local', () => { navigated = true })).toBe(false)
+    expect(navigated).toBe(false)
+    expect(controller.snapshot()).toMatchObject({ frozen: false, error: expect.stringContaining('入力を保持') })
+  })
 })

@@ -3,7 +3,8 @@
  */
 import { dialog, shell } from 'electron'
 import fs from 'node:fs'
-import type { Database } from '@white-box/core/types'
+import path from 'node:path'
+import { randomUUID } from 'node:crypto'
 import type { DataIOPort } from '../app/ports.js'
 import type { Store } from './store.js'
 
@@ -16,7 +17,24 @@ export function createDataIO(store: Store, isReady: () => boolean = () => true):
         filters: [{ name: 'JSON', extensions: ['json'] }],
       })
       if (res.canceled || !res.filePath) return null
-      fs.writeFileSync(res.filePath, JSON.stringify(store.data, null, 2), 'utf-8')
+      if (!isReady()) throw new Error('アプリを終了中です')
+      const resolved = (file: string) => (fs.existsSync(file) ? fs.realpathSync(file) : path.resolve(file)).toLowerCase()
+      if ([store.dbPath, store.runtimePath, `${store.dbPath}.tmp`, path.join(store.dir, 'agent-connection.json')].some((file) => resolved(file) === resolved(res.filePath!))) {
+        throw new Error('アプリの保存ファイルへ書き出すことはできません。別のファイル名を選んでください。')
+      }
+      const temporary = `${res.filePath}.whitebox-${randomUUID()}.tmp`
+      let created = false
+      try {
+        const descriptor = fs.openSync(temporary, 'wx')
+        created = true
+        try {
+          fs.writeFileSync(descriptor, JSON.stringify(store.data, null, 2), 'utf-8')
+          fs.fsyncSync(descriptor)
+        } finally { fs.closeSync(descriptor) }
+        fs.renameSync(temporary, res.filePath)
+      } finally {
+        if (created && fs.existsSync(temporary)) fs.unlinkSync(temporary)
+      }
       return res.filePath
     },
 
@@ -38,7 +56,7 @@ export function createDataIO(store: Store, isReady: () => boolean = () => true):
       })
       if (confirm.response !== 0) return null
       if (!isReady()) throw new Error('アプリを終了中です')
-      const parsed = JSON.parse(fs.readFileSync(res.filePaths[0], 'utf-8')) as Database
+      const parsed: unknown = JSON.parse(fs.readFileSync(res.filePaths[0], 'utf-8'))
       store.replace(parsed)
       return res.filePaths[0]
     },

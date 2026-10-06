@@ -16,8 +16,9 @@ import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-m
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 import { stallWarningDays, validateTaskPlanning } from '@white-box/core/task-priority'
 import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema, PrioritySchema } from '@white-box/contracts'
+import { DATABASE_VERSION, validateStoredDatabase } from './database-validation.js'
+import { validateTaskHierarchy } from '../domain/task-hierarchy.js'
 
-const DB_VERSION = 1
 const RENAME_RETRY_LIMIT = 3
 const RENAME_RETRY_DELAY_MS = 20
 const RENAME_RETRY_SIGNAL = new Int32Array(new SharedArrayBuffer(4))
@@ -69,11 +70,12 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
   }
   validateTaskGraph(tasks)
+  validateTaskHierarchy(tasks)
   if (parsed.goalMapImports !== undefined && (!Array.isArray(parsed.goalMapImports) || parsed.goalMapImports.some((item) => typeof item !== 'string'))) {
     throw new Error('道標の取込履歴が不正です')
   }
   return {
-    version: parsed.version ?? DB_VERSION,
+    version: parsed.version ?? DATABASE_VERSION,
     projects: parsed.projects ?? [],
     tasks,
     sessions: parsed.sessions ?? [],
@@ -134,14 +136,15 @@ export class Store {
     if (!fs.existsSync(this.dbPath)) return emptyDb()
     try {
       const raw = fs.readFileSync(this.dbPath, 'utf-8')
-      const db = normalizeDatabase(JSON.parse(raw) as Partial<Database>)
+      const parsed: unknown = JSON.parse(raw)
+      validateStoredDatabase(parsed)
+      const db = normalizeDatabase(parsed)
       if (db.settings.onboardedAt === null && hasBeenUsed(db)) db.settings.onboardedAt = Date.now()
       return db
     } catch (err) {
       const broken = path.join(this.dir, `data.corrupt-${Date.now()}.json`)
-      fs.copyFileSync(this.dbPath, broken)
-      console.error('[white-box] data.json を読めなかったので退避しました:', broken, err)
-      return emptyDb()
+      try { fs.copyFileSync(this.dbPath, broken) } catch (copyError) { console.error('[white-box] 退避に失敗:', copyError) }
+      throw new Error(`data.json を読み込めません。元のデータは変更していません: ${this.dbPath}`, { cause: err })
     }
   }
 
@@ -196,14 +199,15 @@ export class Store {
 
   readLastAlive(): number | null {
     try {
-      const raw = JSON.parse(fs.readFileSync(this.runtimePath, 'utf-8')) as { lastTickAt?: number }
-      return raw.lastTickAt ?? null
+      const raw = JSON.parse(fs.readFileSync(this.runtimePath, 'utf-8')) as { lastTickAt?: unknown }
+      return typeof raw.lastTickAt === 'number' && Number.isFinite(new Date(raw.lastTickAt).getTime()) ? raw.lastTickAt : null
     } catch {
       return null
     }
   }
 
-  replace(next: Database): void {
+  replace(next: unknown): void {
+    validateStoredDatabase(next)
     const normalized = normalizeDatabase(next)
     fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), 'utf-8')
     const before = this.db

@@ -36,7 +36,7 @@ export const TaskLinkedNotes = forwardRef<NoteEditorHandle, { task: Task }>(func
     finally { busy.current = false; setSaving(false) }
   }
 
-  return <details ref={disclosure} className="phase2-disclosure">
+  return <details ref={disclosure} className="phase2-disclosure" inert={saving} aria-busy={saving}>
     <summary>このタスクの関連ノート <span>{notes.length} 件</span></summary>
     <div className="task-context-notes">
       <div className="phase2-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => void run(async () => {

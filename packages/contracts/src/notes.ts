@@ -29,7 +29,7 @@ export const NotePatchSchema = NoteCreateArgsSchema
 
 export const NOTE_COMMANDS = {
   'note:create': { args: NoteCreateArgsSchema, result: NoteSchema },
-  'note:update': { args: z.strictObject({ id: z.string(), patch: NotePatchSchema }), result: z.null() },
+  'note:update': { args: z.strictObject({ id: z.string(), patch: NotePatchSchema, expected: NotePatchSchema.optional() }), result: z.null() },
   'note:archive': { args: z.strictObject({ id: z.string(), archived: z.boolean() }), result: z.null() },
   'note:markReminded': { args: z.strictObject({ id: z.string(), remindAt: Timestamp }), result: z.null() },
 } as const

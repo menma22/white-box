@@ -92,7 +92,8 @@ export const COMMANDS = {
     result: TaskSchema,
   },
   'task:update': {
-    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ id: true, createdAt: true, updatedAt: true, committedAt: true, lastProgressAt: true }).partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ id: true, createdAt: true, updatedAt: true, committedAt: true, lastProgressAt: true }).partial().strict(),
+      expectedContext: z.strictObject({ title: z.string(), notes: z.string(), problems: z.string(), decisions: z.string(), nextContext: z.string() }).partial().optional() }),
     result: z.null(),
   },
   'task:move': {
@@ -184,8 +185,8 @@ export const COMMANDS = {
     args: z.strictObject({
       id: IdSchema,
       patch: z.strictObject({
-        startedAt: z.number().optional(),
-        endedAt: z.number().optional(),
+        startedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
+        endedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
         plannedMs: z.number().optional(),
         note: z.string().optional(),
         /** 後から申告する除外区間の全体。渡すと申告ぶんを置き換える（観測された一時停止には触らない） */

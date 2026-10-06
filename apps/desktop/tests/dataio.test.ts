@@ -70,6 +70,34 @@ function expectUnchanged() {
   expect(new Store(directory).data).toEqual(originalData)
 }
 
+describe('atomic export', () => {
+  it('rejects writing over app-managed data without changing the file', async () => {
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: store.dbPath })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('保存ファイル')
+    expectUnchanged()
+  })
+
+  it('preserves the previous export when replacement fails', async () => {
+    const target = path.join(directory, 'previous-export.json')
+    fs.writeFileSync(target, 'previous export', 'utf8')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+    vi.spyOn(fs, 'renameSync').mockImplementation(() => { throw new Error('export replacement failed') })
+    await expect(createDataIO(store).exportData()).rejects.toThrow('export replacement failed')
+    expect(fs.readFileSync(target, 'utf8')).toBe('previous export')
+    expect(fs.readdirSync(directory).some((name) => name.includes('.whitebox-'))).toBe(false)
+    expectUnchanged()
+  })
+
+  it('writes the complete database and rejects completion after quit preparation', async () => {
+    const target = path.join(directory, 'export.json')
+    dialogs.showSaveDialog.mockResolvedValue({ canceled: false, filePath: target })
+    await expect(createDataIO(store).exportData()).resolves.toBe(target)
+    expect(JSON.parse(fs.readFileSync(target, 'utf8'))).toEqual(originalData)
+    await expect(createDataIO(store, () => false).exportData()).rejects.toThrow('終了中')
+    expectUnchanged()
+  })
+})
+
 describe('DataIO import readiness after asynchronous dialogs', () => {
   it('refuses a late file selection during quit preparation before opening confirmation', async () => {
     const selection = deferred<{ canceled: boolean; filePaths: string[] }>()

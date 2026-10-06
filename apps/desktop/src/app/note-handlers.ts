@@ -16,7 +16,7 @@ export function createNoteHandlers(ctx: Ctx): NoteHandlers {
       return result.note
     },
     'note:update': (args) => {
-      commitChanges(ctx, { notes: ops.updateNote(db(), args.id, args.patch, ctx.now()) })
+      commitChanges(ctx, { notes: ops.updateNote(db(), args.id, args.patch, ctx.now(), args.expected) })
       return null
     },
     'note:archive': (args) => {

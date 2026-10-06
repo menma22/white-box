@@ -35,7 +35,13 @@ if (!app.requestSingleInstanceLock()) {
   void app.whenReady().then(() => {
     app.setAppUserModelId('dev.whitebox.app')
 
-    const store = new Store()
+    let store: Store
+    try { store = new Store() }
+    catch (cause) {
+      dialog.showErrorBox('データを読み込めません', `既存のデータを保持して、起動を停止しました。保存先のデータとバックアップを確認してください。\n${String(cause)}`)
+      app.quit()
+      return
+    }
     setWindowDraftProfile(createHash('sha256').update(path.resolve(store.dir).toLowerCase()).digest('hex'))
     const runtime = newRuntime()
     setWindowOpeningGuard(() => !runtime.quitting && !runtime.preparingQuit)

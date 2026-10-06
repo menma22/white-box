@@ -1,4 +1,4 @@
-import type { AppState, ID, Project, Session, Task, TaskStatus } from '@white-box/core/types'
+import type { AppState, ID, Project, Session, Task, TaskStatus, TimeRange } from '@white-box/core/types'
 import { dayKey, focusByTaskAcross, sessionsOfDay } from '@white-box/core/engine'
 import { recommendTasks, taskWarnings } from '@white-box/core/task-priority'
 import { activityDayKeys, activitySummary, dayRange } from '@white-box/core/activity'
@@ -98,8 +98,8 @@ export function sessionsForDay(state: AppState, key: string, now = Date.now()): 
   return sessionsOfDay(state.sessions, key, state.settings.dayStartHour, now)
 }
 
-export function dayKeysWithSessions(state: AppState, now = Date.now()): string[] {
-  return activityDayKeys(state.sessions, now, state.settings.dayStartHour)
+export function dayKeysWithSessions(state: AppState, now = Date.now(), period?: TimeRange): string[] {
+  return activityDayKeys(state.sessions, now, state.settings.dayStartHour, period)
 }
 
 export function dayTotalMs(state: AppState, key: string, now: number): number {

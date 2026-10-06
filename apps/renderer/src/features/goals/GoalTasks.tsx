@@ -6,6 +6,8 @@ import { useApp, useData } from '@/stores/app'
 import { Modal } from '@/components/ui'
 import { TaskDetail, type TaskDetailHandle } from '@/features/board/TaskDetail'
 import type { GoalRun } from './GoalFields'
+import { runEditorAction, useDraftParticipant } from '@/lib/useEditorFlush'
+import { TaskTitleDraft } from '@/features/task-control/task-title-draft'
 
 export interface GoalTasksHandle { flush(): Promise<boolean> }
 export const GoalTasks = forwardRef<GoalTasksHandle, {
@@ -21,7 +23,7 @@ export const GoalTasks = forwardRef<GoalTasksHandle, {
   const [detailId, setDetailId] = useState<string | null>(initialTaskId)
   const detail = useRef<TaskDetailHandle | null>(null)
   useImperativeHandle(ref, () => ({ flush: () => detail.current?.flush() ?? Promise.resolve(true) }), [])
-  const selectTask = (id: string) => { void (async () => { if (await detail.current?.flush() !== false) setDetailId(id) })() }
+  const selectTask = (id: string) => { void runEditorAction(() => setDetailId(id)) }
   useEffect(() => {
     if (!initialTaskId) return
     setDetailId(initialTaskId)
@@ -56,9 +58,9 @@ export const GoalTasks = forwardRef<GoalTasksHandle, {
     return (
       <div key={task.id} className={`gm-task-row ${task.status === 'done' ? 'is-done' : ''}`} data-task-id={task.id}>
         <input type="checkbox" aria-label={`完了: ${task.title}`} checked={task.status === 'done'}
-          onChange={() => void run('task:update', { id: task.id, patch: { status: task.status === 'done' ? 'todo' : 'done' } })} />
+          onChange={() => void runEditorAction(async () => { await run('task:update', { id: task.id, patch: { status: task.status === 'done' ? 'todo' : 'done' } }) })} />
         <div className="gm-task-text">
-          <TaskTitle value={task.title} onSave={(value) => void run('task:update', { id: task.id, patch: { title: value } })} />
+          <TaskTitle value={task.title} onSave={(value, expected) => run('task:update', { id: task.id, patch: { title: value }, expectedContext: { title: expected } })} />
           {node && <button type="button" className="gm-task-goal" title={node.goal} onClick={() => onJump(node.id)}>↗ {node.goal || '未入力の目標'}</button>}
         </div>
         <select className={`input gm-task-priority priority-${task.priority}`} aria-label={`優先度: ${task.title}`}
@@ -96,7 +98,7 @@ export const GoalTasks = forwardRef<GoalTasksHandle, {
         {open.map(row)}
         {!open.length && <p className="gm-task-intro">未完了のタスクはない。</p>}
         <button type="button" className="btn btn-quiet btn-md gm-task-done" aria-expanded={state.goalMap.ui.doneOpen}
-          onClick={() => void run('goal:ui', { patch: { doneOpen: !state.goalMap.ui.doneOpen } })}>
+          onClick={() => void runEditorAction(async () => { await run('goal:ui', { patch: { doneOpen: !state.goalMap.ui.doneOpen } }) })}>
           {state.goalMap.ui.doneOpen ? '▾' : '▸'} 完了済み ({done.length})
         </button>
         {state.goalMap.ui.doneOpen && done.map(row)}
@@ -116,20 +118,22 @@ export const GoalTasks = forwardRef<GoalTasksHandle, {
   )
 })
 
-function TaskTitle({ value, onSave }: { value: string; onSave: (value: string) => void }) {
-  const [draft, setDraft] = useState(value)
-  const editing = useRef(false)
-  useEffect(() => { if (!editing.current) setDraft(value) }, [value])
-  return <input className="input gm-task-title" aria-label="タスク名" title={draft} value={draft}
-    onFocus={() => { editing.current = true }} onBlur={() => {
-      editing.current = false
-      const title = draft.trim()
-      setDraft(title || value)
-      if (title && title !== value) onSave(title)
-    }}
+function TaskTitle({ value, onSave }: { value: string; onSave: (value: string, expected: string) => Promise<boolean> }) {
+  const save = useRef(onSave)
+  save.current = onSave
+  const [controller] = useState(() => new TaskTitleDraft(value, (title, expected) => save.current(title, expected)))
+  const [state, setState] = useState(() => controller.snapshot())
+  useEffect(() => controller.subscribe(setState), [controller])
+  useEffect(() => controller.receive(value), [controller, value])
+  useDraftParticipant(() => controller.flush())
+  return <div><input className="input gm-task-title" aria-label="タスク名" title={state.draft} value={state.draft} disabled={state.flushing}
+    onFocus={() => controller.focus(true)} onBlur={() => { controller.focus(false); void controller.save() }}
     onChange={(event) => {
-      setDraft(event.target.value)
-      if (event.target.value.trim()) onSave(event.target.value)
+      controller.update(event.target.value)
+      if (event.target.value.trim()) void controller.save()
     }}
     onKeyDown={(event) => { if (!event.nativeEvent.isComposing && (event.key === 'Enter' || event.key === 'Escape')) event.currentTarget.blur() }} />
+    {state.error && <span role="alert" className="gm-task-error">{state.error} 入力は残っている。</span>}
+    {state.conflict !== null && <div><p>別の画面で保存されたタスク名: {state.conflict}</p><button type="button" className="btn btn-ghost btn-sm" disabled={state.flushing} onClick={() => void controller.retry()}>自分の入力を保存</button><button type="button" className="btn btn-ghost btn-sm" disabled={state.flushing} onClick={() => void controller.acceptLatest()}>最新の内容を使う</button></div>}
+  </div>
 }

@@ -10,7 +10,7 @@ import { TodayView } from '@/features/today/TodayView'
 import { WeekView, type WeekViewHandle } from '@/features/today/WeekView'
 import type { BudgetDraftCache } from '@/features/today/WeeklyBudget'
 import { BudgetDraftStorage } from '@/features/today/budget-drafts'
-import { flushDraftParticipants, useEditorFlush } from '@/lib/useEditorFlush'
+import { useEditorFlush } from '@/lib/useEditorFlush'
 import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { GoalMapView } from '@/features/goals/GoalMapView'
@@ -56,11 +56,7 @@ export function MainWindow() {
   const navigate = useCallback(async (destination: Tab) => {
     if (editorFlush.isFrozen()) return
     if (destination !== tab && document.querySelector('[role="dialog"]')) return
-    if (tab === 'notes' && destination !== 'notes' && await notes.current?.flush() === false) return
-    if (tab === 'board' && destination !== 'board' && await board.current?.flush() === false) return
-    if (tab === 'week' && destination !== 'week' && await week.current?.flush() === false) return
-    if (destination !== tab && !await flushDraftParticipants()) return
-    setTab(destination)
+    if (destination !== tab) await editorFlush.run(() => setTab(destination))
   }, [tab])
   const contentRef = useRef<HTMLElement>(null)
   useEffect(() => { if (contentRef.current) contentRef.current.scrollTop = 0 }, [tab])

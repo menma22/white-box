@@ -28,4 +28,13 @@ export class EditorFlush {
   }
 
   release(id: string) { this.pending.delete(id); this.emit() }
+
+  async run(id: string, action: () => void | Promise<void>): Promise<boolean> {
+    if (this.pending.size) return false
+    try {
+      if (!await this.prepare(id)) return false
+      await action()
+      return true
+    } finally { this.release(id) }
+  }
 }

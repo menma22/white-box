@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { Task } from '../src/types.js'
-import { followUpDue, normalizeTaskControl, taskBlockReasons, taskExecutionProblem, unfinishedPredecessors, validateTaskLinks } from '../src/task-control.js'
+import { followUpDue, normalizeTaskControl, taskBlockReasons, taskExecutionProblem, unfinishedPredecessors, validateTaskGraph, validateTaskLinks } from '../src/task-control.js'
 
 const task = (id: string, over: Partial<Task> = {}): Task => ({ id, title: id, projectId: null, parentId: null, notes: '', status: 'todo', progress: 70, priority: 'normal', order: 0, createdAt: 0, updatedAt: 0, doneAt: null, createdInSessionId: null, ...over })
 
 describe('task control', () => {
+  it('validates deep prerequisite graphs without rejecting readable acyclic data', () => {
+    const tasks = Array.from({ length: 20_000 }, (_, index) => task(String(index), { hardDependencies: index < 19_999 ? [String(index + 1)] : [] }))
+    expect(() => validateTaskGraph(tasks)).not.toThrow()
+    tasks[19_999]!.recommendedPredecessors = ['0']
+    expect(() => validateTaskGraph(tasks)).toThrow('循環')
+  })
   it('legacy defaults and manual unblock preserve status and progress', () => {
     const legacy = task('a')
     const normalized = normalizeTaskControl(legacy)

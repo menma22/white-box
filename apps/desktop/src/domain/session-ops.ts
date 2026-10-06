@@ -189,16 +189,20 @@ export function markExpired(session: Session, now: number): Session {
 }
 
 export function endSession(session: Session, now: number): Session {
-  if (session.endedAt) return session
-  const next = clone(markExpired(session, now))
+  if (session.endedAt !== null) return session
+  let at = Math.max(now, session.startedAt, session.createdAt, session.editedAt ?? session.startedAt, session.expiredNotifiedAt ?? session.startedAt)
+  for (const segment of session.segments) at = Math.max(at, segment.startedAt, segment.endedAt ?? segment.startedAt)
+  for (const pause of session.pauses) at = Math.max(at, pause.startedAt, pause.endedAt ?? pause.startedAt, pause.notifiedAt ?? pause.startedAt)
+  for (const event of session.events) at = Math.max(at, event.at)
+  const next = clone(markExpired(session, at))
   for (const p of next.pauses) {
-    if (p.endedAt === null) p.endedAt = now
+    if (p.endedAt === null) p.endedAt = at
   }
   const open = activeSegment(next)
-  if (open) open.endedAt = now
-  next.endedAt = now
+  if (open) open.endedAt = at
+  next.endedAt = at
   next.state = 'ended'
-  pushEvent(next, now, 'session_ended', `セッション終了（実作業 ${Math.round(focusMs(next, now) / MINUTE)}分）`)
+  pushEvent(next, at, 'session_ended', `セッション終了（実作業 ${Math.round(focusMs(next, at) / MINUTE)}分）`)
   return next
 }
 

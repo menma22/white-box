@@ -23,6 +23,7 @@ import { ExternalWaiting } from './ExternalWaiting'
 import { taskBlockReasons, unfinishedPredecessors } from '@white-box/core/task-control'
 import { ProjectEditor } from './ProjectEditor'
 import { FixedWorkOverview } from './FixedWorkOverview'
+import { runEditorAction } from '@/lib/useEditorFlush'
 
 export interface BoardViewHandle { flush(): Promise<boolean> }
 export const BoardView = forwardRef<BoardViewHandle, {
@@ -66,12 +67,11 @@ export const BoardView = forwardRef<BoardViewHandle, {
   }, [initialTaskId, initialTaskTarget, onTaskJumpHandled])
 
   function openTask(id: string, target?: TaskDetailTarget) {
-    void (async () => {
-      if (!await flush()) return
+    void runEditorAction(() => {
       setView('board')
       setSelected(id)
       setSelectedTarget(target)
-    })()
+    })
   }
 
   function visible(tasks: Task[]): Task[] {
@@ -95,7 +95,7 @@ export const BoardView = forwardRef<BoardViewHandle, {
     <div className="board">
       <header className="board-head">
         <div className="board-projects">
-          <button type="button" className={`board-proj disp ${filter === null ? 'is-active' : ''}`} onClick={() => setFilter(null)}>
+          <button type="button" className={`board-proj disp ${filter === null ? 'is-active' : ''}`} onClick={() => void runEditorAction(() => setFilter(null))}>
             すべて
           </button>
           {state.projects.map((p) => (
@@ -104,7 +104,7 @@ export const BoardView = forwardRef<BoardViewHandle, {
               type="button"
               className={`board-proj disp ${filter === p.id ? 'is-active' : ''}`}
               title={`プロジェクトの重要度: ${p.priority === 'high' ? '重要' : p.priority === 'low' ? '低' : p.priority === 'normal' ? '普通' : '未設定'}`}
-              onClick={() => setFilter(filter === p.id ? null : p.id)}
+              onClick={() => void runEditorAction(() => setFilter(filter === p.id ? null : p.id))}
             >
               <i style={{ background: projectColor(p) }} />
               {p.name}
@@ -130,7 +130,7 @@ export const BoardView = forwardRef<BoardViewHandle, {
             </button>
           )}
         </div>
-        <Segmented value={view} onChange={(value) => { void (async () => { if (await flush()) setView(value) })() }} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
+        <Segmented value={view} onChange={(value) => { void runEditorAction(() => setView(value)) }} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
       </header>
 
       {activeProject && <div className="board-project-context"><span>{activeProject.name} · 重要度 {activeProject.priority === 'high' ? '重要' : activeProject.priority === 'low' ? '低' : activeProject.priority === 'normal' ? '普通' : '未設定'}</span><button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingProject(activeProject.id)}>プロジェクトを編集</button></div>}

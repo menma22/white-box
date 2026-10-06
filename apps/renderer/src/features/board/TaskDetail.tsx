@@ -13,6 +13,8 @@ import { TaskControlEditor } from './TaskControlEditor'
 import { TaskContextEditor } from './TaskContextEditor'
 import type { NoteEditorHandle } from '@/features/notes/NoteEditor'
 import { FixedWorkOverview } from './FixedWorkOverview'
+import { flushDraftParticipants } from '@/lib/useEditorFlush'
+import { TaskTitleDraft } from '@/features/task-control/task-title-draft'
 
 export type TaskDetailTarget = { section: 'waiting' }
 export interface TaskDetailHandle { flush(): Promise<boolean> }
@@ -21,24 +23,35 @@ export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
-  const [title, setTitle] = useState(task?.title ?? '')
-  const editingTitle = useRef(false)
+  const [titleDraft] = useState(() => new TaskTitleDraft(task?.title ?? '', async (title, expected) => {
+    await invoke('task:update', { id: taskId, patch: { title }, expectedContext: { title: expected } })
+  }))
+  const [titleState, setTitleState] = useState(() => titleDraft.snapshot())
+  useEffect(() => titleDraft.subscribe(setTitleState), [titleDraft])
   const context = useRef<NoteEditorHandle | null>(null)
   const body = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
   const [error, setError] = useState('')
+  const [flushing, setFlushing] = useState(false)
+  const pendingFlush = useRef<Promise<boolean> | null>(null)
 
-  const flush = () => context.current?.flush() ?? Promise.resolve(true)
+  const flush = () => {
+    if (pendingFlush.current) return pendingFlush.current
+    setFlushing(true)
+    pendingFlush.current = (async () => await titleDraft.flush() && await context.current?.flush() !== false && await flushDraftParticipants())()
+      .finally(() => { pendingFlush.current = null; setFlushing(false) })
+    return pendingFlush.current
+  }
   useImperativeHandle(ref, () => ({ flush }))
   const close = () => { void flush().then((saved) => { if (saved) onClose() }) }
   const related = (id: string) => { void flush().then((saved) => { if (saved) onSelectTask?.(id) }) }
   useEscape(!confirmDelete, () => { if (!document.querySelector('[role="dialog"]')) close() })
 
   useEffect(() => {
-    if (!editingTitle.current) setTitle(task?.title ?? '')
-  }, [taskId, task?.title])
+    titleDraft.receive(task?.title ?? '')
+  }, [titleDraft, task?.title])
   useEffect(() => {
     if (!target) body.current?.scrollTo({ top: 0 })
   }, [taskId, target])
@@ -66,7 +79,7 @@ export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose
   }
 
   return (
-    <aside className="detail">
+    <aside className="detail" inert={flushing} aria-busy={flushing}>
       <header className="detail-head">
         <div className="detail-path">
           {path.length > 0 && <span className="detail-path-text">{path.join(' / ')} /</span>}
@@ -78,18 +91,21 @@ export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose
       </header>
 
       {error && <p className="task-command-error" role="alert">{error}</p>}
+      {titleState.error && <div className="task-command-error" role="alert">保存できなかった。{titleState.error} 入力は残っている。
+        {titleState.conflict !== null && <p>最新のタスク名: {titleState.conflict}</p>}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void titleDraft.retry()}>このタスク名を保存</button>
+        {titleState.conflict !== null && <button type="button" className="btn btn-ghost btn-sm" onClick={() => void titleDraft.acceptLatest()}>最新のタスク名へ戻す</button>}
+      </div>}
 
       <div className="detail-body" ref={body}>
         <textarea
           className="detail-title"
-          value={title}
+          value={titleState.draft}
           rows={2}
-          onChange={(e) => setTitle(e.target.value)}
-          onFocus={() => { editingTitle.current = true }}
-          onBlur={() => {
-            editingTitle.current = false
-            if (title.trim() && title !== task.title) patch({ title: title.trim() })
-          }}
+          disabled={titleState.flushing}
+          onChange={(e) => titleDraft.update(e.target.value)}
+          onFocus={() => titleDraft.focus(true)}
+          onBlur={() => { titleDraft.focus(false); void titleDraft.save() }}
         />
 
         {executionProblem && <p className="task-control-hint" data-execution-problem>開始できない理由: {executionProblem}</p>}

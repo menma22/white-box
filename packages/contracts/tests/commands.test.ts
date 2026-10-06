@@ -48,6 +48,17 @@ describe('コマンド契約', () => {
     })
   })
 
+  it('記録修正は日付にできない時刻を拒否し、有効な過去・未来の時刻を保持する', () => {
+    for (const field of ['startedAt', 'endedAt'] as const) {
+      for (const value of [NaN, Infinity, -Infinity, 1e20, -1e20]) {
+        expect(() => parseArgs('session:update', { id: 's1', patch: { [field]: value } })).toThrow()
+      }
+      for (const value of [-8_640_000_000_000_000, 0, new Date(2100, 0, 1).getTime(), 8_640_000_000_000_000]) {
+        expect(parseArgs('session:update', { id: 's1', patch: { [field]: value } })).toEqual({ id: 's1', patch: { [field]: value } })
+      }
+    }
+  })
+
   it('休憩コマンドの時間を受け取り、停止理由としての直接指定は拒否する', () => {
     expect(parseArgs('session:break', { minutes: 7 })).toEqual({ minutes: 7 })
     expect(() => parseArgs('session:pause', { reason: 'break' })).toThrow()
