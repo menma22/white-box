@@ -47,7 +47,7 @@ Repositoryは `menma22/white-box`。開始時と提出前のAPIでオープンPR
 | 型検査 / lint / pack / Storybook | 全体exit 0 |
 | Vitest | 61ファイル617件成功、失敗0 |
 | 所有PID判定のNodeテスト | 14件成功、失敗0 |
-| ソース版の実Electron | 13スクリプト成功 |
+| ソース版の実Electron | 13スクリプト成功。製品一致の全体実行へ、後続QAのNote・基本検証を差し替えた構成 |
 | 隔離配布版の実Electron | 12スクリプト成功。終了専用scriptはソース版のみ |
 | 主要な実画面条件 | ソース/配布とも計画79、警告65、依存62、実績54 |
 | 終了専用の実Electron | 観測器付き11、観測器なし7、複数窓11条件が成功。DB全体・再起動・所有PID不在を確認 |
@@ -70,7 +70,7 @@ Repositoryは `menma22/white-box`。開始時と提出前のAPIでオープンPR
 | `97e583d5` → `125026f7` | 61（追加56 / 削除5） | [inventory](evidence/checkpoint-repair-inventory.json) / [割当](evidence/checkpoint-repair-assignments.json) |
 | QA `125026f7` → `15eea5d1` → `130016c8` | 2 + 18（全体追加17 / 削除3） | [Note待機](evidence/notes-readiness-assignments.json) / [CDP要求](evidence/cdp-repair-assignments.json) |
 
-この網羅率は「全行の目的を追跡できた」証拠であり、意味の正しさは故障注入・独立計算・実Store/IPC/DOM・再起動の証拠で別に判定する。提出用の文書と監査ファイルは製品測定範囲から分け、リンク・JSON・件数・識別情報を検算する。
+この網羅率は「全行の目的を追跡できた」証拠であり、意味の正しさは故障注入・独立計算・実Store/IPC/DOM・再起動の証拠で別に判定する。提出用の文書と監査ファイルは製品測定範囲から分け、リンク・JSON・件数・識別情報を検算する。公開ログはUTF-8/LF化とcheckoutパスの正規化を行うため、原ログと公開コピーのハッシュを[対応表](evidence/log-transforms.json)で区別する。
 
 ## 残る制約
 

@@ -27,7 +27,7 @@ def read_log(path):
 def portable(text):
     return text.replace(str(root), '.').replace(root.as_posix(), '.').replace('file:///' + quote(root.as_posix(), safe='/:') + '/', 'file:///<checkout>/')
 
-assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == head
+assert subprocess.run(['git', 'merge-base', '--is-ancestor', head, 'HEAD']).returncode == 0
 assert subprocess.run(['git', 'diff', '--quiet', head, '--', 'apps', 'packages', 'scripts', 'vitest.config.ts']).returncode == 0
 assert subprocess.run(['git', 'diff', '--quiet', product_head, head, '--', 'apps', 'packages', 'vitest.config.ts']).returncode == 0
 gates = read_json(audit / 'gates-final.json')
@@ -166,7 +166,9 @@ write_json(audit / 'publication-files.json', {'measuredHead': head, 'files': pub
 
 broken = []
 for document in review.rglob('*.md'):
-    for link in re.findall(r'\]\(([^)]+)\)', document.read_text(encoding='utf-8-sig')):
+    document_text = document.read_text(encoding='utf-8-sig')
+    assert not re.search(r'\?{4,}', document_text), f'Encoding corruption in {document}'
+    for link in re.findall(r'\]\(([^)]+)\)', document_text):
         target = link.strip('<>').split('#', 1)[0].split('?', 1)[0]
         if not target or re.match(r'^[a-z][a-z0-9+.-]*://', target, re.I):
             continue
