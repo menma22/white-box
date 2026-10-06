@@ -290,8 +290,13 @@ async function verifyUi() {
   await click('[data-task-id="legacy"]')
   await until(() => page.evaluate('Boolean(document.querySelector(".task-control"))'), 'task detail')
   await click('.task-control input[type="checkbox"]')
+  await until(() => read().tasks.find((task) => task.id === 'legacy').blocked === true, 'blocked state persisted from UI')
+  const editors = await page.evaluate('({ waiting: document.querySelectorAll(".detail .task-control").length, context: document.querySelectorAll(".detail .task-context").length })')
+  check('A blocker update retains one waiting editor and one context editor', editors.waiting === 1 && editors.context === 1, editors)
   await fill('[aria-label="Blocked の理由"]', '返信の内容を確認中')
   await button('外部待ちを登録', '.task-control')
+  await until(() => read().tasks.find((task) => task.id === 'legacy').blockReason === '返信の内容を確認中', 'blocked reason persisted from UI blur')
+  check('Opening the external editor saves the entered Blocked reason', read().tasks.find((task) => task.id === 'legacy').blockReason === '返信の内容を確認中')
   await fill('.external-form label:nth-of-type(1) input', '共同研究者')
   await fill('.external-form label:nth-of-type(2) input', '実験条件への回答')
   await dateInput('.external-form label:nth-of-type(3) input', today)
@@ -419,6 +424,18 @@ try {
 } catch (error) {
   checks.push({ name: 'execution', passed: false, detail: error.stack })
   console.error(error)
+  if (page) {
+    try {
+      const observed = await page.evaluate(`({ url: location.href, text: document.body.innerText, detail: document.querySelector('.detail')?.outerHTML,
+        editors: { waiting: document.querySelectorAll('.detail .task-control').length, context: document.querySelectorAll('.detail .task-context').length },
+        detailInert: document.querySelector('.detail')?.inert, mainInert: document.querySelector('.win.main')?.inert,
+        externalForm: Boolean(document.querySelector('.external-form')), alerts: [...document.querySelectorAll('[role="alert"]')].map(item => item.textContent),
+        activeElement: { tag: document.activeElement?.tagName, label: document.activeElement?.getAttribute('aria-label') } })`)
+      fs.writeFileSync(path.join(RUN, 'failure-ui.json'), JSON.stringify(observed, null, 2))
+      fs.writeFileSync(path.join(RUN, 'failure-dom.txt'), observed.text)
+      await screenshot('failure')
+    } catch (captureError) { fs.writeFileSync(path.join(RUN, 'failure-capture-error.txt'), captureError.stack ?? String(captureError)) }
+  }
   process.exitCode = 1
 } finally {
   try { await stop() } catch (error) { checks.push({ name: 'shutdown', passed: false, detail: error.stack }); process.exitCode = 1 }

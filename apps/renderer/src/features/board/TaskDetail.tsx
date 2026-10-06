@@ -193,9 +193,9 @@ export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose
           </div>
         </div>
 
-        <TaskControlEditor key={task.id} task={task} save={save} onRelated={related} focusRequest={target} />
+        <TaskControlEditor key={`control:${task.id}`} task={task} save={save} onRelated={related} focusRequest={target} />
 
-        <TaskContextEditor ref={context} key={task.id} task={task} />
+        <TaskContextEditor ref={context} key={`context:${task.id}`} task={task} />
         <FixedWorkOverview taskId={task.id} />
 
         <div className="detail-field">
