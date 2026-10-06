@@ -14,9 +14,20 @@ export function TaskControlEditor({ task, save, onRelated, focusRequest }: { tas
   const reasons = taskBlockReasons(state, task)
 
   useEffect(() => {
-    if (!focusRequest) return
-    section.current?.scrollIntoView({ block: 'start' })
-    section.current?.focus({ preventScroll: true })
+    const target = section.current
+    if (!focusRequest || !target) return
+    const focus = () => {
+      if (!target.isConnected || target.closest('[inert]')) return false
+      target.scrollIntoView({ block: 'start' })
+      target.focus({ preventScroll: true })
+      return document.activeElement === target
+    }
+    if (focus()) return
+    const observer = new MutationObserver(() => { if (focus()) observer.disconnect() })
+    for (let ancestor: HTMLElement | null = target; ancestor; ancestor = ancestor.parentElement) {
+      observer.observe(ancestor, { attributes: true, attributeFilter: ['inert'] })
+    }
+    return () => observer.disconnect()
   }, [focusRequest, task.id])
 
   return <section ref={section} className="task-control" aria-label="待ち状態と先行タスク" tabIndex={-1} data-task-detail-section="waiting">
