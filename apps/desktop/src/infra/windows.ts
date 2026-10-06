@@ -16,6 +16,23 @@ const DEV_URL = process.env['VITE_DEV_SERVER_URL']
 
 const windows = new Map<WindowKind, BrowserWindow>()
 let onCurrentWorkOpen: (open: boolean) => void = () => undefined
+let canOpenWindow = () => true
+let draftProfile = ''
+
+export function setWindowDraftProfile(key: string): void { draftProfile = key }
+let prepareClose: (kind: WindowKind) => Promise<(closing?: WindowKind[]) => void> = async () => () => {}
+let canCloseWithoutSaving = () => false
+let canPrepareClose = () => true
+
+export function setWindowCloseGuard(prepare: typeof prepareClose, saved = () => false, allowed = () => true): void {
+  prepareClose = prepare
+  canCloseWithoutSaving = saved
+  canPrepareClose = allowed
+}
+
+export function setWindowOpeningGuard(allowed: () => boolean): void {
+  canOpenWindow = allowed
+}
 
 export function observeCurrentWorkWindow(callback: (open: boolean) => void): void {
   onCurrentWorkOpen = callback
@@ -155,7 +172,8 @@ export function getWindow(kind: WindowKind): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
 }
 
-export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
+export function openWindow(kind: WindowKind, focus = true): BrowserWindow | null {
+  if (!canOpenWindow()) return null
   const existing = getWindow(kind)
   if (existing) {
     if (existing.isMinimized()) existing.restore()
@@ -191,6 +209,7 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
       nodeIntegration: false,
       sandbox: false,
       spellcheck: false,
+      additionalArguments: [`--whitebox-draft-profile=${draftProfile}`],
     },
   })
 
@@ -203,18 +222,23 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
     win.webContents.on('dom-ready', () => void win.webContents.insertCSS(TRANSPARENT_PAGE_CSS))
   }
 
+  let shown = false
+  const show = () => {
+    if (shown || !canOpenWindow() || win.isDestroyed()) return
+    shown = true
+    place(kind, win)
+    if (focus) win.show()
+    else win.showInactive()
+  }
+  win.once('ready-to-show', show)
+  if (kind === 'main' || kind === 'current') win.webContents.once('did-finish-load', show)
+
   const hash = `#${kind}`
   if (DEV_URL) {
     void win.loadURL(`${DEV_URL}/${hash}`)
   } else {
     void win.loadFile(path.join(APP_ROOT, 'dist', 'index.html'), { hash: kind })
   }
-
-  win.once('ready-to-show', () => {
-    place(kind, win)
-    if (focus) win.show()
-    else win.showInactive()
-  })
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
@@ -226,12 +250,42 @@ export function openWindow(kind: WindowKind, focus = true): BrowserWindow {
     if (kind === 'current') onCurrentWorkOpen(false)
   })
   windows.set(kind, win)
+  if (kind === 'main' || kind === 'current') {
+    let closing = false
+    let approved = false
+    win.on('close', (event: Electron.Event) => {
+      if (canCloseWithoutSaving() || approved) return
+      event.preventDefault()
+      if (closing || !canPrepareClose()) return
+      closing = true
+      void prepareClose(kind).then((release) => {
+        if (win.isDestroyed()) { release(); return }
+        if (!canPrepareClose()) { closing = false; release(); return }
+        approved = true
+        release([kind])
+        win.close()
+      }).catch((cause) => {
+        closing = false
+        console.error('[white-box] 入力の保存を待つため窓を閉じません:', cause)
+      })
+    })
+  }
   if (kind === 'current') onCurrentWorkOpen(true)
   return win
 }
 
 export function closeWindow(kind: WindowKind): void {
   getWindow(kind)?.close()
+}
+
+export function closeWindowsLater(...kinds: WindowKind[]): void {
+  const targets = kinds.map(getWindow)
+  setTimeout(() => {
+    if (!canOpenWindow()) return
+    for (const win of targets) {
+      if (win && !win.isDestroyed()) win.close()
+    }
+  }, 150)
 }
 
 export function toggleWindow(kind: WindowKind): void {

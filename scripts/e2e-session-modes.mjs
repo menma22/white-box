@@ -107,7 +107,7 @@ async function command(name, args = {}) {
 async function screenshot(client, name) {
   await client.send('Page.bringToFront')
   await wait(250)
-  const { data } = await client.send('Page.captureScreenshot', { format: 'png', fromSurface: false })
+  const { data } = await client.send('Page.captureScreenshot', { format: 'png' })
   fs.writeFileSync(path.join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'))
 }
 

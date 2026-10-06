@@ -15,8 +15,10 @@ import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 import { stallWarningDays, validateTaskPlanning } from '@white-box/core/task-priority'
+import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema, PrioritySchema } from '@white-box/contracts'
+import { DATABASE_VERSION, validateStoredDatabase } from './database-validation.js'
+import { validateTaskHierarchy } from '../domain/task-hierarchy.js'
 
-const DB_VERSION = 1
 const RENAME_RETRY_LIMIT = 3
 const RENAME_RETRY_DELAY_MS = 20
 const RENAME_RETRY_SIGNAL = new Int32Array(new SharedArrayBuffer(4))
@@ -55,18 +57,25 @@ function emptyDb(): Database {
 export function normalizeDatabase(parsed: Partial<Database>): Database {
   const goalMap = parsed.goalMap === undefined ? emptyGoalMap() : parseGoalMap(parsed.goalMap)
   const tasks = parsed.tasks ?? []
+  for (const project of parsed.projects ?? []) {
+    if (project.priority !== undefined) PrioritySchema.parse(project.priority)
+  }
   for (const task of tasks) {
     validateTaskPlanning(task)
+    for (const field of ['problems', 'decisions', 'nextContext'] as const) {
+      if (task[field] !== undefined && typeof task[field] !== 'string') throw new Error('タスクの文脈が不正です')
+    }
     TaskControlSchema.parse({ blocked: task.blocked, blockReason: task.blockReason, hardDependencies: task.hardDependencies, recommendedPredecessors: task.recommendedPredecessors, externalBlock: task.externalBlock })
     validGoalDue(task.due)
     if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
   }
   validateTaskGraph(tasks)
+  validateTaskHierarchy(tasks)
   if (parsed.goalMapImports !== undefined && (!Array.isArray(parsed.goalMapImports) || parsed.goalMapImports.some((item) => typeof item !== 'string'))) {
     throw new Error('道標の取込履歴が不正です')
   }
   return {
-    version: parsed.version ?? DB_VERSION,
+    version: parsed.version ?? DATABASE_VERSION,
     projects: parsed.projects ?? [],
     tasks,
     sessions: parsed.sessions ?? [],
@@ -78,7 +87,22 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     goalMap,
     presenceCandidates: PresenceCandidatesSchema.parse(parsed.presenceCandidates ?? []),
     goalMapImports: parsed.goalMapImports ?? [],
+    ...(parsed.weeklyBudgets !== undefined ? { weeklyBudgets: parseWeeklyBudgets(parsed.weeklyBudgets) } : {}),
+    ...(parsed.weeklyBudgetDefaults !== undefined ? { weeklyBudgetDefaults: WeeklyBudgetPlanSchema.parse(parsed.weeklyBudgetDefaults) } : {}),
+    ...(parsed.fixedWork !== undefined ? { fixedWork: parseFixedWork(parsed.fixedWork) } : {}),
   }
+}
+
+function parseWeeklyBudgets(value: unknown): NonNullable<Database['weeklyBudgets']> {
+  const budgets = WeeklyTimeBudgetSchema.array().parse(value)
+  if (new Set(budgets.map((budget) => budget.weekStart)).size !== budgets.length) throw new Error('同じ週の予算が重複しています')
+  return budgets
+}
+
+function parseFixedWork(value: unknown): NonNullable<Database['fixedWork']> {
+  const work = FixedWorkSchema.array().parse(value)
+  if (new Set(work.map((item) => item.id)).size !== work.length) throw new Error('固定予定のIDが重複しています')
+  return work
 }
 
 function hasBeenUsed(db: Database): boolean {
@@ -112,14 +136,15 @@ export class Store {
     if (!fs.existsSync(this.dbPath)) return emptyDb()
     try {
       const raw = fs.readFileSync(this.dbPath, 'utf-8')
-      const db = normalizeDatabase(JSON.parse(raw) as Partial<Database>)
+      const parsed: unknown = JSON.parse(raw)
+      validateStoredDatabase(parsed)
+      const db = normalizeDatabase(parsed)
       if (db.settings.onboardedAt === null && hasBeenUsed(db)) db.settings.onboardedAt = Date.now()
       return db
     } catch (err) {
       const broken = path.join(this.dir, `data.corrupt-${Date.now()}.json`)
-      fs.copyFileSync(this.dbPath, broken)
-      console.error('[white-box] data.json を読めなかったので退避しました:', broken, err)
-      return emptyDb()
+      try { fs.copyFileSync(this.dbPath, broken, fs.constants.COPYFILE_EXCL) } catch (copyError) { console.error('[white-box] 退避に失敗:', copyError) }
+      throw new Error(`data.json を読み込めません。元のデータは変更していません: ${this.dbPath}`, { cause: err })
     }
   }
 
@@ -130,9 +155,14 @@ export class Store {
   save(): void {
     const tmp = `${this.dbPath}.tmp`
     fs.writeFileSync(tmp, JSON.stringify(this.db, null, 2), 'utf-8')
+    this.replaceFile(tmp, this.dbPath)
+    this.backupOncePerDay()
+  }
+
+  private replaceFile(source: string, destination: string): void {
     for (let attempt = 0; ; attempt++) {
       try {
-        fs.renameSync(tmp, this.dbPath)
+        fs.renameSync(source, destination)
         break
       } catch (cause) {
         const code = (cause as NodeJS.ErrnoException)?.code
@@ -140,7 +170,6 @@ export class Store {
         Atomics.wait(RENAME_RETRY_SIGNAL, 0, 0, RENAME_RETRY_DELAY_MS)
       }
     }
-    this.backupOncePerDay()
   }
 
   private backupOncePerDay(): void {
@@ -157,33 +186,42 @@ export class Store {
 
   private pruneBackups(): void {
     const dir = path.join(this.dir, 'backups')
-    const files = fs.readdirSync(dir).filter((f) => f.startsWith('data-')).sort()
+    const files = fs.readdirSync(dir, { withFileTypes: true }).filter((entry) => {
+      if (!entry.isFile() || !/^data-\d{4}-\d{2}-\d{2}\.json$/.test(entry.name)) return false
+      const stamp = entry.name.slice(5, -5)
+      const date = new Date(`${stamp}T00:00:00.000Z`)
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === stamp
+    }).map((entry) => entry.name).sort()
     for (const f of files.slice(0, Math.max(0, files.length - 30))) {
       fs.rmSync(path.join(dir, f), { force: true })
     }
   }
 
   /** 実行中セッションの復旧用。PC が落ちた時刻の近似値としてだけ使う。 */
-  markAlive(): void {
+  markAlive(options: { requireSuccess?: boolean } = {}): void {
     try {
-      fs.writeFileSync(this.runtimePath, JSON.stringify({ lastTickAt: Date.now() }), 'utf-8')
-    } catch {
+      const tmp = `${this.runtimePath}.tmp`
+      fs.writeFileSync(tmp, JSON.stringify({ lastTickAt: Date.now() }), 'utf-8')
+      this.replaceFile(tmp, this.runtimePath)
+    } catch (cause) {
+      if (options.requireSuccess) throw cause
       /* 実行中の記録が 1 回書けなくても致命ではない */
     }
   }
 
   readLastAlive(): number | null {
     try {
-      const raw = JSON.parse(fs.readFileSync(this.runtimePath, 'utf-8')) as { lastTickAt?: number }
-      return raw.lastTickAt ?? null
+      const raw = JSON.parse(fs.readFileSync(this.runtimePath, 'utf-8')) as { lastTickAt?: unknown }
+      return typeof raw.lastTickAt === 'number' && Number.isFinite(new Date(raw.lastTickAt).getTime()) ? raw.lastTickAt : null
     } catch {
       return null
     }
   }
 
-  replace(next: Database): void {
+  replace(next: unknown): void {
+    validateStoredDatabase(next)
     const normalized = normalizeDatabase(next)
-    fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), 'utf-8')
+    fs.writeFileSync(path.join(this.dir, 'backups', `before-import-${Date.now()}.json`), JSON.stringify(this.db, null, 2), { encoding: 'utf-8', flag: 'wx' })
     const before = this.db
     this.db = normalized
     try { this.save() } catch (cause) { this.db = before; throw cause }

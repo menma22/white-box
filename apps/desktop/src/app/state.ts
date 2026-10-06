@@ -11,11 +11,12 @@ export interface RuntimeState {
   /** 配信のたびに増える通し番号。 */
   revision: number
   currentWorkOpen: boolean
+  preparingQuit: boolean
   quitting: boolean
 }
 
 export function newRuntime(): RuntimeState {
-  return { pendingReview: null, recovery: null, revision: 0, currentWorkOpen: false, quitting: false }
+  return { pendingReview: null, recovery: null, revision: 0, currentWorkOpen: false, preparingQuit: false, quitting: false }
 }
 
 export function liveSession(db: Database): Session | null {
@@ -65,6 +66,9 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     dayNotes: db.dayNotes,
     taskSuggestions: db.taskSuggestions ?? [],
     notes: db.notes ?? [],
+    weeklyBudgets: db.weeklyBudgets,
+    weeklyBudgetDefaults: db.weeklyBudgetDefaults,
+    fixedWork: db.fixedWork,
     goalMap: db.goalMap,
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),

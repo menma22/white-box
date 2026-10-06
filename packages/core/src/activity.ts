@@ -128,14 +128,22 @@ export function activityTimeline(sessions: Session[], now: number, period: TimeR
   return items.sort((a, b) => a.startedAt - b.startedAt)
 }
 
-export function activityDayKeys(sessions: Session[], now: number, dayStartHour: number): string[] {
+export function activityDayKeys(sessions: Session[], now: number, dayStartHour: number, period?: TimeRange): string[] {
   const keys = new Set<string>()
   for (const session of sessions) {
     const end = sessionEndOrNow(session, now)
-    if (end === session.startedAt) keys.add(dayKey(end, dayStartHour))
-    if (end <= session.startedAt) continue
-    const last = dayKey(end - 1, dayStartHour)
-    for (let key = dayKey(session.startedAt, dayStartHour); key <= last; key = shiftDay(key, 1)) keys.add(key)
+    if (!Number.isFinite(new Date(session.startedAt).getTime()) || !Number.isFinite(new Date(end).getTime())) continue
+    if (end === session.startedAt && (!period || end >= period.startedAt && end < period.endedAt)) keys.add(dayKey(end, dayStartHour))
+    const from = Math.max(session.startedAt, period?.startedAt ?? -Infinity)
+    const to = Math.min(end, period?.endedAt ?? Infinity)
+    if (to <= from) continue
+    const last = dayKey(to - 1, dayStartHour)
+    for (let key = dayKey(from, dayStartHour); key <= last;) {
+      keys.add(key)
+      const next = shiftDay(key, 1)
+      if (next <= key || !Number.isFinite(dayStartTs(next, dayStartHour))) break
+      key = next
+    }
   }
   return [...keys].sort().reverse()
 }

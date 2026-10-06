@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "origin": "artifactreview/strict-20261006/final-boundary-regressions.log",
+  "startedAt": "2026-10-06 20:52:23 JST",
+  "counts": {
+    "files": 4,
+    "tests": 70
+  },
+  "files": [
+    {
+      "file": "apps/renderer/tests/task-control-draft.test.ts",
+      "tests": 7
+    },
+    {
+      "file": "apps/desktop/tests/windows-shutdown.test.ts",
+      "tests": 24
+    },
+    {
+      "file": "apps/desktop/tests/dataio.test.ts",
+      "tests": 17
+    },
+    {
+      "file": "apps/desktop/tests/store-save.test.ts",
+      "tests": 22
+    }
+  ],
+  "allPassed": true,
+  "expectedStderr": [
+    "Intentionally rejected import after persistent filesystem sharing failure",
+    "Intentionally rejected resume for an archived project"
+  ],
+  "limits": [
+    "Targeted checks overlap earlier historical tests; do not sum them as unique total coverage."
+  ]
+}

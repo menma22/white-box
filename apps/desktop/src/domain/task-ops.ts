@@ -11,9 +11,9 @@ import { assertTaskExecutable, normalizeTaskControl, validateTaskLinks, type Tas
 import { newId } from './session-ops.js'
 import { requireGoal } from './goal-ops.js'
 import { assertLiveWorkPreserved } from './task-control.js'
+import { validateTaskParent } from './task-hierarchy.js'
 
-export function createProject(db: Database, input: { name: string; hue?: number }): { projects: Project[]; project: Project } {
-  const now = Date.now()
+export function createProject(db: Database, input: { name: string; hue?: number }, now = Date.now()): { projects: Project[]; project: Project } {
   const used = db.projects.map((p) => p.hue)
   const palette = [18, 200, 150, 265, 42, 330, 96, 228]
   const hue = input.hue ?? (palette.find((h) => !used.includes(h)) ?? Math.floor(Math.random() * 360))
@@ -29,8 +29,9 @@ export function createProject(db: Database, input: { name: string; hue?: number 
   return { projects: [...db.projects, project], project }
 }
 
-export function updateProject(db: Database, id: ID, patch: Partial<Project>): Project[] {
-  const projects = db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, updatedAt: Date.now() } : p))
+export function updateProject(db: Database, id: ID, patch: Partial<Project>, now = Date.now()): Project[] {
+  if (patch.priority !== undefined && !['low', 'normal', 'high'].includes(patch.priority)) throw new Error('プロジェクト重要度が不正です')
+  const projects = db.projects.map((p) => (p.id === id ? { ...p, ...patch, id: p.id, createdAt: p.createdAt, updatedAt: now } : p))
   assertLiveWorkPreserved(db, { ...db, projects })
   return projects
 }
@@ -51,6 +52,9 @@ export function createTask(
     status?: TaskStatus
     priority?: Priority
     notes?: string
+    problems?: string
+    decisions?: string
+    nextContext?: string
     sessionId?: ID | null
     due?: string | null
     goalNodeId?: ID | null
@@ -70,6 +74,9 @@ export function createTask(
     parentId: input.parentId ?? null,
     title: input.title.trim() || '無題のタスク',
     notes: input.notes ?? '',
+    ...(input.problems !== undefined ? { problems: input.problems } : {}),
+    ...(input.decisions !== undefined ? { decisions: input.decisions } : {}),
+    ...(input.nextContext !== undefined ? { nextContext: input.nextContext } : {}),
     status,
     progress: 0,
     priority: input.priority ?? 'normal',
@@ -90,6 +97,7 @@ export function createTask(
     externalBlock: input.externalBlock,
   })
   const tasks = [...db.tasks, task]
+  validateTaskParent(tasks, task)
   validateTaskLinks(tasks, task)
   if (status === 'doing') assertTaskExecutable({ ...db, tasks }, task.id)
   return { tasks, task }
@@ -106,7 +114,7 @@ export function updateTask(db: Database, id: ID, patch: Partial<Task>, now = Dat
   const tasks = db.tasks.map((t) => {
     if (t.id !== id) return t
     const nextStatus = patch.status ?? t.status
-    const merged: Task = normalizeTaskControl({ ...t, ...patch, id: t.id, updatedAt: now })
+    const merged: Task = normalizeTaskControl({ ...t, ...patch, id: t.id, createdAt: t.createdAt, updatedAt: now })
     if (patch.status !== undefined && nextStatus === 'done' && merged.doneAt === null) {
       merged.doneAt = now
       if (patch.progress === undefined) merged.progress = 100
@@ -119,10 +127,22 @@ export function updateTask(db: Database, id: ID, patch: Partial<Task>, now = Dat
     return merged
   })
   const next = tasks.find((task) => task.id === id)!
+  validateTaskParent(tasks, next, previous)
   validateTaskLinks(tasks, next, previous)
   if (patch.status === 'doing') assertTaskExecutable({ ...db, tasks }, id)
   assertLiveWorkPreserved(db, { ...db, tasks })
   return tasks
+}
+
+export function assertTaskContextUnchanged(db: Database, id: ID, expected: Partial<Pick<Task, 'title' | 'notes' | 'problems' | 'decisions' | 'nextContext'>> | undefined): void {
+  if (!expected) return
+  const task = db.tasks.find((item) => item.id === id)
+  if (!task) throw new Error('タスクが見つからない')
+  for (const field of ['title', 'notes', 'problems', 'decisions', 'nextContext'] as const) {
+    if (Object.hasOwn(expected, field) && (task[field] ?? '') !== expected[field]) {
+      throw new Error('別の画面で文脈が変更されました。入力は保持しています。最新の保存内容を確認してから、もう一度保存してください。')
+    }
+  }
 }
 
 /** 列をまたぐ移動と並び替え。移動先の列（と、列が変わるときは移動元の列）の order を振り直す。 */
@@ -148,16 +168,25 @@ export function moveTask(db: Database, id: ID, status: TaskStatus, index: number
 }
 
 export function descendantIds(db: Database, id: ID): ID[] {
-  const out: ID[] = []
-  const walk = (parentId: ID) => {
-    for (const t of db.tasks) {
-      if (t.parentId === parentId) {
-        out.push(t.id)
-        walk(t.id)
-      }
+  const children = new Map<ID, ID[]>()
+  for (const task of db.tasks) {
+    if (task.parentId !== null) {
+      const siblings = children.get(task.parentId) ?? []
+      siblings.push(task.id)
+      children.set(task.parentId, siblings)
     }
   }
-  walk(id)
+  const out: ID[] = []
+  const visited = new Set([id])
+  const pending = [...(children.get(id) ?? [])].reverse()
+  while (pending.length) {
+    const next = pending.pop()!
+    if (visited.has(next)) throw new Error('タスクの親子関係が循環しています')
+    visited.add(next)
+    out.push(next)
+    const descendants = children.get(next) ?? []
+    for (let i = descendants.length - 1; i >= 0; i--) pending.push(descendants[i]!)
+  }
   return out
 }
 

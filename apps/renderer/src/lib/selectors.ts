@@ -1,4 +1,4 @@
-import type { AppState, ID, Project, Session, Task, TaskStatus } from '@white-box/core/types'
+import type { AppState, ID, Project, Session, Task, TaskStatus, TimeRange } from '@white-box/core/types'
 import { dayKey, focusByTaskAcross, sessionsOfDay } from '@white-box/core/engine'
 import { recommendTasks, taskWarnings } from '@white-box/core/task-priority'
 import { activityDayKeys, activitySummary, dayRange } from '@white-box/core/activity'
@@ -84,7 +84,7 @@ export interface Stall {
  * 「重要だと決めたのに動いていない」タスク。Inbox は決めていないので対象外。
  */
 export function stalledTasks(state: AppState, now: number): Stall[] {
-  return taskWarnings(state.tasks, state.sessions, now, state.settings.stallWarningDays)
+  return taskWarnings(state.tasks, state.sessions, now, state.settings.stallWarningDays, state.projects)
     .filter((control) => control.task.priority === 'high' && control.reasons.includes('aging'))
     .map((control) => ({ task: control.task, days: Math.floor(control.agingDays!), since: control.agingSince! }))
     .sort((a, b) => b.days - a.days)
@@ -98,8 +98,8 @@ export function sessionsForDay(state: AppState, key: string, now = Date.now()): 
   return sessionsOfDay(state.sessions, key, state.settings.dayStartHour, now)
 }
 
-export function dayKeysWithSessions(state: AppState, now = Date.now()): string[] {
-  return activityDayKeys(state.sessions, now, state.settings.dayStartHour)
+export function dayKeysWithSessions(state: AppState, now = Date.now(), period?: TimeRange): string[] {
+  return activityDayKeys(state.sessions, now, state.settings.dayStartHour, period)
 }
 
 export function dayTotalMs(state: AppState, key: string, now: number): number {
@@ -119,7 +119,7 @@ export function projectTint(project: Project | null, alpha = 0.16): string {
 /** Start UI と切替 UI で共通の並び。今やる可能性が高い順。 */
 export function candidateTasks(state: AppState, now = Date.now()): Task[] {
   const tasks = state.tasks.filter((task) => !state.projects.some((project) => project.id === task.projectId && project.archived))
-  return recommendTasks(tasks, state.sessions, now, state.settings.stallWarningDays)
+  return recommendTasks(tasks, state.sessions, now, state.settings.stallWarningDays, state.projects)
 }
 
 export function matchTask(state: AppState, task: Task, query: string): boolean {

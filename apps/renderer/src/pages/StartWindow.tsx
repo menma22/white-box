@@ -6,6 +6,7 @@ import { Chip, Kbd, ProgressBar, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { SessionMode } from '@white-box/core/types'
 import { taskExecutionProblem, unfinishedPredecessors } from '@white-box/core/task-control'
+import { RestartContext } from '@/features/task-control/RestartContext'
 
 const DURATIONS = [25, 50, 90]
 
@@ -167,6 +168,8 @@ export function StartWindow() {
 
         {rows === 0 && <div className="start-none">タスクがない。上の欄に書けば、そのまま始められる。</div>}
       </div>
+
+      <RestartContext task={!isCreateRow ? matches[cursor] : null} />
 
       <footer className="start-foot">
         {mode !== 'stopwatch' ? <div className="start-durations">

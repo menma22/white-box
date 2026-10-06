@@ -11,6 +11,7 @@ import { PRESENCE_COMMANDS } from './presence.js'
 import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
 import { NOTE_COMMANDS } from './notes.js'
 import { TaskControlSchema } from './task-control.js'
+import { PLANNING_COMMANDS } from './planning.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -35,6 +36,7 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...PLANNING_COMMANDS,
   ...PRESENCE_COMMANDS,
   'agent:config': { args: NoArgs, result: z.string() },
   'agent:context': {
@@ -61,7 +63,7 @@ export const COMMANDS = {
   // ── Project
   'project:create': { args: z.strictObject({ name: z.string() }), result: ProjectSchema },
   'project:update': {
-    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.omit({ id: true, createdAt: true, updatedAt: true }).partial().strict() }),
     result: z.null(),
   },
   'project:delete': { args: z.strictObject({ id: IdSchema }), result: z.null() },
@@ -76,6 +78,9 @@ export const COMMANDS = {
       status: TaskStatusSchema.optional(),
       priority: PrioritySchema.optional(),
       notes: z.string().optional(),
+      problems: z.string().optional(),
+      decisions: z.string().optional(),
+      nextContext: z.string().optional(),
       sessionId: IdSchema.nullable().optional(),
       due: z.string().nullable().optional(),
       goalNodeId: IdSchema.nullable().optional(),
@@ -87,7 +92,8 @@ export const COMMANDS = {
     result: TaskSchema,
   },
   'task:update': {
-    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ committedAt: true, lastProgressAt: true }).partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ id: true, createdAt: true, updatedAt: true, committedAt: true, lastProgressAt: true }).partial().strict(),
+      expectedContext: z.strictObject({ title: z.string(), notes: z.string(), problems: z.string(), decisions: z.string(), nextContext: z.string() }).partial().optional() }),
     result: z.null(),
   },
   'task:move': {
@@ -179,8 +185,8 @@ export const COMMANDS = {
     args: z.strictObject({
       id: IdSchema,
       patch: z.strictObject({
-        startedAt: z.number().optional(),
-        endedAt: z.number().optional(),
+        startedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
+        endedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
         plannedMs: z.number().optional(),
         note: z.string().optional(),
         /** 後から申告する除外区間の全体。渡すと申告ぶんを置き換える（観測された一時停止には触らない） */

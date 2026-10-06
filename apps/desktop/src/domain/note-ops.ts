@@ -44,8 +44,11 @@ export function createNote(db: Database, input: NoteCreateInput, now: number, id
   return { note, notes: [...(db.notes ?? []), note] }
 }
 
-export function updateNote(db: Database, id: string, patch: NotePatch, now: number): Note[] {
+export function updateNote(db: Database, id: string, patch: NotePatch, now: number, expected?: NotePatch): Note[] {
   const previous = requireNote(db, id)
+  for (const key of Object.keys(expected ?? {}) as (keyof NotePatch)[]) {
+    if (expected![key] !== undefined && previous[key] !== expected![key]) throw new Error('ノートが別の画面で変更された。最新の内容を確認してから保存してください')
+  }
   validateReminder(patch.remindAt)
   const clean = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) as NotePatch
   const next = {

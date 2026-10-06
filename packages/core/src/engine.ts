@@ -172,7 +172,9 @@ export function focusByTask(session: Session, now: number): Map<ID, number> {
 
 /** dayStartHour を境界にした「その日」のキー（YYYY-MM-DD, ローカル）。 */
 export function dayKey(ts: number, dayStartHour: number): string {
-  const d = new Date(ts - dayStartHour * HOUR)
+  const d = new Date(ts)
+  const boundary = new Date(d.getFullYear(), d.getMonth(), d.getDate(), dayStartHour, 0, 0, 0).getTime()
+  if (ts < boundary) d.setDate(d.getDate() - 1)
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')

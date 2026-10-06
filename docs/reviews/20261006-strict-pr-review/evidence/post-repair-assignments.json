@@ -1,0 +1,3047 @@
+{
+  "fingerprint": "e06d99e1cb840f3eb7a58d3406ef7b641cf52aedc0bd8ef548cd8f9ee9fce7d3",
+  "comparison": {
+    "repository": "menma22/white-box",
+    "base": "e620a26a37ef56b2bcf40b8809c7c8bc5e56e9f5",
+    "head": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+    "working_tree_included": false,
+    "publication_docs_included": false,
+    "purpose": "Post-repair product and QA snapshot after the previous fixed repair comparison; later documentation publication requires a separate audit."
+  },
+  "purposes": {
+    "PstoreMarkerRecovery": "Preserve the previous committed heartbeat and its known work after write/rename failure, using the existing bounded replacement policy without changing main-save or nonthrowing heartbeat semantics; include real-file recovery regressions.",
+    "PbackupOwnedPreservation": "Preserve write-once pre-import/quarantine recovery copies on timestamp collisions and restrict daily retention to regular files with exact valid generated daily names; retain the existing newest-thirty policy and its regressions.",
+    "PmanagedExportProtection": "Prevent exports from replacing managed live files, pending heartbeat files, recovery originals, or any reserved backup-subtree destination, including Windows casing and directory aliases; verify unchanged bytes/state and ordinary export behavior.",
+    "PcontrolFailedDrafts": "Make Blocked reason and submitted external-wait saves participate in existing editor flush: await pending saves, keep failed input/error, reject close/navigation after failure, serialize follow-up reason edits, freeze pending actions, and permit explicit retry/revert/cancellation; do not autosave unsubmitted external forms.",
+    "PcontrolEditorFocus": "Honor the existing waiting-section scroll/focus request after every ancestor inert lock releases, then stop observing; retain unmount cleanup and add direct focus/lock-release evidence.",
+    "PcontrolEditorIdentity": "Give sibling waiting/context editors distinct stable task-specific React keys so reconciliation preserves exactly one functional editor of each kind and same-task input identity.",
+    "PcapturedClose": "Capture the original BrowserWindow at close reservation, retain the 150 ms reply/flush delay, and avoid closing a later reopened window, destroyed target, missing target, or window during shutdown; preserve main wiring and native preparation regressions.",
+    "PnativeVisibility": "Show Main/Current once after load or first paint without losing inactive opening, placement, shutdown/destroyed guards, or review-only first-paint behavior; verify real owned Win32 visibility before QA CDP activation.",
+    "PqaReceiverIdentityTransport": "Bind quit QA to the launched Electron identity, verified loopback browser endpoint and expected build target/session; preserve error/timeout/value handling and record receiver identity instead of relying on an unverified page endpoint.",
+    "PqaRealStateEvidence": "Add independent public IPC/UI/disk assertions for history month totals/layout, editor count/reason persistence, Task/Note conflicts, failed duration/waiting drafts and explicit resolution, and natural application exit; keep forced cleanup as failure.",
+    "PqaFailureDiagnostics": "Add opt-in isolated source quit observation and bounded before-cleanup snapshots of owned processes, renderer locks/focus/errors, IPC/flush/native events; preserve original return/throw behavior and record failed evidence without turning it into success."
+  },
+  "assignments": {
+    "1": "PmanagedExportProtection",
+    "2": "PmanagedExportProtection",
+    "3": "PmanagedExportProtection",
+    "4": "PmanagedExportProtection",
+    "5": "PmanagedExportProtection",
+    "6": "PmanagedExportProtection",
+    "7": "PmanagedExportProtection",
+    "8": "PmanagedExportProtection",
+    "9": "PmanagedExportProtection",
+    "10": "PmanagedExportProtection",
+    "11": "PmanagedExportProtection",
+    "12": "PmanagedExportProtection",
+    "13": "PmanagedExportProtection",
+    "14": "PmanagedExportProtection",
+    "15": "PbackupOwnedPreservation",
+    "16": "PbackupOwnedPreservation",
+    "17": "PstoreMarkerRecovery",
+    "18": "PstoreMarkerRecovery",
+    "19": "PstoreMarkerRecovery",
+    "20": "PstoreMarkerRecovery",
+    "21": "PstoreMarkerRecovery",
+    "22": "PstoreMarkerRecovery",
+    "23": "PstoreMarkerRecovery",
+    "24": "PstoreMarkerRecovery",
+    "25": "PbackupOwnedPreservation",
+    "26": "PbackupOwnedPreservation",
+    "27": "PbackupOwnedPreservation",
+    "28": "PbackupOwnedPreservation",
+    "29": "PbackupOwnedPreservation",
+    "30": "PbackupOwnedPreservation",
+    "31": "PbackupOwnedPreservation",
+    "32": "PstoreMarkerRecovery",
+    "33": "PstoreMarkerRecovery",
+    "34": "PstoreMarkerRecovery",
+    "35": "PstoreMarkerRecovery",
+    "36": "PbackupOwnedPreservation",
+    "37": "PbackupOwnedPreservation",
+    "38": "PnativeVisibility",
+    "39": "PnativeVisibility",
+    "40": "PnativeVisibility",
+    "41": "PnativeVisibility",
+    "42": "PnativeVisibility",
+    "43": "PnativeVisibility",
+    "44": "PnativeVisibility",
+    "45": "PnativeVisibility",
+    "46": "PnativeVisibility",
+    "47": "PnativeVisibility",
+    "48": "PnativeVisibility",
+    "49": "PnativeVisibility",
+    "50": "PnativeVisibility",
+    "51": "PnativeVisibility",
+    "52": "PnativeVisibility",
+    "53": "PnativeVisibility",
+    "54": "PnativeVisibility",
+    "55": "PnativeVisibility",
+    "56": "PcapturedClose",
+    "57": "PcapturedClose",
+    "58": "PcapturedClose",
+    "59": "PcapturedClose",
+    "60": "PcapturedClose",
+    "61": "PcapturedClose",
+    "62": "PcapturedClose",
+    "63": "PcapturedClose",
+    "64": "PcapturedClose",
+    "65": "PcapturedClose",
+    "66": "PcapturedClose",
+    "67": "PcapturedClose",
+    "68": "PcapturedClose",
+    "69": "PcapturedClose",
+    "70": "PmanagedExportProtection",
+    "71": "PmanagedExportProtection",
+    "72": "PmanagedExportProtection",
+    "73": "PmanagedExportProtection",
+    "74": "PmanagedExportProtection",
+    "75": "PmanagedExportProtection",
+    "76": "PmanagedExportProtection",
+    "77": "PmanagedExportProtection",
+    "78": "PmanagedExportProtection",
+    "79": "PmanagedExportProtection",
+    "80": "PmanagedExportProtection",
+    "81": "PmanagedExportProtection",
+    "82": "PmanagedExportProtection",
+    "83": "PmanagedExportProtection",
+    "84": "PmanagedExportProtection",
+    "85": "PmanagedExportProtection",
+    "86": "PmanagedExportProtection",
+    "87": "PmanagedExportProtection",
+    "88": "PmanagedExportProtection",
+    "89": "PmanagedExportProtection",
+    "90": "PmanagedExportProtection",
+    "91": "PmanagedExportProtection",
+    "92": "PmanagedExportProtection",
+    "93": "PmanagedExportProtection",
+    "94": "PmanagedExportProtection",
+    "95": "PmanagedExportProtection",
+    "96": "PmanagedExportProtection",
+    "97": "PmanagedExportProtection",
+    "98": "PmanagedExportProtection",
+    "99": "PmanagedExportProtection",
+    "100": "PmanagedExportProtection",
+    "101": "PmanagedExportProtection",
+    "102": "PmanagedExportProtection",
+    "103": "PmanagedExportProtection",
+    "104": "PmanagedExportProtection",
+    "105": "PmanagedExportProtection",
+    "106": "PmanagedExportProtection",
+    "107": "PmanagedExportProtection",
+    "108": "PmanagedExportProtection",
+    "109": "PmanagedExportProtection",
+    "110": "PmanagedExportProtection",
+    "111": "PmanagedExportProtection",
+    "112": "PmanagedExportProtection",
+    "113": "PmanagedExportProtection",
+    "114": "PmanagedExportProtection",
+    "115": "PmanagedExportProtection",
+    "116": "PmanagedExportProtection",
+    "117": "PmanagedExportProtection",
+    "118": "PmanagedExportProtection",
+    "119": "PmanagedExportProtection",
+    "120": "PmanagedExportProtection",
+    "121": "PmanagedExportProtection",
+    "122": "PmanagedExportProtection",
+    "123": "PmanagedExportProtection",
+    "124": "PmanagedExportProtection",
+    "125": "PmanagedExportProtection",
+    "126": "PmanagedExportProtection",
+    "127": "PmanagedExportProtection",
+    "128": "PmanagedExportProtection",
+    "129": "PmanagedExportProtection",
+    "130": "PmanagedExportProtection",
+    "131": "PmanagedExportProtection",
+    "132": "PmanagedExportProtection",
+    "133": "PmanagedExportProtection",
+    "134": "PmanagedExportProtection",
+    "135": "PmanagedExportProtection",
+    "136": "PmanagedExportProtection",
+    "137": "PmanagedExportProtection",
+    "138": "PmanagedExportProtection",
+    "139": "PmanagedExportProtection",
+    "140": "PmanagedExportProtection",
+    "141": "PmanagedExportProtection",
+    "142": "PmanagedExportProtection",
+    "143": "PmanagedExportProtection",
+    "144": "PmanagedExportProtection",
+    "145": "PmanagedExportProtection",
+    "146": "PmanagedExportProtection",
+    "147": "PmanagedExportProtection",
+    "148": "PmanagedExportProtection",
+    "149": "PmanagedExportProtection",
+    "150": "PmanagedExportProtection",
+    "151": "PmanagedExportProtection",
+    "152": "PbackupOwnedPreservation",
+    "153": "PbackupOwnedPreservation",
+    "154": "PbackupOwnedPreservation",
+    "155": "PbackupOwnedPreservation",
+    "156": "PbackupOwnedPreservation",
+    "157": "PbackupOwnedPreservation",
+    "158": "PbackupOwnedPreservation",
+    "159": "PbackupOwnedPreservation",
+    "160": "PbackupOwnedPreservation",
+    "161": "PbackupOwnedPreservation",
+    "162": "PbackupOwnedPreservation",
+    "163": "PbackupOwnedPreservation",
+    "164": "PbackupOwnedPreservation",
+    "165": "PbackupOwnedPreservation",
+    "166": "PbackupOwnedPreservation",
+    "167": "PbackupOwnedPreservation",
+    "168": "PbackupOwnedPreservation",
+    "169": "PbackupOwnedPreservation",
+    "170": "PbackupOwnedPreservation",
+    "171": "PbackupOwnedPreservation",
+    "172": "PbackupOwnedPreservation",
+    "173": "PbackupOwnedPreservation",
+    "174": "PbackupOwnedPreservation",
+    "175": "PbackupOwnedPreservation",
+    "176": "PbackupOwnedPreservation",
+    "177": "PbackupOwnedPreservation",
+    "178": "PbackupOwnedPreservation",
+    "179": "PbackupOwnedPreservation",
+    "180": "PbackupOwnedPreservation",
+    "181": "PbackupOwnedPreservation",
+    "182": "PbackupOwnedPreservation",
+    "183": "PbackupOwnedPreservation",
+    "184": "PbackupOwnedPreservation",
+    "185": "PbackupOwnedPreservation",
+    "186": "PbackupOwnedPreservation",
+    "187": "PbackupOwnedPreservation",
+    "188": "PbackupOwnedPreservation",
+    "189": "PbackupOwnedPreservation",
+    "190": "PbackupOwnedPreservation",
+    "191": "PbackupOwnedPreservation",
+    "192": "PstoreMarkerRecovery",
+    "193": "PstoreMarkerRecovery",
+    "194": "PstoreMarkerRecovery",
+    "195": "PstoreMarkerRecovery",
+    "196": "PstoreMarkerRecovery",
+    "197": "PstoreMarkerRecovery",
+    "198": "PstoreMarkerRecovery",
+    "199": "PstoreMarkerRecovery",
+    "200": "PstoreMarkerRecovery",
+    "201": "PstoreMarkerRecovery",
+    "202": "PstoreMarkerRecovery",
+    "203": "PstoreMarkerRecovery",
+    "204": "PstoreMarkerRecovery",
+    "205": "PstoreMarkerRecovery",
+    "206": "PstoreMarkerRecovery",
+    "207": "PstoreMarkerRecovery",
+    "208": "PstoreMarkerRecovery",
+    "209": "PstoreMarkerRecovery",
+    "210": "PstoreMarkerRecovery",
+    "211": "PstoreMarkerRecovery",
+    "212": "PstoreMarkerRecovery",
+    "213": "PstoreMarkerRecovery",
+    "214": "PstoreMarkerRecovery",
+    "215": "PstoreMarkerRecovery",
+    "216": "PstoreMarkerRecovery",
+    "217": "PstoreMarkerRecovery",
+    "218": "PstoreMarkerRecovery",
+    "219": "PstoreMarkerRecovery",
+    "220": "PstoreMarkerRecovery",
+    "221": "PstoreMarkerRecovery",
+    "222": "PstoreMarkerRecovery",
+    "223": "PstoreMarkerRecovery",
+    "224": "PstoreMarkerRecovery",
+    "225": "PstoreMarkerRecovery",
+    "226": "PstoreMarkerRecovery",
+    "227": "PstoreMarkerRecovery",
+    "228": "PstoreMarkerRecovery",
+    "229": "PstoreMarkerRecovery",
+    "230": "PstoreMarkerRecovery",
+    "231": "PstoreMarkerRecovery",
+    "232": "PstoreMarkerRecovery",
+    "233": "PstoreMarkerRecovery",
+    "234": "PstoreMarkerRecovery",
+    "235": "PstoreMarkerRecovery",
+    "236": "PstoreMarkerRecovery",
+    "237": "PstoreMarkerRecovery",
+    "238": "PstoreMarkerRecovery",
+    "239": "PstoreMarkerRecovery",
+    "240": "PstoreMarkerRecovery",
+    "241": "PstoreMarkerRecovery",
+    "242": "PstoreMarkerRecovery",
+    "243": "PstoreMarkerRecovery",
+    "244": "PstoreMarkerRecovery",
+    "245": "PstoreMarkerRecovery",
+    "246": "PstoreMarkerRecovery",
+    "247": "PstoreMarkerRecovery",
+    "248": "PstoreMarkerRecovery",
+    "249": "PstoreMarkerRecovery",
+    "250": "PstoreMarkerRecovery",
+    "251": "PstoreMarkerRecovery",
+    "252": "PstoreMarkerRecovery",
+    "253": "PstoreMarkerRecovery",
+    "254": "PstoreMarkerRecovery",
+    "255": "PstoreMarkerRecovery",
+    "256": "PstoreMarkerRecovery",
+    "257": "PstoreMarkerRecovery",
+    "258": "PstoreMarkerRecovery",
+    "259": "PstoreMarkerRecovery",
+    "260": "PstoreMarkerRecovery",
+    "261": "PstoreMarkerRecovery",
+    "262": "PstoreMarkerRecovery",
+    "263": "PstoreMarkerRecovery",
+    "264": "PstoreMarkerRecovery",
+    "265": "PstoreMarkerRecovery",
+    "266": "PstoreMarkerRecovery",
+    "267": "PstoreMarkerRecovery",
+    "268": "PstoreMarkerRecovery",
+    "269": "PstoreMarkerRecovery",
+    "270": "PstoreMarkerRecovery",
+    "271": "PstoreMarkerRecovery",
+    "272": "PstoreMarkerRecovery",
+    "273": "PstoreMarkerRecovery",
+    "274": "PstoreMarkerRecovery",
+    "275": "PstoreMarkerRecovery",
+    "276": "PstoreMarkerRecovery",
+    "277": "PstoreMarkerRecovery",
+    "278": "PstoreMarkerRecovery",
+    "279": "PstoreMarkerRecovery",
+    "280": "PstoreMarkerRecovery",
+    "281": "PbackupOwnedPreservation",
+    "282": "PbackupOwnedPreservation",
+    "283": "PbackupOwnedPreservation",
+    "284": "PbackupOwnedPreservation",
+    "285": "PbackupOwnedPreservation",
+    "286": "PbackupOwnedPreservation",
+    "287": "PbackupOwnedPreservation",
+    "288": "PbackupOwnedPreservation",
+    "289": "PbackupOwnedPreservation",
+    "290": "PbackupOwnedPreservation",
+    "291": "PbackupOwnedPreservation",
+    "292": "PbackupOwnedPreservation",
+    "293": "PbackupOwnedPreservation",
+    "294": "PbackupOwnedPreservation",
+    "295": "PbackupOwnedPreservation",
+    "296": "PbackupOwnedPreservation",
+    "297": "PbackupOwnedPreservation",
+    "298": "PbackupOwnedPreservation",
+    "299": "PbackupOwnedPreservation",
+    "300": "PbackupOwnedPreservation",
+    "301": "PbackupOwnedPreservation",
+    "302": "PbackupOwnedPreservation",
+    "303": "PbackupOwnedPreservation",
+    "304": "PbackupOwnedPreservation",
+    "305": "PbackupOwnedPreservation",
+    "306": "PbackupOwnedPreservation",
+    "307": "PbackupOwnedPreservation",
+    "308": "PbackupOwnedPreservation",
+    "309": "PbackupOwnedPreservation",
+    "310": "PbackupOwnedPreservation",
+    "311": "PbackupOwnedPreservation",
+    "312": "PbackupOwnedPreservation",
+    "313": "PbackupOwnedPreservation",
+    "314": "PbackupOwnedPreservation",
+    "315": "PbackupOwnedPreservation",
+    "316": "PbackupOwnedPreservation",
+    "317": "PbackupOwnedPreservation",
+    "318": "PcapturedClose",
+    "319": "PcapturedClose",
+    "320": "PnativeVisibility",
+    "321": "PnativeVisibility",
+    "322": "PcapturedClose",
+    "323": "PcapturedClose",
+    "324": "PcapturedClose",
+    "325": "PcapturedClose",
+    "326": "PcapturedClose",
+    "327": "PcapturedClose",
+    "328": "PcapturedClose",
+    "329": "PcapturedClose",
+    "330": "PnativeVisibility",
+    "331": "PnativeVisibility",
+    "332": "PnativeVisibility",
+    "333": "PnativeVisibility",
+    "334": "PnativeVisibility",
+    "335": "PnativeVisibility",
+    "336": "PnativeVisibility",
+    "337": "PnativeVisibility",
+    "338": "PnativeVisibility",
+    "339": "PnativeVisibility",
+    "340": "PnativeVisibility",
+    "341": "PnativeVisibility",
+    "342": "PnativeVisibility",
+    "343": "PnativeVisibility",
+    "344": "PnativeVisibility",
+    "345": "PnativeVisibility",
+    "346": "PnativeVisibility",
+    "347": "PnativeVisibility",
+    "348": "PnativeVisibility",
+    "349": "PnativeVisibility",
+    "350": "PnativeVisibility",
+    "351": "PnativeVisibility",
+    "352": "PnativeVisibility",
+    "353": "PnativeVisibility",
+    "354": "PnativeVisibility",
+    "355": "PnativeVisibility",
+    "356": "PnativeVisibility",
+    "357": "PnativeVisibility",
+    "358": "PnativeVisibility",
+    "359": "PnativeVisibility",
+    "360": "PnativeVisibility",
+    "361": "PnativeVisibility",
+    "362": "PnativeVisibility",
+    "363": "PnativeVisibility",
+    "364": "PnativeVisibility",
+    "365": "PnativeVisibility",
+    "366": "PnativeVisibility",
+    "367": "PnativeVisibility",
+    "368": "PnativeVisibility",
+    "369": "PnativeVisibility",
+    "370": "PnativeVisibility",
+    "371": "PnativeVisibility",
+    "372": "PnativeVisibility",
+    "373": "PnativeVisibility",
+    "374": "PnativeVisibility",
+    "375": "PnativeVisibility",
+    "376": "PnativeVisibility",
+    "377": "PnativeVisibility",
+    "378": "PnativeVisibility",
+    "379": "PnativeVisibility",
+    "380": "PnativeVisibility",
+    "381": "PnativeVisibility",
+    "382": "PnativeVisibility",
+    "383": "PnativeVisibility",
+    "384": "PnativeVisibility",
+    "385": "PnativeVisibility",
+    "386": "PnativeVisibility",
+    "387": "PnativeVisibility",
+    "388": "PnativeVisibility",
+    "389": "PnativeVisibility",
+    "390": "PnativeVisibility",
+    "391": "PnativeVisibility",
+    "392": "PnativeVisibility",
+    "393": "PnativeVisibility",
+    "394": "PnativeVisibility",
+    "395": "PcapturedClose",
+    "396": "PcapturedClose",
+    "397": "PcapturedClose",
+    "398": "PcapturedClose",
+    "399": "PcapturedClose",
+    "400": "PcapturedClose",
+    "401": "PcapturedClose",
+    "402": "PcapturedClose",
+    "403": "PcapturedClose",
+    "404": "PcapturedClose",
+    "405": "PcapturedClose",
+    "406": "PcapturedClose",
+    "407": "PcapturedClose",
+    "408": "PcapturedClose",
+    "409": "PcapturedClose",
+    "410": "PcapturedClose",
+    "411": "PcapturedClose",
+    "412": "PcapturedClose",
+    "413": "PcapturedClose",
+    "414": "PcapturedClose",
+    "415": "PcapturedClose",
+    "416": "PcapturedClose",
+    "417": "PcapturedClose",
+    "418": "PcapturedClose",
+    "419": "PcapturedClose",
+    "420": "PcapturedClose",
+    "421": "PcapturedClose",
+    "422": "PcapturedClose",
+    "423": "PcapturedClose",
+    "424": "PcapturedClose",
+    "425": "PcapturedClose",
+    "426": "PcapturedClose",
+    "427": "PcapturedClose",
+    "428": "PcapturedClose",
+    "429": "PcapturedClose",
+    "430": "PcapturedClose",
+    "431": "PcapturedClose",
+    "432": "PcapturedClose",
+    "433": "PcapturedClose",
+    "434": "PcapturedClose",
+    "435": "PcapturedClose",
+    "436": "PcapturedClose",
+    "437": "PcapturedClose",
+    "438": "PcapturedClose",
+    "439": "PcapturedClose",
+    "440": "PcapturedClose",
+    "441": "PcapturedClose",
+    "442": "PcapturedClose",
+    "443": "PcapturedClose",
+    "444": "PcapturedClose",
+    "445": "PcapturedClose",
+    "446": "PcapturedClose",
+    "447": "PcapturedClose",
+    "448": "PcapturedClose",
+    "449": "PcapturedClose",
+    "450": "PcapturedClose",
+    "451": "PcapturedClose",
+    "452": "PcapturedClose",
+    "453": "PcapturedClose",
+    "454": "PcapturedClose",
+    "455": "PcapturedClose",
+    "456": "PcapturedClose",
+    "457": "PcapturedClose",
+    "458": "PcapturedClose",
+    "459": "PcapturedClose",
+    "460": "PcapturedClose",
+    "461": "PcapturedClose",
+    "462": "PcapturedClose",
+    "463": "PcontrolFailedDrafts",
+    "464": "PcontrolFailedDrafts",
+    "465": "PcontrolFailedDrafts",
+    "466": "PcontrolFailedDrafts",
+    "467": "PcontrolFailedDrafts",
+    "468": "PcontrolFailedDrafts",
+    "469": "PcontrolFailedDrafts",
+    "470": "PcontrolFailedDrafts",
+    "471": "PcontrolFailedDrafts",
+    "472": "PcontrolFailedDrafts",
+    "473": "PcontrolFailedDrafts",
+    "474": "PcontrolFailedDrafts",
+    "475": "PcontrolEditorFocus",
+    "476": "PcontrolEditorFocus",
+    "477": "PcontrolEditorFocus",
+    "478": "PcontrolEditorFocus",
+    "479": "PcontrolEditorFocus",
+    "480": "PcontrolEditorFocus",
+    "481": "PcontrolEditorFocus",
+    "482": "PcontrolEditorFocus",
+    "483": "PcontrolEditorFocus",
+    "484": "PcontrolEditorFocus",
+    "485": "PcontrolEditorFocus",
+    "486": "PcontrolEditorFocus",
+    "487": "PcontrolEditorFocus",
+    "488": "PcontrolEditorFocus",
+    "489": "PcontrolEditorFocus",
+    "490": "PcontrolEditorFocus",
+    "491": "PcontrolEditorFocus",
+    "492": "PcontrolFailedDrafts",
+    "493": "PcontrolFailedDrafts",
+    "494": "PcontrolFailedDrafts",
+    "495": "PcontrolFailedDrafts",
+    "496": "PcontrolFailedDrafts",
+    "497": "PcontrolFailedDrafts",
+    "498": "PcontrolFailedDrafts",
+    "499": "PcontrolFailedDrafts",
+    "500": "PcontrolFailedDrafts",
+    "501": "PcontrolFailedDrafts",
+    "502": "PcontrolFailedDrafts",
+    "503": "PcontrolFailedDrafts",
+    "504": "PcontrolFailedDrafts",
+    "505": "PcontrolFailedDrafts",
+    "506": "PcontrolFailedDrafts",
+    "507": "PcontrolFailedDrafts",
+    "508": "PcontrolFailedDrafts",
+    "509": "PcontrolFailedDrafts",
+    "510": "PcontrolFailedDrafts",
+    "511": "PcontrolFailedDrafts",
+    "512": "PcontrolFailedDrafts",
+    "513": "PcontrolEditorIdentity",
+    "514": "PcontrolEditorIdentity",
+    "515": "PcontrolEditorIdentity",
+    "516": "PcontrolEditorIdentity",
+    "517": "PcontrolFailedDrafts",
+    "518": "PcontrolFailedDrafts",
+    "519": "PcontrolFailedDrafts",
+    "520": "PcontrolFailedDrafts",
+    "521": "PcontrolFailedDrafts",
+    "522": "PcontrolFailedDrafts",
+    "523": "PcontrolFailedDrafts",
+    "524": "PcontrolFailedDrafts",
+    "525": "PcontrolFailedDrafts",
+    "526": "PcontrolFailedDrafts",
+    "527": "PcontrolFailedDrafts",
+    "528": "PcontrolFailedDrafts",
+    "529": "PcontrolFailedDrafts",
+    "530": "PcontrolFailedDrafts",
+    "531": "PcontrolFailedDrafts",
+    "532": "PcontrolFailedDrafts",
+    "533": "PcontrolFailedDrafts",
+    "534": "PcontrolFailedDrafts",
+    "535": "PcontrolFailedDrafts",
+    "536": "PcontrolFailedDrafts",
+    "537": "PcontrolFailedDrafts",
+    "538": "PcontrolFailedDrafts",
+    "539": "PcontrolFailedDrafts",
+    "540": "PcontrolFailedDrafts",
+    "541": "PcontrolFailedDrafts",
+    "542": "PcontrolFailedDrafts",
+    "543": "PcontrolFailedDrafts",
+    "544": "PcontrolFailedDrafts",
+    "545": "PcontrolFailedDrafts",
+    "546": "PcontrolFailedDrafts",
+    "547": "PcontrolFailedDrafts",
+    "548": "PcontrolFailedDrafts",
+    "549": "PcontrolFailedDrafts",
+    "550": "PcontrolFailedDrafts",
+    "551": "PcontrolFailedDrafts",
+    "552": "PcontrolFailedDrafts",
+    "553": "PcontrolFailedDrafts",
+    "554": "PcontrolFailedDrafts",
+    "555": "PcontrolFailedDrafts",
+    "556": "PcontrolFailedDrafts",
+    "557": "PcontrolFailedDrafts",
+    "558": "PcontrolFailedDrafts",
+    "559": "PcontrolFailedDrafts",
+    "560": "PcontrolFailedDrafts",
+    "561": "PcontrolFailedDrafts",
+    "562": "PcontrolFailedDrafts",
+    "563": "PcontrolFailedDrafts",
+    "564": "PcontrolFailedDrafts",
+    "565": "PcontrolFailedDrafts",
+    "566": "PcontrolFailedDrafts",
+    "567": "PcontrolFailedDrafts",
+    "568": "PcontrolFailedDrafts",
+    "569": "PcontrolFailedDrafts",
+    "570": "PcontrolFailedDrafts",
+    "571": "PcontrolFailedDrafts",
+    "572": "PcontrolFailedDrafts",
+    "573": "PcontrolFailedDrafts",
+    "574": "PcontrolFailedDrafts",
+    "575": "PcontrolFailedDrafts",
+    "576": "PcontrolFailedDrafts",
+    "577": "PcontrolFailedDrafts",
+    "578": "PcontrolFailedDrafts",
+    "579": "PcontrolFailedDrafts",
+    "580": "PcontrolFailedDrafts",
+    "581": "PcontrolFailedDrafts",
+    "582": "PcontrolFailedDrafts",
+    "583": "PcontrolFailedDrafts",
+    "584": "PcontrolFailedDrafts",
+    "585": "PcontrolFailedDrafts",
+    "586": "PcontrolFailedDrafts",
+    "587": "PcontrolFailedDrafts",
+    "588": "PcontrolFailedDrafts",
+    "589": "PcontrolFailedDrafts",
+    "590": "PcontrolFailedDrafts",
+    "591": "PcontrolFailedDrafts",
+    "592": "PcontrolFailedDrafts",
+    "593": "PcontrolFailedDrafts",
+    "594": "PcontrolFailedDrafts",
+    "595": "PcontrolFailedDrafts",
+    "596": "PcontrolFailedDrafts",
+    "597": "PcontrolFailedDrafts",
+    "598": "PcontrolFailedDrafts",
+    "599": "PcontrolFailedDrafts",
+    "600": "PcontrolFailedDrafts",
+    "601": "PcontrolFailedDrafts",
+    "602": "PcontrolFailedDrafts",
+    "603": "PcontrolFailedDrafts",
+    "604": "PcontrolFailedDrafts",
+    "605": "PcontrolFailedDrafts",
+    "606": "PcontrolFailedDrafts",
+    "607": "PcontrolFailedDrafts",
+    "608": "PcontrolFailedDrafts",
+    "609": "PcontrolFailedDrafts",
+    "610": "PcontrolFailedDrafts",
+    "611": "PcontrolFailedDrafts",
+    "612": "PcontrolFailedDrafts",
+    "613": "PcontrolFailedDrafts",
+    "614": "PcontrolFailedDrafts",
+    "615": "PcontrolFailedDrafts",
+    "616": "PcontrolFailedDrafts",
+    "617": "PcontrolFailedDrafts",
+    "618": "PcontrolFailedDrafts",
+    "619": "PcontrolFailedDrafts",
+    "620": "PcontrolFailedDrafts",
+    "621": "PcontrolFailedDrafts",
+    "622": "PcontrolFailedDrafts",
+    "623": "PcontrolFailedDrafts",
+    "624": "PcontrolFailedDrafts",
+    "625": "PcontrolFailedDrafts",
+    "626": "PcontrolFailedDrafts",
+    "627": "PcontrolFailedDrafts",
+    "628": "PcontrolFailedDrafts",
+    "629": "PcontrolFailedDrafts",
+    "630": "PcontrolFailedDrafts",
+    "631": "PcontrolFailedDrafts",
+    "632": "PcontrolFailedDrafts",
+    "633": "PcontrolFailedDrafts",
+    "634": "PcontrolFailedDrafts",
+    "635": "PcontrolFailedDrafts",
+    "636": "PcontrolFailedDrafts",
+    "637": "PcontrolFailedDrafts",
+    "638": "PcontrolFailedDrafts",
+    "639": "PcontrolFailedDrafts",
+    "640": "PcontrolFailedDrafts",
+    "641": "PcontrolFailedDrafts",
+    "642": "PcontrolFailedDrafts",
+    "643": "PcontrolFailedDrafts",
+    "644": "PcontrolFailedDrafts",
+    "645": "PcontrolFailedDrafts",
+    "646": "PcontrolFailedDrafts",
+    "647": "PcontrolFailedDrafts",
+    "648": "PcontrolFailedDrafts",
+    "649": "PcontrolFailedDrafts",
+    "650": "PcontrolFailedDrafts",
+    "651": "PcontrolFailedDrafts",
+    "652": "PcontrolFailedDrafts",
+    "653": "PcontrolFailedDrafts",
+    "654": "PcontrolFailedDrafts",
+    "655": "PcontrolFailedDrafts",
+    "656": "PcontrolFailedDrafts",
+    "657": "PcontrolFailedDrafts",
+    "658": "PcontrolFailedDrafts",
+    "659": "PcontrolFailedDrafts",
+    "660": "PcontrolFailedDrafts",
+    "661": "PcontrolFailedDrafts",
+    "662": "PcontrolFailedDrafts",
+    "663": "PcontrolFailedDrafts",
+    "664": "PcontrolFailedDrafts",
+    "665": "PcontrolFailedDrafts",
+    "666": "PcontrolFailedDrafts",
+    "667": "PcontrolFailedDrafts",
+    "668": "PcontrolFailedDrafts",
+    "669": "PcontrolFailedDrafts",
+    "670": "PcontrolFailedDrafts",
+    "671": "PcontrolFailedDrafts",
+    "672": "PcontrolFailedDrafts",
+    "673": "PcontrolFailedDrafts",
+    "674": "PcontrolFailedDrafts",
+    "675": "PcontrolFailedDrafts",
+    "676": "PcontrolFailedDrafts",
+    "677": "PcontrolFailedDrafts",
+    "678": "PcontrolFailedDrafts",
+    "679": "PcontrolFailedDrafts",
+    "680": "PcontrolFailedDrafts",
+    "681": "PcontrolFailedDrafts",
+    "682": "PcontrolFailedDrafts",
+    "683": "PcontrolFailedDrafts",
+    "684": "PcontrolFailedDrafts",
+    "685": "PcontrolFailedDrafts",
+    "686": "PcontrolFailedDrafts",
+    "687": "PcontrolFailedDrafts",
+    "688": "PcontrolFailedDrafts",
+    "689": "PcontrolFailedDrafts",
+    "690": "PcontrolFailedDrafts",
+    "691": "PcontrolFailedDrafts",
+    "692": "PcontrolFailedDrafts",
+    "693": "PcontrolFailedDrafts",
+    "694": "PcontrolFailedDrafts",
+    "695": "PcontrolFailedDrafts",
+    "696": "PcontrolFailedDrafts",
+    "697": "PcontrolFailedDrafts",
+    "698": "PcontrolFailedDrafts",
+    "699": "PcontrolFailedDrafts",
+    "700": "PcontrolFailedDrafts",
+    "701": "PcontrolFailedDrafts",
+    "702": "PcontrolFailedDrafts",
+    "703": "PcontrolFailedDrafts",
+    "704": "PcontrolFailedDrafts",
+    "705": "PcontrolFailedDrafts",
+    "706": "PcontrolFailedDrafts",
+    "707": "PcontrolFailedDrafts",
+    "708": "PcontrolFailedDrafts",
+    "709": "PcontrolFailedDrafts",
+    "710": "PcontrolFailedDrafts",
+    "711": "PcontrolFailedDrafts",
+    "712": "PcontrolFailedDrafts",
+    "713": "PcontrolFailedDrafts",
+    "714": "PcontrolFailedDrafts",
+    "715": "PcontrolFailedDrafts",
+    "716": "PcontrolFailedDrafts",
+    "717": "PcontrolFailedDrafts",
+    "718": "PcontrolFailedDrafts",
+    "719": "PcontrolFailedDrafts",
+    "720": "PcontrolFailedDrafts",
+    "721": "PcontrolFailedDrafts",
+    "722": "PqaRealStateEvidence",
+    "723": "PqaRealStateEvidence",
+    "724": "PqaRealStateEvidence",
+    "725": "PqaRealStateEvidence",
+    "726": "PqaRealStateEvidence",
+    "727": "PqaRealStateEvidence",
+    "728": "PqaRealStateEvidence",
+    "729": "PqaRealStateEvidence",
+    "730": "PqaRealStateEvidence",
+    "731": "PqaRealStateEvidence",
+    "732": "PqaRealStateEvidence",
+    "733": "PqaRealStateEvidence",
+    "734": "PqaRealStateEvidence",
+    "735": "PqaRealStateEvidence",
+    "736": "PqaRealStateEvidence",
+    "737": "PqaRealStateEvidence",
+    "738": "PqaRealStateEvidence",
+    "739": "PqaRealStateEvidence",
+    "740": "PqaRealStateEvidence",
+    "741": "PqaRealStateEvidence",
+    "742": "PqaRealStateEvidence",
+    "743": "PqaRealStateEvidence",
+    "744": "PqaRealStateEvidence",
+    "745": "PqaRealStateEvidence",
+    "746": "PqaRealStateEvidence",
+    "747": "PqaRealStateEvidence",
+    "748": "PqaRealStateEvidence",
+    "749": "PqaFailureDiagnostics",
+    "750": "PqaFailureDiagnostics",
+    "751": "PqaFailureDiagnostics",
+    "752": "PqaFailureDiagnostics",
+    "753": "PqaFailureDiagnostics",
+    "754": "PqaFailureDiagnostics",
+    "755": "PqaFailureDiagnostics",
+    "756": "PqaFailureDiagnostics",
+    "757": "PqaFailureDiagnostics",
+    "758": "PqaFailureDiagnostics",
+    "759": "PqaFailureDiagnostics",
+    "760": "PqaFailureDiagnostics",
+    "761": "PqaRealStateEvidence",
+    "762": "PqaRealStateEvidence",
+    "763": "PqaRealStateEvidence",
+    "764": "PqaRealStateEvidence",
+    "765": "PqaRealStateEvidence",
+    "766": "PqaRealStateEvidence",
+    "767": "PqaRealStateEvidence",
+    "768": "PqaRealStateEvidence",
+    "769": "PqaRealStateEvidence",
+    "770": "PqaRealStateEvidence",
+    "771": "PqaRealStateEvidence",
+    "772": "PqaRealStateEvidence",
+    "773": "PqaRealStateEvidence",
+    "774": "PqaRealStateEvidence",
+    "775": "PqaRealStateEvidence",
+    "776": "PqaRealStateEvidence",
+    "777": "PqaRealStateEvidence",
+    "778": "PqaRealStateEvidence",
+    "779": "PqaRealStateEvidence",
+    "780": "PqaRealStateEvidence",
+    "781": "PqaRealStateEvidence",
+    "782": "PqaRealStateEvidence",
+    "783": "PqaRealStateEvidence",
+    "784": "PqaRealStateEvidence",
+    "785": "PqaRealStateEvidence",
+    "786": "PqaRealStateEvidence",
+    "787": "PqaRealStateEvidence",
+    "788": "PqaReceiverIdentityTransport",
+    "789": "PqaReceiverIdentityTransport",
+    "790": "PqaReceiverIdentityTransport",
+    "791": "PqaReceiverIdentityTransport",
+    "792": "PqaReceiverIdentityTransport",
+    "793": "PqaReceiverIdentityTransport",
+    "794": "PqaReceiverIdentityTransport",
+    "795": "PqaReceiverIdentityTransport",
+    "796": "PqaReceiverIdentityTransport",
+    "797": "PqaReceiverIdentityTransport",
+    "798": "PqaReceiverIdentityTransport",
+    "799": "PqaReceiverIdentityTransport",
+    "800": "PqaReceiverIdentityTransport",
+    "801": "PqaReceiverIdentityTransport",
+    "802": "PqaReceiverIdentityTransport",
+    "803": "PqaReceiverIdentityTransport",
+    "804": "PqaReceiverIdentityTransport",
+    "805": "PqaReceiverIdentityTransport",
+    "806": "PqaReceiverIdentityTransport",
+    "807": "PqaReceiverIdentityTransport",
+    "808": "PqaReceiverIdentityTransport",
+    "809": "PqaReceiverIdentityTransport",
+    "810": "PqaReceiverIdentityTransport",
+    "811": "PqaReceiverIdentityTransport",
+    "812": "PqaReceiverIdentityTransport",
+    "813": "PqaReceiverIdentityTransport",
+    "814": "PqaReceiverIdentityTransport",
+    "815": "PqaReceiverIdentityTransport",
+    "816": "PqaReceiverIdentityTransport",
+    "817": "PqaReceiverIdentityTransport",
+    "818": "PqaReceiverIdentityTransport",
+    "819": "PqaReceiverIdentityTransport",
+    "820": "PqaReceiverIdentityTransport",
+    "821": "PqaReceiverIdentityTransport",
+    "822": "PqaReceiverIdentityTransport",
+    "823": "PqaReceiverIdentityTransport",
+    "824": "PqaReceiverIdentityTransport",
+    "825": "PqaReceiverIdentityTransport",
+    "826": "PqaReceiverIdentityTransport",
+    "827": "PqaReceiverIdentityTransport",
+    "828": "PqaReceiverIdentityTransport",
+    "829": "PqaReceiverIdentityTransport",
+    "830": "PqaReceiverIdentityTransport",
+    "831": "PqaReceiverIdentityTransport",
+    "832": "PqaReceiverIdentityTransport",
+    "833": "PqaReceiverIdentityTransport",
+    "834": "PqaReceiverIdentityTransport",
+    "835": "PqaReceiverIdentityTransport",
+    "836": "PqaReceiverIdentityTransport",
+    "837": "PqaReceiverIdentityTransport",
+    "838": "PqaReceiverIdentityTransport",
+    "839": "PqaReceiverIdentityTransport",
+    "840": "PqaReceiverIdentityTransport",
+    "841": "PqaReceiverIdentityTransport",
+    "842": "PqaReceiverIdentityTransport",
+    "843": "PqaReceiverIdentityTransport",
+    "844": "PqaReceiverIdentityTransport",
+    "845": "PqaReceiverIdentityTransport",
+    "846": "PqaReceiverIdentityTransport",
+    "847": "PqaReceiverIdentityTransport",
+    "848": "PqaReceiverIdentityTransport",
+    "849": "PqaReceiverIdentityTransport",
+    "850": "PqaReceiverIdentityTransport",
+    "851": "PqaReceiverIdentityTransport",
+    "852": "PqaReceiverIdentityTransport",
+    "853": "PqaReceiverIdentityTransport",
+    "854": "PqaReceiverIdentityTransport",
+    "855": "PqaReceiverIdentityTransport",
+    "856": "PqaReceiverIdentityTransport",
+    "857": "PqaReceiverIdentityTransport",
+    "858": "PqaReceiverIdentityTransport",
+    "859": "PqaReceiverIdentityTransport",
+    "860": "PqaReceiverIdentityTransport",
+    "861": "PqaFailureDiagnostics",
+    "862": "PqaFailureDiagnostics",
+    "863": "PqaReceiverIdentityTransport",
+    "864": "PqaFailureDiagnostics",
+    "865": "PqaFailureDiagnostics",
+    "866": "PqaFailureDiagnostics",
+    "867": "PqaFailureDiagnostics",
+    "868": "PqaReceiverIdentityTransport",
+    "869": "PqaReceiverIdentityTransport",
+    "870": "PqaFailureDiagnostics",
+    "871": "PqaFailureDiagnostics",
+    "872": "PqaFailureDiagnostics",
+    "873": "PqaFailureDiagnostics",
+    "874": "PqaFailureDiagnostics",
+    "875": "PqaFailureDiagnostics",
+    "876": "PqaFailureDiagnostics",
+    "877": "PqaFailureDiagnostics",
+    "878": "PqaFailureDiagnostics",
+    "879": "PqaFailureDiagnostics",
+    "880": "PqaFailureDiagnostics",
+    "881": "PqaFailureDiagnostics",
+    "882": "PqaFailureDiagnostics",
+    "883": "PnativeVisibility",
+    "884": "PnativeVisibility",
+    "885": "PnativeVisibility",
+    "886": "PnativeVisibility",
+    "887": "PnativeVisibility",
+    "888": "PnativeVisibility",
+    "889": "PnativeVisibility",
+    "890": "PnativeVisibility",
+    "891": "PnativeVisibility",
+    "892": "PnativeVisibility",
+    "893": "PnativeVisibility",
+    "894": "PnativeVisibility",
+    "895": "PnativeVisibility",
+    "896": "PqaFailureDiagnostics",
+    "897": "PqaFailureDiagnostics",
+    "898": "PqaFailureDiagnostics",
+    "899": "PqaFailureDiagnostics",
+    "900": "PqaReceiverIdentityTransport",
+    "901": "PqaReceiverIdentityTransport",
+    "902": "PqaReceiverIdentityTransport",
+    "903": "PqaReceiverIdentityTransport",
+    "904": "PqaReceiverIdentityTransport",
+    "905": "PqaReceiverIdentityTransport",
+    "906": "PqaFailureDiagnostics",
+    "907": "PqaFailureDiagnostics",
+    "908": "PnativeVisibility",
+    "909": "PnativeVisibility",
+    "910": "PnativeVisibility",
+    "911": "PnativeVisibility",
+    "912": "PnativeVisibility",
+    "913": "PnativeVisibility",
+    "914": "PqaFailureDiagnostics",
+    "915": "PqaFailureDiagnostics",
+    "916": "PqaFailureDiagnostics",
+    "917": "PqaFailureDiagnostics",
+    "918": "PqaFailureDiagnostics",
+    "919": "PqaFailureDiagnostics",
+    "920": "PqaFailureDiagnostics",
+    "921": "PqaFailureDiagnostics",
+    "922": "PqaFailureDiagnostics",
+    "923": "PqaFailureDiagnostics",
+    "924": "PqaFailureDiagnostics",
+    "925": "PqaFailureDiagnostics",
+    "926": "PqaFailureDiagnostics",
+    "927": "PqaFailureDiagnostics",
+    "928": "PqaFailureDiagnostics",
+    "929": "PqaFailureDiagnostics",
+    "930": "PqaFailureDiagnostics",
+    "931": "PqaFailureDiagnostics",
+    "932": "PqaFailureDiagnostics",
+    "933": "PqaFailureDiagnostics",
+    "934": "PqaFailureDiagnostics",
+    "935": "PqaFailureDiagnostics",
+    "936": "PqaFailureDiagnostics",
+    "937": "PqaFailureDiagnostics",
+    "938": "PqaFailureDiagnostics",
+    "939": "PqaFailureDiagnostics",
+    "940": "PqaFailureDiagnostics",
+    "941": "PqaFailureDiagnostics",
+    "942": "PqaFailureDiagnostics",
+    "943": "PqaFailureDiagnostics",
+    "944": "PqaFailureDiagnostics",
+    "945": "PqaFailureDiagnostics",
+    "946": "PqaFailureDiagnostics",
+    "947": "PqaFailureDiagnostics",
+    "948": "PqaFailureDiagnostics",
+    "949": "PqaFailureDiagnostics",
+    "950": "PqaFailureDiagnostics",
+    "951": "PqaFailureDiagnostics",
+    "952": "PqaFailureDiagnostics",
+    "953": "PqaFailureDiagnostics",
+    "954": "PqaFailureDiagnostics",
+    "955": "PqaFailureDiagnostics",
+    "956": "PqaFailureDiagnostics",
+    "957": "PqaFailureDiagnostics",
+    "958": "PqaFailureDiagnostics",
+    "959": "PqaFailureDiagnostics",
+    "960": "PqaFailureDiagnostics",
+    "961": "PqaFailureDiagnostics",
+    "962": "PqaFailureDiagnostics",
+    "963": "PqaFailureDiagnostics",
+    "964": "PqaFailureDiagnostics",
+    "965": "PqaFailureDiagnostics",
+    "966": "PqaFailureDiagnostics",
+    "967": "PqaFailureDiagnostics",
+    "968": "PqaFailureDiagnostics",
+    "969": "PqaFailureDiagnostics",
+    "970": "PqaFailureDiagnostics",
+    "971": "PqaFailureDiagnostics",
+    "972": "PqaFailureDiagnostics",
+    "973": "PqaFailureDiagnostics",
+    "974": "PqaFailureDiagnostics",
+    "975": "PqaFailureDiagnostics",
+    "976": "PqaFailureDiagnostics",
+    "977": "PqaFailureDiagnostics",
+    "978": "PqaFailureDiagnostics",
+    "979": "PqaFailureDiagnostics",
+    "980": "PqaFailureDiagnostics",
+    "981": "PqaFailureDiagnostics",
+    "982": "PqaFailureDiagnostics",
+    "983": "PqaFailureDiagnostics",
+    "984": "PqaFailureDiagnostics",
+    "985": "PcontrolEditorFocus",
+    "986": "PcontrolEditorFocus",
+    "987": "PcontrolEditorFocus",
+    "988": "PcontrolEditorFocus",
+    "989": "PcontrolEditorFocus",
+    "990": "PcontrolEditorFocus",
+    "991": "PcontrolEditorFocus",
+    "992": "PcontrolEditorFocus",
+    "993": "PqaRealStateEvidence",
+    "994": "PqaRealStateEvidence",
+    "995": "PqaRealStateEvidence",
+    "996": "PqaRealStateEvidence",
+    "997": "PqaRealStateEvidence",
+    "998": "PqaRealStateEvidence",
+    "999": "PqaRealStateEvidence",
+    "1000": "PqaRealStateEvidence",
+    "1001": "PqaRealStateEvidence",
+    "1002": "PqaRealStateEvidence",
+    "1003": "PqaRealStateEvidence",
+    "1004": "PqaRealStateEvidence",
+    "1005": "PqaRealStateEvidence",
+    "1006": "PqaRealStateEvidence",
+    "1007": "PqaRealStateEvidence",
+    "1008": "PqaRealStateEvidence",
+    "1009": "PqaRealStateEvidence",
+    "1010": "PqaRealStateEvidence",
+    "1011": "PqaRealStateEvidence",
+    "1012": "PqaRealStateEvidence",
+    "1013": "PqaRealStateEvidence",
+    "1014": "PqaRealStateEvidence",
+    "1015": "PqaRealStateEvidence",
+    "1016": "PqaRealStateEvidence",
+    "1017": "PqaRealStateEvidence",
+    "1018": "PqaRealStateEvidence",
+    "1019": "PqaRealStateEvidence",
+    "1020": "PqaRealStateEvidence",
+    "1021": "PqaRealStateEvidence",
+    "1022": "PqaRealStateEvidence",
+    "1023": "PqaRealStateEvidence",
+    "1024": "PqaRealStateEvidence",
+    "1025": "PqaRealStateEvidence",
+    "1026": "PqaRealStateEvidence",
+    "1027": "PqaRealStateEvidence",
+    "1028": "PqaRealStateEvidence",
+    "1029": "PqaRealStateEvidence",
+    "1030": "PqaRealStateEvidence",
+    "1031": "PqaRealStateEvidence",
+    "1032": "PqaRealStateEvidence",
+    "1033": "PqaRealStateEvidence",
+    "1034": "PqaRealStateEvidence",
+    "1035": "PqaRealStateEvidence",
+    "1036": "PqaRealStateEvidence",
+    "1037": "PqaRealStateEvidence",
+    "1038": "PqaRealStateEvidence",
+    "1039": "PqaRealStateEvidence",
+    "1040": "PqaRealStateEvidence",
+    "1041": "PqaRealStateEvidence",
+    "1042": "PqaFailureDiagnostics",
+    "1043": "PqaFailureDiagnostics",
+    "1044": "PqaFailureDiagnostics",
+    "1045": "PqaRealStateEvidence",
+    "1046": "PqaRealStateEvidence",
+    "1047": "PqaRealStateEvidence",
+    "1048": "PqaRealStateEvidence",
+    "1049": "PqaRealStateEvidence",
+    "1050": "PqaRealStateEvidence",
+    "1051": "PqaRealStateEvidence",
+    "1052": "PqaRealStateEvidence",
+    "1053": "PqaRealStateEvidence",
+    "1054": "PqaRealStateEvidence",
+    "1055": "PqaRealStateEvidence",
+    "1056": "PqaRealStateEvidence",
+    "1057": "PqaRealStateEvidence",
+    "1058": "PqaRealStateEvidence",
+    "1059": "PqaRealStateEvidence",
+    "1060": "PqaRealStateEvidence",
+    "1061": "PqaRealStateEvidence",
+    "1062": "PqaRealStateEvidence",
+    "1063": "PqaFailureDiagnostics",
+    "1064": "PqaFailureDiagnostics",
+    "1065": "PqaFailureDiagnostics",
+    "1066": "PqaFailureDiagnostics",
+    "1067": "PqaFailureDiagnostics",
+    "1068": "PqaFailureDiagnostics",
+    "1069": "PqaFailureDiagnostics",
+    "1070": "PqaFailureDiagnostics",
+    "1071": "PqaFailureDiagnostics",
+    "1072": "PqaFailureDiagnostics",
+    "1073": "PqaFailureDiagnostics",
+    "1074": "PqaFailureDiagnostics",
+    "1075": "PqaFailureDiagnostics",
+    "1076": "PqaFailureDiagnostics",
+    "1077": "PqaFailureDiagnostics",
+    "1078": "PqaFailureDiagnostics",
+    "1079": "PqaFailureDiagnostics",
+    "1080": "PqaFailureDiagnostics",
+    "1081": "PqaFailureDiagnostics",
+    "1082": "PqaFailureDiagnostics",
+    "1083": "PqaFailureDiagnostics",
+    "1084": "PqaFailureDiagnostics",
+    "1085": "PqaFailureDiagnostics",
+    "1086": "PqaFailureDiagnostics",
+    "1087": "PqaFailureDiagnostics",
+    "1088": "PqaFailureDiagnostics",
+    "1089": "PqaFailureDiagnostics",
+    "1090": "PqaFailureDiagnostics",
+    "1091": "PqaFailureDiagnostics",
+    "1092": "PqaFailureDiagnostics",
+    "1093": "PqaFailureDiagnostics",
+    "1094": "PqaFailureDiagnostics",
+    "1095": "PqaFailureDiagnostics",
+    "1096": "PqaFailureDiagnostics",
+    "1097": "PqaFailureDiagnostics",
+    "1098": "PqaFailureDiagnostics"
+  },
+  "coverage": {
+    "files": 18,
+    "hunks": 82,
+    "units": 1098,
+    "added": 1028,
+    "deleted": 68,
+    "metadata": 2,
+    "purpose_count": 11,
+    "unassigned": 0,
+    "duplicate_assignments": 0,
+    "deletions_with_preservation_checks": 68,
+    "deleted_tests_or_comments": 0
+  },
+  "counts_by_purpose": {
+    "PstoreMarkerRecovery": {
+      "added": 98,
+      "deleted": 3
+    },
+    "PbackupOwnedPreservation": {
+      "deleted": 3,
+      "added": 85
+    },
+    "PmanagedExportProtection": {
+      "deleted": 3,
+      "added": 93
+    },
+    "PcontrolFailedDrafts": {
+      "added": 225,
+      "deleted": 11,
+      "metadata": 2
+    },
+    "PcontrolEditorFocus": {
+      "deleted": 3,
+      "added": 22
+    },
+    "PcontrolEditorIdentity": {
+      "deleted": 2,
+      "added": 2
+    },
+    "PcapturedClose": {
+      "added": 87,
+      "deleted": 5
+    },
+    "PnativeVisibility": {
+      "added": 96,
+      "deleted": 8
+    },
+    "PqaReceiverIdentityTransport": {
+      "deleted": 12,
+      "added": 70
+    },
+    "PqaRealStateEvidence": {
+      "added": 118,
+      "deleted": 3
+    },
+    "PqaFailureDiagnostics": {
+      "added": 132,
+      "deleted": 15
+    }
+  },
+  "classification_groups": [
+    {
+      "units": "1-14",
+      "purpose": "PmanagedExportProtection",
+      "rationale": "One mixed guard protects managed live/recovery namespaces; canonicalization and the shared rejection belong to that guard.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/dataio.ts b/apps/desktop/src/infra/dataio.ts",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 21,
+          "line_last": 23
+        },
+        {
+          "file": "a/apps/desktop/src/infra/dataio.ts b/apps/desktop/src/infra/dataio.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 21,
+          "line_last": 31
+        }
+      ]
+    },
+    {
+      "units": "15-16",
+      "purpose": "PbackupOwnedPreservation",
+      "rationale": "Quarantine copy becomes exclusive without changing failed-load abort or original-file preservation.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 146,
+          "line_last": 146
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 146,
+          "line_last": 146
+        }
+      ]
+    },
+    {
+      "units": "17-24",
+      "purpose": "PstoreMarkerRecovery",
+      "rationale": "Extract and call the unchanged main-save replacement loop for reuse by heartbeat; backup remains after successful replacement.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 158,
+          "line_last": 162
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 3,
+          "line_first": 160,
+          "line_last": 160
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 165,
+          "line_last": 165
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 4,
+          "line_first": 168,
+          "line_last": 168
+        }
+      ]
+    },
+    {
+      "units": "25-31",
+      "purpose": "PbackupOwnedPreservation",
+      "rationale": "Narrow the daily retention set by regular-file type, exact name, and valid calendar date.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 5,
+          "line_first": 185,
+          "line_last": 185
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 5,
+          "line_first": 189,
+          "line_last": 194
+        }
+      ]
+    },
+    {
+      "units": "32-35",
+      "purpose": "PstoreMarkerRecovery",
+      "rationale": "Write a heartbeat temporary file before committing it through bounded rename.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 6,
+          "line_first": 194,
+          "line_last": 194
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 6,
+          "line_first": 203,
+          "line_last": 205
+        }
+      ]
+    },
+    {
+      "units": "36-37",
+      "purpose": "PbackupOwnedPreservation",
+      "rationale": "Exclusive pre-import snapshot write prevents timestamp collision from erasing the first recovery copy.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "deleted",
+          "hunk": 7,
+          "line_first": 212,
+          "line_last": 212
+        },
+        {
+          "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+          "kind": "added",
+          "hunk": 7,
+          "line_first": 223,
+          "line_last": 223
+        }
+      ]
+    },
+    {
+      "units": "38-55",
+      "purpose": "PnativeVisibility",
+      "rationale": "Move the identical placement/focus body into a once-only show callback and add editor load fallback.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/windows.ts b/apps/desktop/src/infra/windows.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 225,
+          "line_last": 235
+        },
+        {
+          "file": "a/apps/desktop/src/infra/windows.ts b/apps/desktop/src/infra/windows.ts",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 232,
+          "line_last": 238
+        }
+      ]
+    },
+    {
+      "units": "56-69",
+      "purpose": "PcapturedClose",
+      "rationale": "Capture native window instances in the delayed helper and connect the WindowPort to it.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/src/infra/windows.ts b/apps/desktop/src/infra/windows.ts",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 281,
+          "line_last": 290
+        },
+        {
+          "file": "a/apps/desktop/src/presentation/main.ts b/apps/desktop/src/presentation/main.ts",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 23,
+          "line_last": 23
+        },
+        {
+          "file": "a/apps/desktop/src/presentation/main.ts b/apps/desktop/src/presentation/main.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 23,
+          "line_last": 23
+        },
+        {
+          "file": "a/apps/desktop/src/presentation/main.ts b/apps/desktop/src/presentation/main.ts",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 100,
+          "line_last": 100
+        },
+        {
+          "file": "a/apps/desktop/src/presentation/main.ts b/apps/desktop/src/presentation/main.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 100,
+          "line_last": 100
+        }
+      ]
+    },
+    {
+      "units": "70-151",
+      "purpose": "PmanagedExportProtection",
+      "rationale": "Real-file export refusal cases protect recovery snapshots, casing/aliases, the reserved subtree, quarantined originals, and runtime.tmp.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/dataio.test.ts b/apps/desktop/tests/dataio.test.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 80,
+          "line_last": 161
+        }
+      ]
+    },
+    {
+      "units": "152-191",
+      "purpose": "PbackupOwnedPreservation",
+      "rationale": "Two public Store collision regressions preserve first import/quarantine bytes and current DB state.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 31,
+          "line_last": 70
+        }
+      ]
+    },
+    {
+      "units": "192-280",
+      "purpose": "PstoreMarkerRecovery",
+      "rationale": "Six failure/retry cases verify prior marker bytes, real restart recovery, next heartbeat, and bounded rename behavior.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 156,
+          "line_last": 244
+        }
+      ]
+    },
+    {
+      "units": "281-317",
+      "purpose": "PbackupOwnedPreservation",
+      "rationale": "Public daily saves independently exercise unrelated-entry preservation and exactly the newest thirty generated backups.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 245,
+          "line_last": 281
+        }
+      ]
+    },
+    {
+      "units": "318-319",
+      "purpose": "PcapturedClose",
+      "rationale": "Import the delayed native-window helper for its new regressions.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 2,
+          "line_last": 2
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 2,
+          "line_last": 2
+        }
+      ]
+    },
+    {
+      "units": "320-321",
+      "purpose": "PnativeVisibility",
+      "rationale": "EventEmitter webContents models did-finish-load independently from ready-to-show.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 9,
+          "line_last": 9
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 9,
+          "line_last": 9
+        }
+      ]
+    },
+    {
+      "units": "322-329",
+      "purpose": "PcapturedClose",
+      "rationale": "Shared native-window fixture now models destruction, necessary to distinguish old/reopened targets and avoid duplicate closes; visibility also uses it.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 10,
+          "line_last": 10
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "deleted",
+          "hunk": 3,
+          "line_first": 11,
+          "line_last": 11
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 12,
+          "line_last": 12
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "deleted",
+          "hunk": 4,
+          "line_first": 25,
+          "line_last": 25
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 4,
+          "line_first": 26,
+          "line_last": 29
+        }
+      ]
+    },
+    {
+      "units": "330-394",
+      "purpose": "PnativeVisibility",
+      "rationale": "Assert load-first/paint-first once-only display, inactive behavior, destroyed/shutdown guards, and unchanged review behavior.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 5,
+          "line_first": 36,
+          "line_last": 100
+        }
+      ]
+    },
+    {
+      "units": "395-462",
+      "purpose": "PcapturedClose",
+      "rationale": "Restore timer state and exercise captured target identity, 150 ms preparation, and shutdown no-ops.",
+      "locations": [
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 6,
+          "line_first": 102,
+          "line_last": 102
+        },
+        {
+          "file": "a/apps/desktop/tests/windows-shutdown.test.ts b/apps/desktop/tests/windows-shutdown.test.ts",
+          "kind": "added",
+          "hunk": 7,
+          "line_first": 109,
+          "line_last": 175
+        }
+      ]
+    },
+    {
+      "units": "463-474",
+      "purpose": "PcontrolFailedDrafts",
+      "rationale": "Create the real draft controller, keep its current save callback, reconcile clean reasons, and register existing flush participation.",
+      "locations": [
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 6,
+          "line_last": 6
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 8,
+          "line_last": 8
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "deleted",
+          "hunk": 3,
+          "line_first": 11,
+          "line_last": 11
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 13,
+          "line_last": 16
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 4,
+          "line_first": 20,
+          "line_last": 24
+        }
+      ]
+    },
+    {
+      "units": "475-491",
+      "purpose": "PcontrolEditorFocus",
+      "rationale": "Split focus from draft ownership: observe only inert attributes until connected target focus succeeds or component unmounts.",
+      "locations": [
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "deleted",
+          "hunk": 5,
+          "line_first": 17,
+          "line_last": 19
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 5,
+          "line_first": 27,
+          "line_last": 40
+        }
+      ]
+    },
+    {
+      "units": "492-512",
+      "purpose": "PcontrolFailedDrafts",
+      "rationale": "Route reason/external submission through the draft controller and preserve controls, form values, failures, and explicit cancellation.",
+      "locations": [
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "deleted",
+          "hunk": 6,
+          "line_first": 25,
+          "line_last": 25
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 6,
+          "line_first": 46,
+          "line_last": 46
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "deleted",
+          "hunk": 7,
+          "line_first": 51,
+          "line_last": 52
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 7,
+          "line_first": 72,
+          "line_last": 73
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "deleted",
+          "hunk": 8,
+          "line_first": 54,
+          "line_last": 60
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskControlEditor.tsx b/apps/renderer/src/features/board/TaskControlEditor.tsx",
+          "kind": "added",
+          "hunk": 8,
+          "line_first": 75,
+          "line_last": 82
+        }
+      ]
+    },
+    {
+      "units": "513-516",
+      "purpose": "PcontrolEditorIdentity",
+      "rationale": "Distinct control/context key prefixes preserve sibling identity without recreating the same-task editor.",
+      "locations": [
+        {
+          "file": "a/apps/renderer/src/features/board/TaskDetail.tsx b/apps/renderer/src/features/board/TaskDetail.tsx",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 196,
+          "line_last": 196
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskDetail.tsx b/apps/renderer/src/features/board/TaskDetail.tsx",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 196,
+          "line_last": 196
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskDetail.tsx b/apps/renderer/src/features/board/TaskDetail.tsx",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 198,
+          "line_last": 198
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/TaskDetail.tsx b/apps/renderer/src/features/board/TaskDetail.tsx",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 198,
+          "line_last": 198
+        }
+      ]
+    },
+    {
+      "units": "517-721",
+      "purpose": "PcontrolFailedDrafts",
+      "rationale": "New draft-controller file and seven behavioral tests, including both new-file metadata units; reason/external/flush are one close-preservation responsibility.",
+      "locations": [
+        {
+          "file": "a/apps/renderer/src/features/board/task-control-draft.ts b/apps/renderer/src/features/board/task-control-draft.ts",
+          "kind": "metadata",
+          "hunk": null,
+          "line_first": null,
+          "line_last": null
+        },
+        {
+          "file": "a/apps/renderer/src/features/board/task-control-draft.ts b/apps/renderer/src/features/board/task-control-draft.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 1,
+          "line_last": 80
+        },
+        {
+          "file": "a/apps/renderer/tests/task-control-draft.test.ts b/apps/renderer/tests/task-control-draft.test.ts",
+          "kind": "metadata",
+          "hunk": null,
+          "line_first": null,
+          "line_last": null
+        },
+        {
+          "file": "a/apps/renderer/tests/task-control-draft.test.ts b/apps/renderer/tests/task-control-draft.test.ts",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 1,
+          "line_last": 123
+        }
+      ]
+    },
+    {
+      "units": "722-748",
+      "purpose": "PqaRealStateEvidence",
+      "rationale": "History paging preserves independent totals; dependency pointer flow confirms one editor of each kind and persisted reason.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-activity.mjs b/scripts/e2e-activity.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 378,
+          "line_last": 398
+        },
+        {
+          "file": "a/scripts/e2e-activity.mjs b/scripts/e2e-activity.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 416,
+          "line_last": 416
+        },
+        {
+          "file": "a/scripts/e2e-dependencies.mjs b/scripts/e2e-dependencies.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 293,
+          "line_last": 295
+        },
+        {
+          "file": "a/scripts/e2e-dependencies.mjs b/scripts/e2e-dependencies.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 298,
+          "line_last": 299
+        }
+      ]
+    },
+    {
+      "units": "749-760",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Dependency failure-only DOM/lock/focus/error capture preserves the original test failure.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-dependencies.mjs b/scripts/e2e-dependencies.mjs",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 427,
+          "line_last": 438
+        }
+      ]
+    },
+    {
+      "units": "761-787",
+      "purpose": "PqaRealStateEvidence",
+      "rationale": "Public cross-window Task and linked Note edits check both texts, blocked close/autosave, and explicit resolution.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-phase2-planning.mjs b/scripts/e2e-phase2-planning.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 512,
+          "line_last": 538
+        }
+      ]
+    },
+    {
+      "units": "788-860",
+      "purpose": "PqaReceiverIdentityTransport",
+      "rationale": "Replace unverified page CDP with a verified browser/PID/build/session transport; preserve value, error, close, and timeout paths.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 7,
+          "line_last": 7
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 7,
+          "line_last": 7
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 47,
+          "line_last": 68
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 3,
+          "line_first": 66,
+          "line_last": 68
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 88,
+          "line_last": 96
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 4,
+          "line_first": 71,
+          "line_last": 71
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 4,
+          "line_first": 99,
+          "line_last": 99
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 5,
+          "line_first": 75,
+          "line_last": 75
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 5,
+          "line_first": 103,
+          "line_last": 103
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 6,
+          "line_first": 81,
+          "line_last": 82
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 6,
+          "line_first": 109,
+          "line_last": 111
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 7,
+          "line_first": 84,
+          "line_last": 84
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 7,
+          "line_first": 113,
+          "line_last": 114
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "deleted",
+          "hunk": 8,
+          "line_first": 86,
+          "line_last": 88
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 8,
+          "line_first": 116,
+          "line_last": 118
+        },
+        {
+          "file": "a/scripts/e2e-quit.mjs b/scripts/e2e-quit.mjs",
+          "kind": "added",
+          "hunk": 9,
+          "line_first": 120,
+          "line_last": 138
+        }
+      ]
+    },
+    {
+      "units": "861-862",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Shared spawnSync import primarily supports bounded live native-process diagnostics; it also supports native visibility evidence.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 3,
+          "line_last": 3
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 3,
+          "line_last": 3
+        }
+      ]
+    },
+    {
+      "units": "863-863",
+      "purpose": "PqaReceiverIdentityTransport",
+      "rationale": "Import exact process identity/ownership helpers used to bind diagnostic receivers to the launched app.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 9,
+          "line_last": 9
+        }
+      ]
+    },
+    {
+      "units": "864-867",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Source-only observer and optional kept-page branch require explicit diagnostic opt-in and reject package misuse.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 12,
+          "line_last": 15
+        }
+      ]
+    },
+    {
+      "units": "868-869",
+      "purpose": "PqaReceiverIdentityTransport",
+      "rationale": "Hold launch identity and the owned-process registry rather than using only numeric PID.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 4,
+          "line_first": 25,
+          "line_last": 26
+        }
+      ]
+    },
+    {
+      "units": "870-882",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Allow bounded browser diagnostic connections/session commands; normal page defaults keep their original enable and timeout behavior.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 5,
+          "line_first": 45,
+          "line_last": 45
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 5,
+          "line_first": 52,
+          "line_last": 52
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 6,
+          "line_first": 48,
+          "line_last": 48
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 6,
+          "line_first": 55,
+          "line_last": 55
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 7,
+          "line_first": 68,
+          "line_last": 68
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 7,
+          "line_first": 75,
+          "line_last": 75
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 8,
+          "line_first": 71,
+          "line_last": 71
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 8,
+          "line_first": 78,
+          "line_last": 78
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 9,
+          "line_first": 73,
+          "line_last": 73
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 9,
+          "line_first": 80,
+          "line_last": 80
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 10,
+          "line_first": 75,
+          "line_last": 76
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 10,
+          "line_first": 82,
+          "line_last": 82
+        }
+      ]
+    },
+    {
+      "units": "883-895",
+      "purpose": "PnativeVisibility",
+      "rationale": "Win32 probe verifies owned process identity, window owner, title, native handle, and IsWindowVisible.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 11,
+          "line_first": 101,
+          "line_last": 113
+        }
+      ]
+    },
+    {
+      "units": "896-899",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Select trace directory and source observer entry only when opt-in is set; default launch is preserved.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 12,
+          "line_first": 97,
+          "line_last": 97
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 12,
+          "line_first": 116,
+          "line_last": 116
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 13,
+          "line_first": 102,
+          "line_last": 102
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 13,
+          "line_first": 121,
+          "line_last": 121
+        }
+      ]
+    },
+    {
+      "units": "900-905",
+      "purpose": "PqaReceiverIdentityTransport",
+      "rationale": "Capture process creation identity and root registration for the actual launched executable.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 13,
+          "line_first": 122,
+          "line_last": 122
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 14,
+          "line_first": 127,
+          "line_last": 131
+        }
+      ]
+    },
+    {
+      "units": "906-907",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Persist isolated launch context for later failed-state interpretation.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 15,
+          "line_first": 139,
+          "line_last": 140
+        }
+      ]
+    },
+    {
+      "units": "908-913",
+      "purpose": "PnativeVisibility",
+      "rationale": "Assert physical Main visibility before any page CDP activation and save the measured Win32 result.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 16,
+          "line_first": 144,
+          "line_last": 149
+        }
+      ]
+    },
+    {
+      "units": "914-984",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Collect timeout state before cleanup, retain original focus wait inside diagnostic catch, and record process/quit chronology without accepting late exit as success.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 17,
+          "line_first": 153,
+          "line_last": 194
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 18,
+          "line_first": 198,
+          "line_last": 199
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 19,
+          "line_first": 205,
+          "line_last": 207
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 20,
+          "line_first": 150,
+          "line_last": 150
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 20,
+          "line_first": 230,
+          "line_last": 231
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 21,
+          "line_first": 233,
+          "line_last": 236
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 22,
+          "line_first": 161,
+          "line_last": 161
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 22,
+          "line_first": 246,
+          "line_last": 247
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "deleted",
+          "hunk": 23,
+          "line_first": 244,
+          "line_last": 244
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 23,
+          "line_first": 330,
+          "line_last": 342
+        }
+      ]
+    },
+    {
+      "units": "985-992",
+      "purpose": "PcontrolEditorFocus",
+      "rationale": "Split this mixed hunk: successful focus assertions explicitly require target focus and every ancestor inert lock released.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 23,
+          "line_first": 343,
+          "line_last": 350
+        }
+      ]
+    },
+    {
+      "units": "993-1041",
+      "purpose": "PqaRealStateEvidence",
+      "rationale": "Keep the duration failure fix and add waiting-save failure/close/persisted-state/explicit-revert-or-cancel checks.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 24,
+          "line_first": 502,
+          "line_last": 507
+        },
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 25,
+          "line_first": 523,
+          "line_last": 565
+        }
+      ]
+    },
+    {
+      "units": "1042-1044",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Failure-live observation is opt-in and best-effort; capture errors are saved separately.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e-task-priority.mjs b/scripts/e2e-task-priority.mjs",
+          "kind": "added",
+          "hunk": 26,
+          "line_first": 621,
+          "line_last": 623
+        }
+      ]
+    },
+    {
+      "units": "1045-1062",
+      "purpose": "PqaRealStateEvidence",
+      "rationale": "Open the public Main quit receiver and replace successful-path child.kill with app:quit, deadline, exit-zero assertion, and failure-only cleanup.",
+      "locations": [
+        {
+          "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 166,
+          "line_last": 166
+        },
+        {
+          "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 166,
+          "line_last": 166
+        },
+        {
+          "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 329,
+          "line_last": 330
+        },
+        {
+          "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 329,
+          "line_last": 342
+        }
+      ]
+    },
+    {
+      "units": "1063-1098",
+      "purpose": "PqaFailureDiagnostics",
+      "rationale": "Observer adds safe window state, flush/IPC, renderer, and native-error-box traces while forwarding original functions and outcomes.",
+      "locations": [
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "deleted",
+          "hunk": 1,
+          "line_first": 1,
+          "line_last": 1
+        },
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "added",
+          "hunk": 1,
+          "line_first": 1,
+          "line_last": 1
+        },
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "deleted",
+          "hunk": 2,
+          "line_first": 12,
+          "line_last": 12
+        },
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "added",
+          "hunk": 2,
+          "line_first": 12,
+          "line_last": 15
+        },
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "added",
+          "hunk": 3,
+          "line_first": 26,
+          "line_last": 36
+        },
+        {
+          "file": "a/scripts/quit-observer.mjs b/scripts/quit-observer.mjs",
+          "kind": "added",
+          "hunk": 4,
+          "line_first": 73,
+          "line_last": 90
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "Srecord": {
+      "path": "docs/product-spec.md",
+      "lines": "99-107",
+      "role": "Primary invariant: meaningful work must leave what/when execution records.",
+      "content_sha256_at_classification": "2b4d5379907232d83863ae8ce0dd5fc1d1cedf6bab7b72f9e4dbfc4aaee5b2ee"
+    },
+    "Sarchitecture": {
+      "path": "docs/architecture.md",
+      "lines": "117-135",
+      "role": "Storage/recovery design: preserve original/copies, temporary replacement, export protection, last heartbeat/action recovery. Supplementary current document; not added to this fixed code comparison.",
+      "content_sha256_at_classification": "5356b02a01964739ccafa9fc234bb1551c2f3250d0584e01b02ad89bc60a307d"
+    },
+    "Sclaude": {
+      "path": "CLAUDE.local.md",
+      "lines": "18-34",
+      "role": "Local invariants: main owns session truth, 150 ms closeLater reply delay, no business-mechanism duplication in verification surfaces.",
+      "content_sha256_at_classification": "4c8baaa6ba926a482bbe773121a8bd4af4488be8a5ac2dda5a4886fe7bb2b322"
+    },
+    "Sdependencies": {
+      "path": "docs/stories/20261005_story_dependencies-and-external-follow-up.md",
+      "lines": "9-19 and design notes",
+      "role": "Primary waiting fields, save-failure rollback/error, direct focus and isolated public-IPC/UI/restart criteria; bounded rename design.",
+      "content_sha256_at_classification": "13b42c0c2e23f349d91a147e49da2a15842875d61b4a6940054d16f06afdf58d"
+    },
+    "Srisk": {
+      "path": "docs/stories/20261005_story_effort-slack-aging-and-risk.md",
+      "lines": "16-21",
+      "role": "Primary same-task input preservation, waiting-section direct focus, failed-state preservation, and actual UI evidence.",
+      "content_sha256_at_classification": "2f71167b87d63dad5d2b39dcba25f6f4d7da30dbb77bf38fbeb0731378db45ee"
+    },
+    "Scompletion": {
+      "path": "docs/stories/20261006_story_phase2-completion.md",
+      "lines": "5,15-20,24,32-33",
+      "role": "Primary preserve input on failed close/move; await matched renderer flush, freeze editing, stop shutdown reopening, and do not call unreproduced quit hangs solved.",
+      "content_sha256_at_classification": "bbee0d24cb26f88b7575288fd68726c46e3589de949fb3efc1bc56d7854a14bb"
+    },
+    "Sactivity": {
+      "path": "docs/stories/20261005_story_activity-views.md",
+      "lines": "9-16",
+      "role": "Primary period/full total agreement, preserved history, minimum-width actual source/package UI evidence.",
+      "content_sha256_at_classification": "e44e52174391e9004716fb3660df95465d777d64c2b5201e7f4627cf0274e11f"
+    },
+    "Sverification": {
+      "path": "docs/verification.md",
+      "lines": "20-21,51",
+      "role": "Real event/state/file/PID evidence, isolated fixtures, baseline before fault injection, and forced cleanup never proving natural exit. Supplementary current document.",
+      "content_sha256_at_classification": "875c4741953d59e6af1695e3245fb4b869902818712fa7823f51531a8a54e31b"
+    },
+    "Srequest": {
+      "kind": "delegated explicit preservation request",
+      "role": "Parent task messages on 2026-10-06 authorized only minimal recovery/backup preservation fixes, synthetic files and process-local clocks, no user-data/system-clock manipulation, source freeze and exact line-purpose coverage. This task does not claim private user fixtures were inspected."
+    },
+    "L21": {
+      "path": "docs/reviews/20261006-strict-pr-review/pr-21.md",
+      "role": "Evidence index for actual Store/heartbeat/import preservation defects; a review ledger is evidence, not a new primary product requirement.",
+      "content_sha256_at_classification": "5123932df751ba25a0613e8ff30f8aa9d6326eb4409403b2d19662c7d476f8b3"
+    },
+    "L23": {
+      "path": "docs/reviews/20261006-strict-pr-review/pr-23.md",
+      "role": "Evidence index for failed duration/input/Note preservation and original purpose map.",
+      "content_sha256_at_classification": "86f91103c11659d54cf1fa2b7ebf644f19e010ec7227f58d096cfa81baecdacf"
+    },
+    "L24": {
+      "path": "docs/reviews/20261006-strict-pr-review/pr-24.md",
+      "lines": "Q9-Q13",
+      "role": "Evidence index for duplicate editor keys, inert focus rejection, wrong QA receiver, captured-close target, and protected export snapshots.",
+      "content_sha256_at_classification": "b2f86718033f5ef39e753a0775b68a97aa1e7ab69f320fcd760af79dda3f33d6"
+    },
+    "L22": {
+      "path": "docs/reviews/20261006-strict-pr-review/pr-22.md",
+      "role": "Evidence index for bounded month presentation and unchanged independent all-time history totals.",
+      "content_sha256_at_classification": "858c133574ea9458d725997bea5dd9e9671bf349e97ae748dc9e06369a26587c"
+    },
+    "Lsafe": {
+      "path": "docs/reviews/20261006-strict-pr-review/final-safety-review.md",
+      "role": "Evidence index for independent failure/captured-close probes and their stated runtime limits.",
+      "content_sha256_at_classification": "8c5803c87e2b2b9de96a2d99e1fa58a44fc4425b08121970c4cfcdd1ae67f7a7"
+    }
+  },
+  "independent_acceptance_conditions": {
+    "PstoreMarkerRecovery": [
+      {
+        "verdict": "satisfied",
+        "condition": "Failed new heartbeat preserves prior Good bytes/readLastAlive and known recovery time; next successful heartbeat/restart succeeds.",
+        "sources": [
+          "Srecord",
+          "Sarchitecture",
+          "Srequest"
+        ],
+        "evidence": [
+          "apps/desktop/tests/store-save.test.ts:157",
+          "artifactreview/strict-20261006/heartbeat-atomic-probe/run-tmECIC/result.json",
+          "artifactreview/strict-20261006/heartbeat-atomic-probe/run-wQMCe6/result.json",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:59"
+        ]
+      },
+      {
+        "verdict": "satisfied",
+        "condition": "Shared rename retains four total attempts, retryable-code restriction, three 20 ms waits, main-save throwing semantics and heartbeat nonthrow semantics.",
+        "sources": [
+          "Sdependencies",
+          "Sarchitecture"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/store.ts:162",
+          "apps/desktop/tests/store-save.test.ts:72",
+          "apps/desktop/tests/store-save.test.ts:216"
+        ]
+      }
+    ],
+    "PbackupOwnedPreservation": [
+      {
+        "verdict": "satisfied",
+        "condition": "Only exact valid daily regular files are counted/pruned, newest thirty remain, and unrelated file bytes/directories survive.",
+        "sources": [
+          "Srecord",
+          "Srequest",
+          "Sarchitecture"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/store.ts:187",
+          "apps/desktop/tests/store-save.test.ts:246",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:59"
+        ]
+      },
+      {
+        "verdict": "satisfied",
+        "condition": "Timestamp collisions cannot replace the first pre-import or quarantined recovery copy; failed import leaves current DB/file unchanged, and a later distinct import remains possible.",
+        "sources": [
+          "Srecord",
+          "Srequest",
+          "Sarchitecture"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/store.ts:146",
+          "apps/desktop/src/infra/store.ts:223",
+          "apps/desktop/tests/store-save.test.ts:31",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:59"
+        ]
+      }
+    ],
+    "PmanagedExportProtection": [
+      {
+        "verdict": "satisfied",
+        "condition": "Export refuses live/pending/recovery/backup-namespace destinations before writing; Windows casing and existing-directory aliases do not bypass the guard.",
+        "sources": [
+          "Srecord",
+          "Srequest",
+          "Sarchitecture"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/dataio.ts:21",
+          "apps/desktop/tests/dataio.test.ts:80",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:6"
+        ]
+      }
+    ],
+    "PcontrolFailedDrafts": [
+      {
+        "verdict": "satisfied",
+        "condition": "Pending/failed reason or submitted external saves block flush/close, preserve entered values, survive old notifications, support retry/revert/cancel, and wait for both parallel submitted responsibilities.",
+        "sources": [
+          "Sdependencies",
+          "Srisk",
+          "Scompletion"
+        ],
+        "evidence": [
+          "apps/renderer/src/features/board/task-control-draft.ts:25",
+          "apps/renderer/src/lib/useEditorFlush.ts:24",
+          "apps/renderer/tests/task-control-draft.test.ts:13",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:4"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "Final frozen build visibly preserves failed waiting form/input/error across pointer close and explicit resolution in both source and package flows.",
+        "sources": [
+          "Sdependencies",
+          "Srisk",
+          "Scompletion"
+        ],
+        "evidence": [
+          "scripts/e2e-task-priority.mjs:523",
+          "docs/reviews/20261006-strict-pr-review/pr-23.md"
+        ]
+      }
+    ],
+    "PcontrolEditorFocus": [
+      {
+        "verdict": "satisfied",
+        "condition": "Requested target scroll/focus waits for connected non-inert ancestors and observer stops after success or unmount, while the original focus behavior remains.",
+        "sources": [
+          "Sdependencies",
+          "Srisk"
+        ],
+        "evidence": [
+          "apps/renderer/src/features/board/TaskControlEditor.tsx:26",
+          "scripts/e2e-task-priority.mjs:330",
+          "L24"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "Actual final source/package focus reaches the waiting target after ancestor locks release.",
+        "sources": [
+          "Sdependencies",
+          "Srisk"
+        ],
+        "evidence": [
+          "scripts/e2e-task-priority.mjs:343",
+          "artifactreview/strict-20261006/priority-focus-before.log",
+          "artifactreview/strict-20261006/priority-focus-after.log"
+        ]
+      }
+    ],
+    "PcontrolEditorIdentity": [
+      {
+        "verdict": "satisfied",
+        "condition": "Sibling editor keys differ but remain task-stable; dedicated UI checks still require one waiting editor, one context editor and persisted reason.",
+        "sources": [
+          "Sdependencies",
+          "Srisk"
+        ],
+        "evidence": [
+          "apps/renderer/src/features/board/TaskDetail.tsx:196",
+          "scripts/e2e-dependencies.mjs:293",
+          "L24"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "Final frozen source/package pointer flow and restart retain one functional editor each.",
+        "sources": [
+          "Sdependencies",
+          "Srisk"
+        ],
+        "evidence": [
+          "scripts/e2e-dependencies.mjs:293"
+        ]
+      }
+    ],
+    "PcapturedClose": [
+      {
+        "verdict": "satisfied",
+        "condition": "150 ms close addresses only captured original instances, respects native input preparation and shutdown guards, and cannot close a subsequently created/reopened instance.",
+        "sources": [
+          "Sclaude",
+          "Scompletion"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/windows.ts:281",
+          "apps/desktop/src/presentation/main.ts:100",
+          "apps/desktop/tests/windows-shutdown.test.ts:109",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:5"
+        ]
+      }
+    ],
+    "PnativeVisibility": [
+      {
+        "verdict": "satisfied",
+        "condition": "Main/Current load-first and paint-first both show once with placement/inactive behavior retained; destroyed/shutdown windows never show and review remains paint-dependent.",
+        "sources": [
+          "Scompletion",
+          "Srequest"
+        ],
+        "evidence": [
+          "apps/desktop/src/infra/windows.ts:225",
+          "apps/desktop/tests/windows-shutdown.test.ts:36",
+          "artifactreview/strict-20261006/final-boundary-regressions.log:5"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "The final frozen Main is physically Win32-visible on its owned PID before any CDP activation.",
+        "sources": [
+          "Scompletion",
+          "Sverification"
+        ],
+        "evidence": [
+          "scripts/e2e-task-priority.mjs:101",
+          "scripts/e2e-task-priority.mjs:144"
+        ]
+      }
+    ],
+    "PqaReceiverIdentityTransport": [
+      {
+        "verdict": "satisfied",
+        "condition": "Quit QA refuses non-loopback/wrong-port/credentialed/non-browser endpoints, mismatched browser PID/build target/session, stale process identity, and changed evaluation URL; preserve rejection and bounded timeout/value behavior.",
+        "sources": [
+          "Scompletion",
+          "Sverification",
+          "Srequest"
+        ],
+        "evidence": [
+          "scripts/e2e-quit.mjs:47",
+          "scripts/e2e-quit.mjs:88",
+          "scripts/e2e-quit.mjs:120",
+          "L24"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "Frozen source quit QA completes real transport and failure behavior under the actual protocol/runtime; protocol inspection is not a runtime pass and this source-only quit script does not claim package support.",
+        "sources": [
+          "Scompletion",
+          "Sverification"
+        ],
+        "evidence": [
+          "scripts/e2e-quit.mjs:88"
+        ]
+      }
+    ],
+    "PqaRealStateEvidence": [
+      {
+        "verdict": "satisfied",
+        "condition": "Changed QA asserts public result and saved/DOM state rather than reproducing business transitions: month/all-time totals, conflicts, failed input, explicit resolution and natural exit with failure-only cleanup.",
+        "sources": [
+          "Sactivity",
+          "Sdependencies",
+          "Srisk",
+          "Scompletion",
+          "Sclaude",
+          "Sverification"
+        ],
+        "evidence": [
+          "scripts/e2e-activity.mjs:378",
+          "scripts/e2e-dependencies.mjs:293",
+          "scripts/e2e-phase2-planning.mjs:512",
+          "scripts/e2e-task-priority.mjs:502",
+          "scripts/e2e.mjs:329"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "All added QA expectations pass against the final frozen source and package, with real pixels, no unexpected renderer errors and truthful process outcomes.",
+        "sources": [
+          "Scompletion",
+          "Sverification"
+        ],
+        "evidence": [
+          "docs/reviews/20261006-strict-pr-review/README.md"
+        ]
+      }
+    ],
+    "PqaFailureDiagnostics": [
+      {
+        "verdict": "satisfied",
+        "condition": "Observer is explicit source-only opt-in; failure capture uses launch/process/build identity and bounded calls before cleanup; wrappers forward original arguments, this, values and throws and never accept forced cleanup as successful natural exit.",
+        "sources": [
+          "Scompletion",
+          "Sverification",
+          "Srequest"
+        ],
+        "evidence": [
+          "scripts/e2e-task-priority.mjs:12",
+          "scripts/e2e-task-priority.mjs:153",
+          "scripts/e2e-task-priority.mjs:198",
+          "scripts/quit-observer.mjs:26"
+        ]
+      },
+      {
+        "verdict": "unverified",
+        "condition": "The intermittent native quit hang is causally identified; before-cleanup native-timeout capture and keep-page branch are exercised under the final frozen script.",
+        "sources": [
+          "Scompletion",
+          "Sverification"
+        ],
+        "evidence": [
+          "artifactreview/strict-20261006/priority-quit-diagnosis.json"
+        ]
+      }
+    ]
+  },
+  "deleted_guarantee_checks": [
+    {
+      "units": [
+        1,
+        2,
+        3
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Existing live-file export rejection remains in the canonical managed namespace guard; Windows casing remains case-insensitive and aliases/new backup destinations receive stronger protection.",
+      "evidence": [
+        "apps/desktop/src/infra/dataio.ts:21",
+        "apps/desktop/tests/dataio.test.ts:99"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        15
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Failed-load original remains untouched and startup still aborts; exclusive quarantine copy additionally prevents an earlier recovery original from being overwritten.",
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:146",
+        "apps/desktop/tests/store-save.test.ts:56"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        22,
+        24
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Rename loop and backup-after-success order move into helper/call wiring; original main save retry and rollback cases remain, without increasing retry bounds.",
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:155",
+        "apps/desktop/tests/store-save.test.ts:72"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        25
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Keep-thirty sorted retention remains; only unsupported prefix-owned entries leave the deletion set. No retention test is removed.",
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:187",
+        "apps/desktop/tests/store-save.test.ts:246"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        32
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Heartbeat format/read API/caught failure semantics remain; direct overwrite is replaced by temporary commit and prior-byte/restart assertions.",
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:201",
+        "apps/desktop/tests/store-save.test.ts:157"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        36
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Pre-import snapshot still precedes DB replacement; wx makes collision fail before replacing either old recovery copy or current DB.",
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:223",
+        "apps/desktop/tests/store-save.test.ts:31"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Original placement/focused-versus-inactive show body and guards move into once-only callback; review remains ready-to-show only.",
+      "evidence": [
+        "apps/desktop/src/infra/windows.ts:225",
+        "apps/desktop/tests/windows-shutdown.test.ts:36"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        66,
+        68,
+        318
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "WindowPort still provides 150 ms delayed native close and input preparation; native instance capture replaces late name lookup and helper import/wiring is explicit.",
+      "evidence": [
+        "apps/desktop/src/presentation/main.ts:23",
+        "apps/desktop/src/presentation/main.ts:100",
+        "apps/desktop/tests/windows-shutdown.test.ts:109"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        320,
+        323,
+        325
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Only shared mock internals change to model load events/destruction. Existing shutdown cases remain; no test or explanatory comment is deleted.",
+      "evidence": [
+        "apps/desktop/tests/windows-shutdown.test.ts:9",
+        "apps/desktop/tests/windows-shutdown.test.ts:102"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        465,
+        492
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Reason string, user edit and blur save remain through the draft controller; pending/failure/old-notification behavior now has independent regressions.",
+      "evidence": [
+        "apps/renderer/src/features/board/TaskControlEditor.tsx:13",
+        "apps/renderer/tests/task-control-draft.test.ts:13"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        475,
+        476,
+        477
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Original scroll and preventScroll focus operations remain inside a guarded retry; cleanup prevents observer retention after unmount/success.",
+      "evidence": [
+        "apps/renderer/src/features/board/TaskControlEditor.tsx:26",
+        "scripts/e2e-task-priority.mjs:343"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        494,
+        495,
+        498,
+        499,
+        500,
+        501,
+        502,
+        503,
+        504
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "All who/what/since/last-contact/follow-up values, null handling, required fields, save success and explicit cancellation remain. Added pending locks/error/flush preserve submitted failures rather than discarding them.",
+      "evidence": [
+        "apps/renderer/src/features/board/TaskControlEditor.tsx:72",
+        "apps/renderer/tests/task-control-draft.test.ts:72"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        513,
+        515
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Task-specific key stability remains; component-specific prefixes remove sibling collision without changing props or recreating repeated same-task selection.",
+      "evidence": [
+        "apps/renderer/src/features/board/TaskDetail.tsx:196",
+        "scripts/e2e-dependencies.mjs:293"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        788,
+        812,
+        813,
+        814,
+        824,
+        826,
+        828,
+        829,
+        833,
+        836,
+        837,
+        838
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "fileURLToPath import, socket-close rejection, exceptionDetails/error propagation, 5 s evaluation timeout and returned by-value result remain in verified browser/session send plus evaluate; unverified raw page receiver is intentionally replaced.",
+      "evidence": [
+        "scripts/e2e-quit.mjs:88",
+        "scripts/e2e-quit.mjs:99",
+        "scripts/e2e-quit.mjs:109",
+        "scripts/e2e-quit.mjs:132"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        861,
+        870,
+        872,
+        874,
+        876,
+        878,
+        880,
+        881,
+        896,
+        898
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "spawn/default source launch, Runtime/Log enable, normal 10 s command timeout and 30 s screenshot timeout remain; optional session/browser timeout/observer entry support isolated diagnostics only.",
+      "evidence": [
+        "scripts/e2e-task-priority.mjs:52",
+        "scripts/e2e-task-priority.mjs:116"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        961,
+        968
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "Default page-close timing remains when keep-page is false and all original quit observation fields remain; added fields distinguish timeout, late exit, cleanup and identity.",
+      "evidence": [
+        "scripts/e2e-task-priority.mjs:230",
+        "scripts/e2e-task-priority.mjs:247"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        971
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "The identical waiting-editor focus wait is reintroduced in try/catch before stronger successful focus/ancestor assertions; failed diagnostic capture does not make the wait pass.",
+      "evidence": [
+        "scripts/e2e-task-priority.mjs:330",
+        "scripts/e2e-task-priority.mjs:343"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        1045,
+        1047,
+        1048
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "HUD startup remains and Main is added as public quit receiver. Owned child cleanup remains on failure; kill-and-sleep no longer counts as successful shutdown.",
+      "evidence": [
+        "scripts/e2e.mjs:166",
+        "scripts/e2e.mjs:329"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    },
+    {
+      "units": [
+        1063,
+        1065
+      ],
+      "preserved_or_intentionally_replaced_guarantee": "All original Electron imports/window fields remain; error-box and safe per-window snapshot traces only add observations. Original business return/throw behavior is forwarded.",
+      "evidence": [
+        "scripts/quit-observer.mjs:1",
+        "scripts/quit-observer.mjs:12",
+        "scripts/quit-observer.mjs:73"
+      ],
+      "verdict": "satisfied at source/regression-assertion boundary; final actual runtime remains separately unverified"
+    }
+  ],
+  "evidence_read": [
+    "artifactreview/strict-20261006/final-boundary-regressions.log:4",
+    "artifactreview/strict-20261006/final-boundary-regressions.log:59",
+    "artifactreview/strict-20261006/test.log:473",
+    "artifactreview/strict-20261006/test.log:1607",
+    "artifactreview/strict-20261006/test.log:1664",
+    "artifactreview/strict-20261006/test.log:1895",
+    "artifactreview/strict-20261006/gates.json"
+  ],
+  "limits": [
+    "Exactly-one-purpose accounting proves diff coverage, not semantic correctness or universal absence of bugs.",
+    "Satisfied conditions are limited to the source and regression assertions/evidence stated; no UI/build/test commands were run for this classification task.",
+    "The read parent gate logs show Store22/DataIO17/Windows24/draft7 and full615 tests; the fingerprint fixes source units independently of those logs.",
+    "Final frozen source/package UI and native visibility/quit outcomes must be entered by the parent after actual runs; earlier successful runs are not reused as frozen-snapshot proof.",
+    "The intermittent quit hang remains causally unresolved; optional keep-page and a live native-timeout capture are unverified.",
+    "Heartbeat exception preservation is not a physical power-loss/disk-flush durability guarantee.",
+    "Unrelated backup entries are synthetic preservation preconditions, not observed user data; exact valid generated-name regular files remain the managed retention family.",
+    "Current documentary-source hashes pin what was read, including parent-owned pending documentation; those files do not add units to this fixed product/QA comparison."
+  ]
+}

@@ -3,11 +3,13 @@
 このリポジトリの現在地。**生きた文書**なので、状態が変わったらこのファイルを更新する。
 何を作るかは [product-spec.md](product-spec.md)、なぜそう作ったかは [decisions.md](decisions.md)。
 
-最終更新: 2026-10-05
+最終更新: 2026-10-06
 
 ---
 
 ## 現在地
+
+2026-10-06の全オープンPR #21〜#24 の厳密レビューは [専用の台帳](reviews/20261006-strict-pr-review/README.md) に集約する。保存・復旧・複数窓競合・入力保持の修正は最後の `codex/phase-2-completion` へ追加し、途中の #21〜#23 を単体で修正済みとは扱わない。製品測定点 `125026f7` は型・lint・61ファイル617テスト・packに成功し、ソース実アプリ13本も成功した。QA `130016c8` で補強後のソース基本・Noteと配布12本が成功した。先行ソース13本のうち変更のない11本は内容一致を確認した。Noteの一度の戻りtimeout原因は未確定で記録を保持する。下記の480テスト等は元の完成story提出時の歴史結果であり、今回の結果とは分ける。main・日常利用EXEは変更していない。
 
 **Phase 1（MVP）に加え、道標の既存機能を統合。日常使用中。** 再編と第 1 波（PR #2）を `main` に統合し、道標も新構成へ移した。
 
@@ -21,7 +23,7 @@
 
 ```
 Phase 1  ████████████████████  完了（1-26 を除く）
-Phase 2  対象機能を実装・レビュー中（下表）。全体は未完了
+Phase 2  レビュー用ブランチで全項目を実装・検証済み。未統合・本番未反映（下表）
 Phase 3  ░░░░░░░░░░░░░░░░░░░░  未着手
 Phase 4  ░░░░░░░░░░░░░░░░░░░░  未着手
 Phase 5  ░░░░░░░░░░░░░░░░░░░░  未着手
@@ -74,12 +76,14 @@ Phase 7  ░░░░░░░░░░░░░░░░░░░░  未着手
 | Recommended Order | 実装 | 同story。先行未完でも開始可能 |
 | Estimated Effort / Slack | 実装 | [見積・停滞・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)、`packages/core/src/task-priority.ts`。残作業と安全余裕の欠損は不明 |
 | Aging / Warning Escalation / 通常画面の警告 | 実装・実UI検証済み | 同story。確かなTodoの起点と実作業を使い、Welcome・Board・Today・今週で現在の警告を確認する |
-| Project Priority / Weekly Time Budget / Fixed Work | 未実装・今回の対象外 | 仕様の後続項目 |
-| Task Notes / Problems の後続体系 | 一部実装・今回の対象外 | 既存のタスクnotes・ノート・道標の問題を保持。Phase 2全体の体系としては未完了 |
+| Project Priority / Weekly Time Budget / Fixed Work | 実装・実UI検証済み | [完成story](stories/20261006_story_phase2-completion.md)。旧未設定・生活時間の欠損・外部予定と実績の区別を保持 |
+| Task Notes / Problems / Decisions / Next Context | 実装・実UI検証済み | 同story。既存のタスクnotes・linked Noteを保持し、必要な種類だけ編集する。Start/Current Workで再開文脈を参照する |
 
 3storyの結合状態では、警告の件数と最上位理由を要約し、展開すれば全警告を操作できる。Today・今週は初期要約とし、過去・未来週へ現在の行動警告を混ぜない。Welcome・Boardも作業中または警告が4件以上なら初期折り畳み。本人の開閉と操作中の展開を保持し、保存エラーは折り畳んでも表示する。警告タイトルは一般詳細、整理操作は既存の待ち編集欄へ直接進む。
 
-Cの結合版は型検査・lint・43ファイル397テスト・Storybook build・pack（本体buildを含む）を通過した。最終UXのソース版・配布版でpriority56・activity50・dependencies60項目が成功し、配布版の共通mutex検証は11本、変更影響のソース版5本も通過。[見積・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)へ実際のQA結果・画像・保存・再起動証拠を記録した。ソース版道標の終了失敗と再測定成功、配布版を含む間欠的QUIT timeoutの未確定事項は同storyで追跡する。個別storyの過去の成功と今回の結合検証を区別する。本番未適用・Phase 2全体未完了の状態は変わらない。
+2026-10-05の3story結合版は型検査・lint・43ファイル397テスト・Storybook build・pack（本体buildを含む）を通過した。当時の最終UXのソース版・配布版でpriority56・activity50・dependencies60項目が成功し、配布版の共通mutex検証は11本、変更影響のソース版5本も通過。[見積・警告story](stories/20261005_story_effort-slack-aging-and-risk.md)へ当時のQA結果・画像・保存・再起動証拠を記録した。これは下記の追加分の検証とは区別する。
+
+2026-10-06の完成storyは残る4項目と、窓をまたぐ入力保存・終了中の再開防止を追加した。型検査・lint・53ファイル480テスト・Storybook build・pack、ソース版と配布版の新機能各75項目・既存機能の共通各11本が成功。終了は観測器あり9項目・なし5項目、PID再利用の判定は14テストを通過し、配布物131ファイルのバイト一致を確認した。[完成story](stories/20261006_story_phase2-completion.md)と[検証記録](qa/20261006_phase2-completion.json)に測定対象と未確認事項を記録した。Windowsのファイル選択ダイアログの実操作はアクセス拒否により未確認。過去の間欠的QUIT timeoutのnative根因も未確定であり、今回再現・修正した終了準備の競合と区別する。未統合・本番未反映。
 
 ## 仕様の Phase 1 に無いが入れたもの
 
@@ -103,7 +107,7 @@ Cの結合版は型検査・lint・43ファイル397テスト・Storybook build�
 
 1. **毎日使う。** 道標も含め、目標からタスク実行・記録までを使って確かめる
 2. 使って出た問題を下の「実使用で出た課題」に書き溜める
-3. 対象Phase 2のPRをレビューし、反映後の実使用で判断根拠と実績表示を確かめる。後続項目は別に着手順を決める
+3. Phase 2のPR統合・本番反映の範囲を確定し、反映後の実使用で判断根拠・資源配分・再開文脈を確かめる。Phase 3以降は別に着手順を決める
 
 ### 実使用で出た課題
 

@@ -1,6 +1,6 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 54 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（54 コマンド）', () => {
+describe('ユースケースの網羅（58 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -25,6 +25,8 @@ describe('ユースケースの網羅（54 コマンド）', () => {
     db.goalMap.issues = [{ id: 'i1', text: '難点', kind: 'problem', nodeId: null, resolved: false, createdAt: 0 }]
     db.presenceCandidates = [{ id: 'candidate', sessionId: 'finished', startedAt: 0, endedAt: 10_000, status: 'pending', createdAt: 10_000, reviewedAt: null }]
     const ctx = fakeCtx(db)
+    db.fixedWork = [{ id: 'fixed1', taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議', cancelled: false, createdAt: 0, updatedAt: 0 }]
+    db.weeklyBudgetDefaults = { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] }
     // 復旧系・レビュー系が「対象あり」の経路を通るよう、実行時状態を仕込む
     const handlers = createHandlers(ctx)
     await dispatch(handlers, 'session:start', { taskId: 't1', minutes: 50 })
@@ -34,6 +36,10 @@ describe('ユースケースの網羅（54 コマンド）', () => {
     ctx.runtime.recovery = { sessionId, lastKnownAt: ctx.now() }
 
     const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
+      'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
+      'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },
+      'fixedWork:update': { id: 'fixed1', patch: { cancelled: true } },
       'presence:resolve': { id: 'candidate', decision: 'dismiss' },
       'agent:config': {},
       'agent:context': {},

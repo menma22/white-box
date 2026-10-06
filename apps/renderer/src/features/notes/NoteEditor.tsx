@@ -4,6 +4,7 @@ import type { Project, Task } from '@white-box/core/types'
 import { Button } from '@/components/ui'
 import { invoke } from '@/lib/bridge'
 import { NoteAutosave } from './note-autosave'
+import { useDraftParticipant } from '@/lib/useEditorFlush'
 
 export interface NoteEditorHandle { flush(): Promise<boolean> }
 
@@ -15,10 +16,10 @@ export function localDateTime(timestamp: number | null): string {
 }
 
 export const NoteEditor = forwardRef<NoteEditorHandle, {
-  note: Note; projects: Project[]; tasks: Task[]; now: number; onArchive: (archived: boolean) => void
-}>(function NoteEditor({ note, projects, tasks, now, onArchive }, ref) {
+  note: Note; projects: Project[]; tasks: Task[]; now: number; onArchive: (archived: boolean) => void; compact?: boolean
+}>(function NoteEditor({ note, projects, tasks, now, onArchive, compact = false }, ref) {
   const controller = useRef<NoteAutosave | null>(null)
-  if (!controller.current) controller.current = new NoteAutosave(note, (patch) => invoke('note:update', { id: note.id, patch }))
+  if (!controller.current) controller.current = new NoteAutosave(note, (patch) => invoke('note:update', { id: note.id, patch, expected: controller.current!.expected(patch) }))
   const autosave = controller.current
   const [state, setState] = useState(() => autosave.snapshot())
   useImperativeHandle(ref, () => ({ flush: () => autosave.flush() }), [autosave])
@@ -27,6 +28,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, {
     return () => { unsubscribe(); void autosave.flush() }
   }, [autosave])
   useEffect(() => { autosave.receive(note) }, [autosave, note])
+  useDraftParticipant(() => autosave.flush())
   const draft = state.draft
   const linkedProject = projects.find((project) => project.id === draft.projectId)
   const linkedTask = tasks.find((task) => task.id === draft.taskId)
@@ -40,12 +42,16 @@ export const NoteEditor = forwardRef<NoteEditorHandle, {
     <div className="note-editor-toolbar">
       <label className="note-pin"><input type="checkbox" checked={draft.pinned} onChange={(event) => autosave.update({ pinned: event.target.checked })} />気に留めておく</label>
       <span role="status" className={`note-save-status note-save-${state.status}`}>{savingText}</span>
-      <Button size="sm" onClick={() => onArchive(!note.archived)}>{note.archived ? '一覧に戻す' : 'アーカイブ'}</Button>
+      <Button size="sm" onClick={() => void autosave.flush().then((saved) => { if (saved) onArchive(!note.archived) })}>{note.archived ? '一覧に戻す' : 'アーカイブ'}</Button>
     </div>
-    {state.error && <div className="note-error" role="alert"><span>保存できなかった：{state.error}。入力はこの画面に残っている。</span><Button size="sm" onClick={() => void autosave.flush()}>もう一度保存</Button></div>}
+    {state.error && <div className="note-error" role="alert"><span>保存できなかった：{state.error}。入力はこの画面に残っている。</span>
+      {Object.entries(state.conflicts).map(([key, value]) => <div key={key}><strong>別の画面で保存された{({ title: 'タイトル', body: '本文', projectId: 'プロジェクト', taskId: 'タスク', pinned: '気に留めておく設定', remindAt: 'リマインド日時' } as Record<string, string>)[key]}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{key === 'projectId' ? projects.find((project) => project.id === value)?.name ?? '関連付けなし' : key === 'taskId' ? tasks.find((task) => task.id === value)?.title ?? '関連付けなし' : key === 'remindAt' ? value === null ? '未設定' : new Date(Number(value)).toLocaleString('ja-JP') : typeof value === 'boolean' ? value ? '有効' : '無効' : value || '空欄'}</p></div>)}
+      <Button size="sm" onClick={() => void autosave.retry()}>{Object.keys(state.conflicts).length ? '自分の入力を保存' : 'もう一度保存'}</Button>
+      {Object.keys(state.conflicts).length > 0 && <Button size="sm" onClick={() => void autosave.acceptLatest()}>最新の内容を使う</Button>}
+    </div>}
     {note.archived && <p className="note-archive-label">アーカイブ中。リマインドは止まっている。</p>}
     <input className="note-title-input" aria-label="ノートのタイトル" placeholder="タイトル" value={draft.title} autoFocus onChange={(event) => autosave.update({ title: event.target.value })} />
-    <div className="note-links">
+    {!compact && <div className="note-links">
       <label>プロジェクト<select className="input" aria-label="ノートのプロジェクト" value={draft.projectId ?? ''} onChange={(event) => autosave.update({ projectId: event.target.value || null, taskId: null })}>
         <option value="">関連付けなし</option>
         {draft.projectId && !linkedProject && <option value={draft.projectId}>（削除されたプロジェクト）</option>}
@@ -59,7 +65,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, {
         {draft.taskId && !linkedTask && <option value={draft.taskId}>（削除されたタスク）</option>}
         {options.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}
       </select></label>
-    </div>
+    </div>}
     <textarea className="note-body-input" aria-label="ノートの本文" placeholder="浮かんだこと、次に戻る場所を書いておく。" value={draft.body} onChange={(event) => autosave.update({ body: event.target.value })} />
     <div className="note-reminder-control"><label>思い出す日時<input className="input" type="datetime-local" aria-label="リマインドの日時" value={localDateTime(draft.remindAt)} onChange={(event) => {
       if (!event.target.value) autosave.update({ remindAt: null })

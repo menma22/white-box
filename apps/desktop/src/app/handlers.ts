@@ -4,18 +4,20 @@
  */
 import type { ArgsOf, CommandName, ResultOf } from '@white-box/contracts'
 import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
+import type { WindowKind } from '@white-box/core/types'
 import { assertTaskExecutable } from '@white-box/core/task-control'
-import { restoreOpenSession } from './lifecycle.js'
+import { restoreCurrentWorkPause, restoreOpenSession } from './lifecycle.js'
 import * as ops from '../domain/session-ops.js'
 import * as taskOps from '../domain/task-ops.js'
 import * as goalOps from '../domain/goal-ops.js'
 import type { Ctx } from './ports.js'
 import { createPresenceHandlers } from './presence-handlers.js'
-import { buildState, liveSession, replaceSession, taskTitle } from './state.js'
+import { buildState, liveSession, taskTitle } from './state.js'
 import { checkExpire } from './lifecycle.js'
 import { commitChanges } from './commit.js'
 import { createAgentHandlers } from './agent-handlers.js'
 import { createNoteHandlers } from './note-handlers.js'
+import { createPlanningHandlers } from './planning-handlers.js'
 
 export type Handlers = {
   [N in CommandName]: (args: ArgsOf<N>) => Promise<ResultOf<N>> | ResultOf<N>
@@ -32,16 +34,17 @@ export function createHandlers(ctx: Ctx): Handlers {
     ...createPresenceHandlers(ctx),
     ...createAgentHandlers(ctx),
     ...createNoteHandlers(ctx),
+    ...createPlanningHandlers(ctx),
     'state:get': () => buildState(db(), ctx.runtime, ctx.now()),
 
     // ── Project
     'project:create': (a) => {
-      const r = taskOps.createProject(db(), { name: a.name })
+      const r = taskOps.createProject(db(), { name: a.name }, ctx.now())
       commitChanges(ctx, { projects: r.projects })
       return r.project
     },
     'project:update': (a) => {
-      commitChanges(ctx, { projects: taskOps.updateProject(db(), a.id, a.patch) })
+      commitChanges(ctx, { projects: taskOps.updateProject(db(), a.id, a.patch, ctx.now()) })
       return null
     },
     'project:delete': (a) => {
@@ -60,6 +63,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return r.task
     },
     'task:update': (a) => {
+      taskOps.assertTaskContextUnchanged(db(), a.id, a.expectedContext)
       commitChanges(ctx, { tasks: taskOps.updateTask(db(), a.id, a.patch, ctx.now()) })
       return null
     },
@@ -85,23 +89,19 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'goal:merge': (a) => {
       const r = goalOps.mergeGoals(db(), a)
-      db().goalMap = r.goalMap
-      ctx.publish()
+      commitChanges(ctx, { goalMap: r.goalMap })
       return r.goal
     },
     'goal:hide': (a) => {
-      db().goalMap = goalOps.hideGoal(db(), a.id, a.reason ?? '')
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.hideGoal(db(), a.id, a.reason ?? '') })
       return null
     },
     'goal:restore': (a) => {
-      db().goalMap = goalOps.restoreGoal(db(), a.id)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.restoreGoal(db(), a.id) })
       return null
     },
     'goal:ui': (a) => {
-      db().goalMap = goalOps.updateGoalUi(db(), a)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.updateGoalUi(db(), a) })
       return null
     },
     'goal:import': (a) => {
@@ -111,18 +111,15 @@ export function createHandlers(ctx: Ctx): Handlers {
     },
     'issue:create': (a) => {
       const r = goalOps.createIssue(db(), a)
-      db().goalMap = r.goalMap
-      ctx.publish()
+      commitChanges(ctx, { goalMap: r.goalMap })
       return r.issue
     },
     'issue:update': (a) => {
-      db().goalMap = goalOps.updateIssue(db(), a.id, a.patch)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.updateIssue(db(), a.id, a.patch) })
       return null
     },
     'issue:delete': (a) => {
-      db().goalMap = goalOps.deleteIssue(db(), a.id)
-      ctx.publish()
+      commitChanges(ctx, { goalMap: goalOps.deleteIssue(db(), a.id) })
       return null
     },
 
@@ -168,8 +165,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       const next = ops.pauseSession(s, ctx.now(), a.reason ?? 'manual')
       // スリープは lock-screen と suspend が続くため、停止を追加しない場合は窓も出し直さない。
       if (next === s) return null
-      replaceSession(db(), next)
-      ctx.publish()
+      commitChanges(ctx, { sessions: db().sessions.map((item) => item.id === s.id ? next : item) })
       ctx.windows.open('hud', false)
       return null
     },
@@ -210,8 +206,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       const minutes = a.minutes || 5
       const next = ops.startBreak(s, minutes, ctx.now())
       if (next === s) return null
-      replaceSession(db(), next)
-      ctx.publish()
+      commitChanges(ctx, { sessions: db().sessions.map((item) => item.id === s.id ? next : item) })
       ctx.windows.open('hud', false)
       ctx.windows.closeLater('expire')
       return null
@@ -277,35 +272,48 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'session:skipReview': () => {
+      const pendingReview = ctx.runtime.pendingReview
       ctx.runtime.pendingReview = null
-      ctx.publish()
+      try { commitChanges(ctx, {}) } catch (cause) { ctx.runtime.pendingReview = pendingReview; throw cause }
       ctx.windows.closeLater('review')
       return null
     },
     'session:update': (a) => {
       const s = db().sessions.find((x) => x.id === a.id)
       if (!s) return null
+      const now = ctx.now()
       if (s.endedAt === null && a.segmentTaskId) throw new Error('現在のタスク変更にはセッションの切替を使う')
+      if (s.endedAt === null && a.patch.endedAt !== undefined) throw new Error('進行中のセッションを終了するには終了操作を使う')
+      if (s.endedAt === null && a.patch.startedAt !== undefined && a.patch.startedAt > now) throw new Error('進行中のセッションの開始時刻を未来には変更できません')
       // 先に db を書き換えてから検証しない（申告が拒否されたときに記録が半分だけ変わる）
-      const next = ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, ctx.now())
+      const next = ops.editSession(s, { ...a.patch, segmentTaskId: a.segmentTaskId }, now)
       commitChanges(ctx, { sessions: db().sessions.map((session) => session.id === s.id ? next : session) })
       return null
     },
     'session:delete': (a) => {
-      db().sessions = db().sessions.filter((s) => s.id !== a.id)
-      ctx.publish()
+      commitChanges(ctx, { sessions: db().sessions.filter((s) => s.id !== a.id) })
       return null
     },
 
     // ── 復旧
     'recovery:close': () => {
       const s = db().sessions.find((x) => x.id === ctx.runtime.recovery?.sessionId)
+      const recovery = ctx.runtime.recovery
+      const pendingReview = ctx.runtime.pendingReview
+      let sessions = db().sessions
       if (s && ctx.runtime.recovery) {
-        replaceSession(db(), ops.closeAtLastKnown(s, ctx.runtime.recovery.lastKnownAt))
+        const ended = ops.closeAtLastKnown(s, ctx.runtime.recovery.lastKnownAt)
+        sessions = sessions.map((item) => item.id === s.id ? ended : item)
         ctx.runtime.pendingReview = { sessionId: s.id, thenStart: false }
       }
       ctx.runtime.recovery = null
-      ctx.publish()
+      try {
+        commitChanges(ctx, { sessions })
+      } catch (cause) {
+        ctx.runtime.recovery = recovery
+        ctx.runtime.pendingReview = pendingReview
+        throw cause
+      }
       ctx.windows.open('review')
       return null
     },
@@ -365,13 +373,11 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
     'day:note': (a) => {
-      db().dayNotes[a.key] = a.text
-      ctx.publish()
+      commitChanges(ctx, { dayNotes: { ...db().dayNotes, [a.key]: a.text } })
       return null
     },
     'welcome:dismiss': () => {
-      db().settings.lastWelcomeDate = dayKey(ctx.now(), db().settings.dayStartHour)
-      ctx.publish()
+      commitChanges(ctx, { settings: { ...db().settings, lastWelcomeDate: dayKey(ctx.now(), db().settings.dayStartHour) } })
       return null
     },
 
@@ -382,8 +388,8 @@ export function createHandlers(ctx: Ctx): Handlers {
         ctx.ticker.stop()
         ctx.runtime.recovery = null
         ctx.runtime.pendingReview = null
-        restoreOpenSession(ctx)
-        ctx.publish()
+        restoreOpenSession(ctx, undefined, { useHeartbeat: false })
+        if (!restoreCurrentWorkPause(ctx)) ctx.publish()
       }
       return p
     },
@@ -396,6 +402,30 @@ export function createHandlers(ctx: Ctx): Handlers {
       ctx.system.quit()
       return null
     },
+  }
+  const quitSaveCommands = new Set<CommandName>(['state:get', 'app:quit', 'task:update', 'project:update', 'note:update', 'fixedWork:create', 'fixedWork:update'])
+  function guard<N extends CommandName>(name: N, reason?: 'end' | 'switch' | 'import') {
+    const original = handlers[name] as (args: ArgsOf<N>) => ResultOf<N> | Promise<ResultOf<N>>
+    const assertAvailable = () => {
+      if (ctx.runtime.quitting && name !== 'state:get' || ctx.runtime.preparingQuit && !quitSaveCommands.has(name)) throw new Error('アプリを終了中です')
+    }
+    handlers[name] = ((args: ArgsOf<N>) => {
+      assertAvailable()
+      if (!reason || !ctx.windows.prepareEditors) return original(args)
+      return ctx.windows.prepareEditors(reason, reason === 'import' ? undefined : ['current']).then(async (release) => {
+        let closing: WindowKind[] = []
+        try {
+          assertAvailable()
+          const endsCurrent = name === 'session:end' && Boolean(currentSession())
+          const result = await original(args)
+          if (endsCurrent) closing = ['current']
+          return result
+        } finally { release(closing) }
+      })
+    }) as Handlers[N]
+  }
+  for (const name of Object.keys(handlers) as CommandName[]) {
+    guard(name, name === 'session:end' ? 'end' : name === 'session:switchTask' ? 'switch' : name === 'data:import' ? 'import' : undefined)
   }
   return handlers
 }

@@ -7,6 +7,7 @@ import * as ops from '../domain/session-ops.js'
 import type { Ctx } from './ports.js'
 import { buildBreakTimer, liveSession, replaceSession } from './state.js'
 import { commitChanges } from './commit.js'
+import type { Session } from '@white-box/core/types'
 
 /** これより長く記録が途切れていたら、PC が落ちていたとみなす。 */
 const CRASH_GAP_MS = 90_000
@@ -22,30 +23,26 @@ const CRASH_GAP_MS = 90_000
  * それ以外は、最後の生存記録と最新の操作記録のうち新しい時刻からの空白が
  * crashGapMs より長ければ「PC が落ちていた」とみなし、
  * その時刻で一時停止して人間に聞く（recovery）。短ければそのまま計測を続ける。
+ * 取り込みでは useHeartbeat=false とし、置換前データの生存記録を使わない。
  */
-export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS): void {
+export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS, options: { useHeartbeat?: boolean } = {}): void {
+  if (ctx.runtime.quitting || ctx.runtime.preparingQuit) return
   const s = liveSession(ctx.store.data)
   if (!s) return
+  const lastAliveAt = options.useHeartbeat === false ? null : ctx.store.readLastAlive()
   if (taskExecutionProblem(ctx.store.data, activeTaskId(s)) && !isPaused(s)) {
     const recordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
-    const lastKnownAt = Math.min(ctx.now(), Math.max(ctx.store.readLastAlive() ?? recordedAt, recordedAt))
+    const lastKnownAt = Math.min(ctx.now(), Math.max(lastAliveAt ?? recordedAt, recordedAt))
     const next = ops.pauseSession(s, lastKnownAt, 'manual')
     const sessions = ctx.store.data.sessions.map((item) => item.id === s.id ? next : item)
     ctx.runtime.recovery = { sessionId: s.id, lastKnownAt }
-    try {
-      commitChanges(ctx, { sessions })
-    } catch (cause) {
-      ctx.store.data.sessions = sessions
-      ctx.ticker.stop()
-      ctx.publish(false)
-      throw cause
-    }
+    commitSafetyStop(ctx, sessions)
     ctx.ticker.start()
     return
   }
   if (s.pauses.some((p) => p.endedAt === null && p.reason === 'task-management')) {
     const recordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
-    const lastKnownAt = Math.min(ctx.now(), Math.max(ctx.store.readLastAlive() ?? recordedAt, recordedAt))
+    const lastKnownAt = Math.min(ctx.now(), Math.max(lastAliveAt ?? recordedAt, recordedAt))
     const closed = ops.finishTaskManagement(s, lastKnownAt)
     const restored = ops.pauseSession(closed, lastKnownAt, 'suspend')
     replaceSession(ctx.store.data, restored)
@@ -55,7 +52,7 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS): void {
     return
   }
   const lastRecordedAt = s.events.reduce((latest, event) => Math.max(latest, event.at), s.startedAt)
-  const lastKnownAt = Math.min(ctx.now(), Math.max(ctx.store.readLastAlive() ?? lastRecordedAt, lastRecordedAt))
+  const lastKnownAt = Math.min(ctx.now(), Math.max(lastAliveAt ?? lastRecordedAt, lastRecordedAt))
   const gap = ctx.now() - lastKnownAt
   if (buildBreakTimer(ctx.store.data) && !(s.mode === 'pomodoro' && s.pomodoroAutoResume && gap > crashGapMs)) {
     ctx.ticker.start()
@@ -70,12 +67,33 @@ export function restoreOpenSession(ctx: Ctx, crashGapMs = CRASH_GAP_MS): void {
   ctx.ticker.start()
 }
 
+export function restoreCurrentWorkPause(ctx: Ctx): boolean {
+  const session = liveSession(ctx.store.data)
+  if (!ctx.runtime.currentWorkOpen || !session) return false
+  const next = ops.pauseSession(session, ctx.now(), 'task-management')
+  if (next === session) return false
+  commitSafetyStop(ctx, ctx.store.data.sessions.map((item) => item.id === session.id ? next : item))
+  return true
+}
+
+function commitSafetyStop(ctx: Ctx, sessions: Session[]): void {
+  try {
+    commitChanges(ctx, { sessions })
+  } catch (cause) {
+    ctx.store.data.sessions = sessions
+    ctx.ticker.stop()
+    ctx.publish(false)
+    throw cause
+  }
+}
+
 /**
  * タイマー満了では作業を止めて確認窓を出し、ポモドーロ満了では休憩に切り替える。
  * 休憩満了は、自動再開が有効なポモドーロで現在タスクが実行可能かつ整理・復旧・他の停止がなければ次周期へ進む。
  * それ以外は停止を維持して確認窓を出す。ストップウォッチには作業満了がない。
  */
 export function checkExpire(ctx: Ctx): void {
+  if (ctx.runtime.quitting || ctx.runtime.preparingQuit) return
   let s = liveSession(ctx.store.data)
   if (!s) return
   const now = ctx.now()
@@ -94,6 +112,18 @@ export function checkExpire(ctx: Ctx): void {
     if (!automatic) ctx.windows.open('expire')
     return
   }
+}
+
+export function prepareQuit(ctx: Ctx): void {
+  ctx.runtime.quitting = true
+  try {
+    ctx.store.markAlive({ requireSuccess: true })
+    ctx.store.save()
+  } catch (cause) {
+    ctx.runtime.quitting = false
+    throw cause
+  }
+  ctx.ticker.stop()
 }
 
 export function setCurrentWorkOpen(ctx: Ctx, open: boolean): void {

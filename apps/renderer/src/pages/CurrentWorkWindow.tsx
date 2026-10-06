@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { invoke, cmd } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { candidateTasks, childrenOf, projectById, projectColor, STATUS_LABEL, taskById } from '@/lib/selectors'
@@ -7,6 +7,10 @@ import { Chip, Empty, ProgressBar, Ring, TitleBar, useEscape } from '@/component
 import { formatDuration, pausedMsWithin } from '@white-box/core/engine'
 import { remainingLabel } from '@/lib/format'
 import { taskExecutionProblem, unfinishedPredecessors } from '@white-box/core/task-control'
+import { TaskContextEditor } from '@/features/board/TaskContextEditor'
+import { RestartContext } from '@/features/task-control/RestartContext'
+import type { NoteEditorHandle } from '@/features/notes/NoteEditor'
+import { useEditorFlush } from '@/lib/useEditorFlush'
 
 export function CurrentWorkWindow() {
   const state = useData()
@@ -17,9 +21,15 @@ export function CurrentWorkWindow() {
   const [splitting, setSplitting] = useState(false)
   const [splitTitle, setSplitTitle] = useState('')
   const [error, setError] = useState('')
+  const context = useRef<NoteEditorHandle | null>(null)
+  const contextDisclosure = useRef<HTMLDetailsElement | null>(null)
   const action = (request: Promise<unknown>) => { setError(''); void request.catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, ''))) }
+  const flush = async () => { const ok = await context.current?.flush() !== false; if (!ok && contextDisclosure.current) contextDisclosure.current.open = true; return ok }
+  const editorFlush = useEditorFlush(flush)
+  const close = () => { void (async () => { if (await flush()) await cmd.closeSelf() })() }
+  const switchTask = (id: string) => { void (async () => { if (await flush()) action(invoke('session:switchTask', { taskId: id })) })() }
 
-  useEscape(true, () => void cmd.closeSelf())
+  useEscape(true, close)
 
   const current = taskById(state, tick?.activeTaskId ?? null)
   const currentProject = projectById(state, current?.projectId ?? null)
@@ -59,10 +69,12 @@ export function CurrentWorkWindow() {
   }
 
   return (
-    <div className="win current">
-      <TitleBar title="現在の仕事" onClose={() => void cmd.closeSelf()} />
+    <div className="win current" inert={editorFlush.frozen} aria-busy={editorFlush.frozen}>
+      <TitleBar title="現在の仕事" onClose={close} />
 
       <div className="current-body">
+        {editorFlush.error && <p className="task-command-error" role="alert">{editorFlush.error}</p>}
+        {editorFlush.frozen && <p className="editor-flush-status" role="status">入力を保存している…</p>}
         {error && <p className="task-command-error" role="alert">{error}</p>}
         {managing && <p className="current-management">タスク整理 {formatDuration(managementMs, 'compact')} · 実作業から除外中。{originallyPaused ? '閉じても一時停止を保つ。' : '閉じると作業を再開する。'}</p>}
         {tick && current && timer ? (
@@ -95,7 +107,7 @@ export function CurrentWorkWindow() {
                 >
                   {expired ? '延長を選ぶ' : timer.isBreak ? '休憩を終える' : originallyPaused ? '閉じたら再開する' : '閉じても一時停止'}
                 </button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('session:end')}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => { void (async () => { if (await flush()) action(invoke('session:end')) })() }}>
                   セッション終了
                 </button>
               </div>
@@ -109,6 +121,8 @@ export function CurrentWorkWindow() {
             </button>
           </section>
         )}
+
+        {current && <><RestartContext task={current} /><details ref={contextDisclosure} className="phase2-disclosure"><summary>この仕事の文脈を残す</summary><TaskContextEditor ref={context} key={current.id} task={current} /></details></>}
 
         {splitting && current && (
           <div className="current-split">
@@ -146,7 +160,7 @@ export function CurrentWorkWindow() {
                 </button>
                 <span className="current-sub-title">{t.title}</span>
                 {tick && (
-                  <button type="button" className="current-switch disp" disabled={Boolean(taskExecutionProblem(state, t.id))} title={taskExecutionProblem(state, t.id) ?? ''} onClick={() => action(invoke('session:switchTask', { taskId: t.id }))}>
+                  <button type="button" className="current-switch disp" disabled={Boolean(taskExecutionProblem(state, t.id))} title={taskExecutionProblem(state, t.id) ?? ''} onClick={() => switchTask(t.id)}>
                     切り替える
                   </button>
                 )}
@@ -203,7 +217,7 @@ export function CurrentWorkWindow() {
                         className="current-switch disp"
                         disabled={Boolean(problem)}
                         title={problem ?? ''}
-                        onClick={() => action(invoke('session:switchTask', { taskId: t.id }))}
+                        onClick={() => switchTask(t.id)}
                       >
                         切り替える
                       </button>

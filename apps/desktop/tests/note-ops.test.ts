@@ -5,6 +5,42 @@ import { createNoteHandlers } from '../src/app/note-handlers.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
 describe('ノートの変更', () => {
+  it('同じ項目が変更済みなら古い期待値の保存を拒み、最新の内容を保持する', () => {
+    const ctx = fakeCtx()
+    ctx.store.data.notes = createNote(ctx.store.data, { body: '最初の本文' }, 100, 'n').notes
+    const handlers = createNoteHandlers(ctx)
+    handlers['note:update']({ id: 'n', patch: { body: '別の画面の本文' }, expected: { body: '最初の本文' } })
+    const before = ctx.store.data.notes
+    const calls = [...ctx.calls]
+    expect(() => handlers['note:update']({ id: 'n', patch: { body: '古い画面の入力' }, expected: { body: '最初の本文' } })).toThrow('別の画面')
+    expect(ctx.store.data.notes).toBe(before)
+    expect(ctx.store.data.notes![0]!.body).toBe('別の画面の本文')
+    expect(ctx.calls).toEqual(calls)
+    handlers['note:update']({ id: 'n', patch: { body: '明示的に選んだ本文' }, expected: { body: '別の画面の本文' } })
+    expect(ctx.store.data.notes![0]!.body).toBe('明示的に選んだ本文')
+  })
+
+  it('異なる項目の同時編集と、期待値を省いた既存の操作を受け付ける', () => {
+    const db = emptyDb()
+    db.notes = createNote(db, { body: '本文', title: 'タイトル' }, 100, 'n').notes
+    db.notes = updateNote(db, 'n', { body: '別の画面の本文' }, 200, { body: '本文' })
+    db.notes = updateNote(db, 'n', { title: '自分のタイトル' }, 300, { title: 'タイトル' })
+    expect(db.notes[0]).toMatchObject({ body: '別の画面の本文', title: '自分のタイトル' })
+    db.notes = updateNote(db, 'n', { pinned: true }, 400)
+    expect(db.notes[0]!.pinned).toBe(true)
+    expect(() => updateNote(db, 'n', { pinned: false }, 500, { pinned: false })).toThrow('別の画面')
+    expect(db.notes[0]!.pinned).toBe(true)
+  })
+
+  it('関連先やリマインドの null も比較し、未定義の期待値は無視する', () => {
+    const db = emptyDb()
+    db.notes = createNote(db, { remindAt: 50 }, 100, 'n').notes
+    expect(() => updateNote(db, 'n', { remindAt: null }, 200, { remindAt: null })).toThrow('別の画面')
+    const next = updateNote(db, 'n', { body: '本文' }, 200, { body: undefined, taskId: null })
+    expect(next[0]!.body).toBe('本文')
+    expect(db.notes[0]!.body).toBe('')
+  })
+
   it('保存失敗では作成・更新・アーカイブのメモリ変更を戻し、同じ入力で再送できる', () => {
     const ctx = fakeCtx()
     ctx.store.data.notes = createNote(ctx.store.data, { body: '保存された本文' }, 100, 'n').notes

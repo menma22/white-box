@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "projects": [],
+  "tasks": [
+    {
+      "projectId": null,
+      "parentId": null,
+      "title": "old",
+      "notes": "",
+      "status": "doing",
+      "progress": 0,
+      "priority": "normal",
+      "order": 0,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "doneAt": null,
+      "createdInSessionId": null,
+      "id": "old"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "ses_muwiap25og41et",
+      "startedAt": 996400000,
+      "endedAt": null,
+      "plannedMs": 60000,
+      "state": "running",
+      "segments": [
+        {
+          "id": "seg_muwiap25y6rfwy",
+          "taskId": "old",
+          "startedAt": 996400000,
+          "endedAt": null
+        }
+      ],
+      "pauses": [],
+      "events": [
+        {
+          "at": 996400000,
+          "type": "session_started",
+          "label": "ストップウォッチ開始"
+        },
+        {
+          "at": 996400000,
+          "type": "task_started",
+          "label": "Old imported",
+          "ref": {
+            "taskId": "old"
+          }
+        }
+      ],
+      "progressChanges": [],
+      "note": "",
+      "expiredNotifiedAt": null,
+      "editedAt": null,
+      "createdAt": 996400000,
+      "mode": "stopwatch"
+    }
+  ],
+  "settings": {
+    "displayName": "",
+    "defaultSessionMinutes": 50,
+    "defaultSessionMode": "timer",
+    "pomodoroBreakMinutes": 5,
+    "pomodoroAutoResume": false,
+    "defaultExtendMinutes": 15,
+    "extendOptions": [
+      5,
+      10,
+      15
+    ],
+    "shortcuts": {
+      "startPause": "",
+      "currentWork": "",
+      "dashboard": ""
+    },
+    "launchAtLogin": false,
+    "autoPauseOnSuspend": true,
+    "soundOnExpire": true,
+    "dayStartHour": 4,
+    "lastWelcomeDate": null,
+    "stallWarningDays": 3,
+    "showSessionCard": true,
+    "onboardedAt": null,
+    "remindToStart": false,
+    "startReminderMinutes": 3,
+    "enableAgentApi": false
+  },
+  "dayNotes": {},
+  "agentRequests": {},
+  "taskSuggestions": [],
+  "notes": [],
+  "goalMap": {
+    "nodes": {},
+    "heads": [],
+    "activeHeadId": null,
+    "issues": [],
+    "history": [],
+    "ui": {
+      "view": "map",
+      "headsOpen": true,
+      "doneOpen": false,
+      "resolvedOpen": false,
+      "showHidden": false
+    }
+  },
+  "presenceCandidates": [],
+  "goalMapImports": []
+}

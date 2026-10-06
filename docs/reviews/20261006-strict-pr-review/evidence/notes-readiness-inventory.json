@@ -1,0 +1,23 @@
+{
+  "base": "125026f7088487a429170f6276786a13f0e40c4c",
+  "head": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48",
+  "units": [
+    {
+      "id": "1",
+      "file": "a/scripts/e2e-notes.mjs b/scripts/e2e-notes.mjs",
+      "hunk": 1,
+      "kind": "added",
+      "line": 254,
+      "content": "  await until(() => page.evaluate(`(() => { const main=document.querySelector('.win.main'); return main && !main.inert && main.getAttribute('aria-busy')!=='true' && !document.querySelector('.editor-flush-status,[role=\"dialog\"]') && document.querySelector('.rail-tab.is-active .rail-tab-key')?.textContent==='1'; })()`), 'Today is ready for the return shortcut')"
+    },
+    {
+      "id": "2",
+      "file": "a/scripts/e2e-notes.mjs b/scripts/e2e-notes.mjs",
+      "hunk": 1,
+      "kind": "added",
+      "line": 255,
+      "content": "  await page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')"
+    }
+  ],
+  "fingerprint": "26232892b7b4727dc36ab3d0e62a6c61db99773fc732f8a94d5ab2c4047f0709"
+}

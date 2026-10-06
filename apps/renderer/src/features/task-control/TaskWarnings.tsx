@@ -12,7 +12,7 @@ export function TaskWarnings({ state, now, onOpenTask, onStarted, projectId = nu
 }) {
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState<boolean | null>(null)
-  const warnings = taskWarnings(state.tasks, state.sessions, now, state.settings.stallWarningDays)
+  const warnings = taskWarnings(state.tasks, state.sessions, now, state.settings.stallWarningDays, state.projects)
     .filter((control) => !projectId || control.task.projectId === projectId)
     .filter((control) => !state.projects.some((project) => project.id === control.task.projectId && project.archived))
   const open = expanded ?? (!compact && !state.live && warnings.length <= 3)

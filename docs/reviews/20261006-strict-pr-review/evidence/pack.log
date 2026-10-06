@@ -1,0 +1,30 @@
+pnpm.CMD : $ pnpm build && node scripts/pack.mjs
+発生場所 行:2 文字:1340
++ ... view/strict-20261006/$gate.log"; & pnpm.cmd run $gate *> $log; $code= ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ pnpm build && node scripts/pack.mjs:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+$ pnpm build:packages && tsc -p apps/desktop/tsconfig.json && pnpm --filter @white-box/renderer build
+$ pnpm -r --filter "./packages/*" run build
+Scope: 2 of 4 workspace projects
+packages/core build$ tsc -p tsconfig.json
+packages/core build: Done
+packages/contracts build$ tsc -p tsconfig.json
+packages/contracts build: Done
+$ vite build
+vite v6.4.3 building for production...
+transforming...
+✓ 119 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/index.html                   0.61 kB │ gzip:   0.37 kB
+../../dist/assets/index-1uBoYO6P.css   81.36 kB │ gzip:  14.91 kB
+../../dist/assets/index-CEjrNWY0.js   417.04 kB │ gzip: 123.89 kB
+✓ built in 1.64s
+copying electron runtime...
+assembling workspace dependencies...
+applying icon...
+
+done: .\release\White Box\White Box.exe
+ショートカットを作る: powershell -ExecutionPolicy Bypass -File scripts\make-shortcuts.ps1 -Exe ".\release\White Box\White Box.exe"

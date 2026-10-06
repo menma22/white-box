@@ -73,14 +73,17 @@ export function validateTaskGraph(tasks: Task[]): void {
   const byId = new Map(tasks.map((item) => [item.id, item]))
   const visiting = new Set<ID>()
   const visited = new Set<ID>()
-  function walk(id: ID): void {
-    if (visiting.has(id)) throw new Error('先行タスクのリンクが循環している')
-    if (visited.has(id)) return
-    visiting.add(id)
-    const item = byId.get(id)
-    for (const predecessor of [...(item?.hardDependencies ?? []), ...(item?.recommendedPredecessors ?? [])]) walk(predecessor)
-    visiting.delete(id)
-    visited.add(id)
+  for (const id of byId.keys()) {
+    const pending = [{ id, completed: false }]
+    while (pending.length) {
+      const current = pending.pop()!
+      if (current.completed) { visiting.delete(current.id); visited.add(current.id); continue }
+      if (visiting.has(current.id)) throw new Error('先行タスクのリンクが循環している')
+      if (visited.has(current.id)) continue
+      visiting.add(current.id)
+      pending.push({ ...current, completed: true })
+      const item = byId.get(current.id)
+      for (const predecessor of [...(item?.hardDependencies ?? []), ...(item?.recommendedPredecessors ?? [])]) pending.push({ id: predecessor, completed: false })
+    }
   }
-  for (const id of byId.keys()) walk(id)
 }

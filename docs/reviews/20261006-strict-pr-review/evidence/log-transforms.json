@@ -1,0 +1,257 @@
+{
+  "scope": "Suite tables retain hashes of original logs. Published logs are UTF-8/LF copies with checkout paths normalized; compare each recorded hash only to its named byte stream.",
+  "logs": [
+    {
+      "original": "artifactreview/strict-20261006/basic-source-cdp-final.log",
+      "originalSha256": "e1c667c25427398105130c5503beba114dae44b646ac5fe7cd5b31aa894c5604",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/basic-source-cdp-final.log",
+      "publishedSha256": "799ade427b08f1ca2bac7a0d792260239116b306c92107d249f0254775ddd914",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/build-provenance-cdp-final.log",
+      "originalSha256": "d715e725c2ee375cbb871941b03e3079bc66e2646aab9335990b921ecfa71219",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/build-provenance-cdp-final.log",
+      "publishedSha256": "5400e16284265badb7c428b258b6d37ee2507f273460e4e3d40ef002c23a4f8a",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/build-provenance-final.log",
+      "originalSha256": "d715e725c2ee375cbb871941b03e3079bc66e2646aab9335990b921ecfa71219",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/build-provenance-final.log",
+      "publishedSha256": "5400e16284265badb7c428b258b6d37ee2507f273460e4e3d40ef002c23a4f8a",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-package-cdp-final.log",
+      "originalSha256": "016c2eb5e4833fdcd23bf4d9c8deeac77e055e5d7d936e0c64c0f7fd53d1e3d5",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-package-cdp-final.log",
+      "publishedSha256": "949490e9d970988ca79053dd779d45d11beabfd3afca123d3f04ebc31bbae3b4",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-package-checkpoint-final.log",
+      "originalSha256": "d8f08f52069d1c0f73f11f43d4a8e3ea3c734d8a49d1588a80ce0e7ab5a6cebe",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-package-checkpoint-final.log",
+      "publishedSha256": "ad66f8bece4b1c81a2071c20f447d476cbe078b3ed2c5aa3024117f890d150f5",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-package-final.log",
+      "originalSha256": "64129c34b67e5fe1414575600b77f87ae7e6823a1c699b909170034901a1bcce",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-package-final.log",
+      "publishedSha256": "bfd2bb17ac4486796559fa5b9232e04552fffa0f6f46b32abd2b9fa29157b396",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-package-ready-final.log",
+      "originalSha256": "f984d286fec95e2516693236d29a5d22e930a8482f3f29abcd3499e66d6c3ab5",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-package-ready-final.log",
+      "publishedSha256": "ac67738c146d82aa32ed3c30c85ce71f0520a2b4109de2551eb6b3660468bb46",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-source-checkpoint-final.log",
+      "originalSha256": "9457508c3866d3dd2b7ca4f1fbafcc4065e215ff40ee07a1ab9a9f4e11b68b8e",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-source-checkpoint-final.log",
+      "publishedSha256": "eb6f7140a8912df6330f7a12ccb71c6e041385d9d4f6a7c74fafa07a9caa2bc8",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/e2e-source-final.log",
+      "originalSha256": "fd6c4243419032f52548859a59770c564066360fc44a4d422e9669c8dc0601cd",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/e2e-source-final.log",
+      "publishedSha256": "547609240cebe328d45ed432ae8bf6b23b7bbabaa8dc6a28a43016785fd126ba",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/final-boundary-regressions.log",
+      "originalSha256": "57c23b795688b9f145441b37bc1978af52e6792f7ec4bbb825f8d39dec64cadf",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/final-boundary-regressions.log",
+      "publishedSha256": "59f6e13686a1db536cec66ed8fe1a0964c698b06981160b0b0857da559bd44e3",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/final-safety-probes.log",
+      "originalSha256": "bcf1784aaaf0204eeba9fe5f34f26248a930797f012a61be096d41eb7c91e611",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/final-safety-probes.log",
+      "publishedSha256": "282190c243ae2d99313447eaf4b84ee5d5206cc56370dcc0ec86bdf77d5ad30b",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/lint-final.log",
+      "originalSha256": "8b1e5ca5120369bd9a0b6af8e05a9152a97faf47a0e16dd2025a52025e1483d5",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/lint-final.log",
+      "publishedSha256": "edc0009c87914d8fc7a50b3af07e37d2b25ea42064f92dc7ed35ff61aa1f10ba",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/lint.log",
+      "originalSha256": "f9b63e599d9df08c605cb084089937fd2de4f3b343efca7436a863a2158118f6",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/lint.log",
+      "publishedSha256": "cd1b48df561747cb49a32066880fb985d280cb2b149f4253675e264a6cc925ff",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/notes-source-ready-final.log",
+      "originalSha256": "8391d830118d77222b8e510af116264e31316b2ddf550f2a2a06f990c46cc594",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/notes-source-ready-final.log",
+      "publishedSha256": "0b1a9eb5f5c14f2e2e470e12d0a7b06f0e1069088ec4bcb69a82b89bc5d53ce4",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/notes-transition-probe.log",
+      "originalSha256": "402db79d1d4136f486625e679d44a9af6acd0b53040bb8f676d33bee7c42539e",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/notes-transition-probe.log",
+      "publishedSha256": "3bc315dbaf9529831d3c4f29be224d3dd3153b4ac517fad45055b29c791af6ba",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/owned-processes.log",
+      "originalSha256": "17bb97ef297f520e347a8ad46d7774c629715db0af721acfe0a3c8467064d296",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/owned-processes.log",
+      "publishedSha256": "c3aa9ce3a4fe7444637161b649219c008de196971f328a7bf1aa3daec4b310a2",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/pack-final.log",
+      "originalSha256": "2c4a9aaf37ff796fc199948edb6240a11a4538c0de82e6f426a1ee3e419660d1",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/pack-final.log",
+      "publishedSha256": "4ed1d9e760d3796683ee0af4edfec1a3a64b0cf7a49a580c8d1319f7d5108370",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/pack.log",
+      "originalSha256": "d4bfc21168f9b944920c97ea97e14d52de2940eeed2bc3e905c3f36b76a1595c",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/pack.log",
+      "publishedSha256": "b0099ff901f7e87a8951c1e6810e560f7e70dce83008176f625806e6b415d0ff",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/quit-live-checkpoint-final.log",
+      "originalSha256": "812d6c7366bac003a7d82102b5c93938c36a07fdc65c577d21cb094f296d8faf",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/quit-live-checkpoint-final.log",
+      "publishedSha256": "751926c01874865322340ddb7a248e29c4fa7dd637afd9b05bd728c044a146d6",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/quit-live-final.log",
+      "originalSha256": "cabb978dd1c3f3867a7f0881487aeda5fa5e54ca7298b7c81d361078a7f28bd6",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/quit-live-final.log",
+      "publishedSha256": "964acfd058cd63fb5b08222d05f3e29cd47e008f2dace10bb2dccdf53af8f22b",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/quit-observer-off-checkpoint-final.log",
+      "originalSha256": "90b91ae1dd1089fa4c6a2beae904584c01ac186096e1380db14e2213359b6d32",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/quit-observer-off-checkpoint-final.log",
+      "publishedSha256": "0a9ac8b9aa2194eb74cb82415c3c03a15af6ef0293c2d7ee8ecd8696a119b649",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/quit-observer-off-final.log",
+      "originalSha256": "c0f47bb36f82282be304a106e15fcd9f84cafacb0557fb6ad5a2f9e4cf52f538",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/quit-observer-off-final.log",
+      "publishedSha256": "0aad47400427f224695c97bf8b3d7feda06ce2fa94ec0e88982638bbe726b4c8",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/storybook.log",
+      "originalSha256": "394a55272e10a24e07f3f4dce131835ca08d7a18554c71705244e7581dc6b0a2",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/storybook.log",
+      "publishedSha256": "a6f3c499cc90e403b2cf9ebaa7228116909c279526e0c9f9ff29466719420c8c",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/task-title-row-transition-probe.log",
+      "originalSha256": "74846c1db442fb5d258454a49ec93cd18dd3e23bde3ab52cd1b90e8db6c0bf91",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/task-title-row-transition-probe.log",
+      "publishedSha256": "a90c84d82eb91d6c7b812d3605c873da4bc298d94bfcda7a0a64203327eb8725",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/test-final.log",
+      "originalSha256": "22e02650aab09ef4a37544e4e175100c8accd31713ba9a2264c733812260074f",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/test-final.log",
+      "publishedSha256": "bb252743182a6754e5157e2ff6113b83c11e6b88cbab14a716b04a3eb4f58df6",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/test.log",
+      "originalSha256": "400d7b26a612fc4a4f1475cc4a11aafd80bf90ebe33b8cec66a89a7293cb9a7e",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/test.log",
+      "publishedSha256": "cf54594df476a657f3fa3a587179293f3fab4b64091794f792ece305bc356391",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/typecheck-final.log",
+      "originalSha256": "591fcdbae540835b387e66e463363c4d76b6d0d7e99166cf1246a68b74fac4bd",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/typecheck-final.log",
+      "publishedSha256": "c4011ea50bd9eb37bbfec3efa124e734e8c28b9c26c0f85f8f9d2ec7b20e1f54",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    },
+    {
+      "original": "artifactreview/strict-20261006/typecheck.log",
+      "originalSha256": "cb4debdd6ed9b9f5060551acda44f6934d5a15c7e903601d36f8d867f569880a",
+      "originalEncoding": "utf-16",
+      "published": "docs/reviews/20261006-strict-pr-review/evidence/typecheck.log",
+      "publishedSha256": "f38230f4abc9195ff454cf3fb50661d3e4ee9a5c6d78d84d8b506056cd73097a",
+      "publishedEncoding": "utf-8",
+      "equalsCurrentPortableTransform": true
+    }
+  ]
+}

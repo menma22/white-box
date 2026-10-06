@@ -10,6 +10,7 @@ import { ActivityBreakdown } from './ActivityBreakdown'
 import { ActivityTrend } from './ActivityTrend'
 import { TaskWarnings } from '@/features/task-control/TaskWarnings'
 import type { TaskDetailTarget } from '@/features/board/TaskDetail'
+import { FixedWorkOverview } from '@/features/board/FixedWorkOverview'
 
 export function TodayView({ onOpenTask }: { onOpenTask?: (id: string, target?: TaskDetailTarget) => void }) {
   const state = useData()
@@ -47,6 +48,8 @@ export function TodayView({ onOpenTask }: { onOpenTask?: (id: string, target?: T
         />
         <Metric label="いま" value={new Date(now).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })} />
       </div>
+
+      <FixedWorkOverview period={period} onOpenTask={onOpenTask} />
 
       {sessions.length === 0 ? (
         <Empty title="今日はまだ記録がない" hint="ショートカットを押せば、そこから記録が始まる。" />

@@ -8,6 +8,7 @@ import { PresenceCandidatesSchema } from './presence.js'
 import { TaskSuggestionSchema } from './agent.js'
 import { NoteSchema } from './notes.js'
 import { TaskControlSchema } from './task-control.js'
+import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema } from './planning.js'
 import type {
   AppState,
   GoalHistory,
@@ -50,6 +51,7 @@ export const ProjectSchema = z.object({
   name: z.string(),
   hue: z.number(),
   archived: z.boolean(),
+  priority: PrioritySchema.optional(),
   order: z.number(),
   createdAt: z.number(),
   updatedAt: z.number(),
@@ -62,6 +64,9 @@ export const TaskSchema = z.object({
   parentId: IdSchema.nullable(),
   title: z.string(),
   notes: z.string(),
+  problems: z.string().optional(),
+  decisions: z.string().optional(),
+  nextContext: z.string().optional(),
   status: TaskStatusSchema,
   progress: z.number(),
   priority: PrioritySchema,
@@ -264,6 +269,9 @@ export const AppStateSchema = z.object({
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),
   recovery: z.object({ sessionId: IdSchema, lastKnownAt: z.number() }).nullable(),
   pendingReview: z.object({ sessionId: IdSchema, thenStart: z.boolean() }).nullable(),
+  weeklyBudgets: z.array(WeeklyTimeBudgetSchema).optional(),
+  weeklyBudgetDefaults: WeeklyBudgetPlanSchema.optional(),
+  fixedWork: z.array(FixedWorkSchema).optional(),
 })
 
 // ── スキーマ ⇄ core 型の等価性検査（ずれるとここがコンパイルエラーになる）──

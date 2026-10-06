@@ -10,11 +10,12 @@ export interface StorePort {
   save(): void
   replace(next: Database): void
   /** 実行中セッションの復旧用。生きている時刻の記録。 */
-  markAlive(): void
+  markAlive(options?: { requireSuccess?: boolean }): void
   readLastAlive(): number | null
 }
 
 export interface WindowPort {
+  prepareEditors?(reason: 'close' | 'quit' | 'end' | 'switch' | 'import', kinds?: WindowKind[]): Promise<(closing?: WindowKind[]) => void>
   open(kind: WindowKind, focus?: boolean): void
   close(kind: WindowKind): void
   toggle(kind: WindowKind): void

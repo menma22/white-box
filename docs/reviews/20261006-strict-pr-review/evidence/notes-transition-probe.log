@@ -1,0 +1,1 @@
+PASS NotesView create: ancestor stays inert throughout awaited create, releases after success, and failure preserves selected editor with error.

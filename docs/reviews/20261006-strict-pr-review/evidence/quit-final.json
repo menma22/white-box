@@ -1,0 +1,152 @@
+{
+  "measuredHead": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+  "runs": [
+    {
+      "mode": "default",
+      "directory": ".e2e-quit/run-OfILWA",
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "first: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "first: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "first: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "first: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "Natural shutdown preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "restart: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "restart: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "All owned Electron processes are absent",
+          "passed": true
+        }
+      ],
+      "resultSha256": "483f72d73934acfe3010f71573836c61d84186daf3bfa82ea68f42062289fa12"
+    },
+    {
+      "mode": "observer-off",
+      "directory": ".e2e-quit/run-jwGnRW",
+      "exitCode": 0,
+      "passed": 7,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "first: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "first: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "Natural shutdown preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "All owned Electron processes are absent",
+          "passed": true
+        }
+      ],
+      "resultSha256": "ce151cae03cd58ec51f88788b442d1fc6e55a51985ace4b7ea5fbdd1e3e64ec4"
+    },
+    {
+      "mode": "multiple-windows",
+      "directory": ".e2e-quit/run-wtWkxL",
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "first: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "first: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "first: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "first: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "Natural shutdown preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "restart: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "restart: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "All owned Electron processes are absent",
+          "passed": true
+        }
+      ],
+      "resultSha256": "483f72d73934acfe3010f71573836c61d84186daf3bfa82ea68f42062289fa12"
+    }
+  ],
+  "scope": "Source Electron only; these modes do not exercise the packaged executable."
+}

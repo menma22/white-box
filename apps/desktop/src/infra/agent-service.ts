@@ -14,6 +14,7 @@ export function createAgentService(ctx: Ctx, directory: string, handlers: Handle
         if (stopped || !ctx.store.data.settings.enableAgentApi) server.close()
         else agent = server
       }).catch((error: unknown) => {
+        if (stopped) return
         console.error('[white-box] AI連携を開始できません:', error)
         ctx.store.data.settings.enableAgentApi = false
         ctx.publish()

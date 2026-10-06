@@ -17,6 +17,7 @@ export const NotesView = forwardRef<NotesViewHandle, {
   const [selectedId, setSelectedId] = useState<string | null>(initialNoteId ?? null)
   const [createdNote, setCreatedNote] = useState<Note | null>(null)
   const [creating, setCreating] = useState(false)
+  const [changing, setChanging] = useState(false)
   const [error, setError] = useState('')
   const busy = useRef(false)
   const handledJump = useRef<string | null>(null)
@@ -26,25 +27,31 @@ export const NotesView = forwardRef<NotesViewHandle, {
   const selected = data.notes?.find((note) => note.id === selectedId) ?? (createdNote?.id === selectedId ? createdNote : null)
 
   useEffect(() => {
-    if (!initialNoteId || handledJump.current === initialNoteId) return
+    if (!initialNoteId) { handledJump.current = null; return }
+    if (handledJump.current === initialNoteId || busy.current) return
     void (async () => {
-      if (await editor.current?.flush() === false) return
+      busy.current = true
+      setChanging(true)
       handledJump.current = initialNoteId
-      setSelectedId(initialNoteId)
-      onJumpHandled?.()
+      try {
+        if (await editor.current?.flush() === false) return
+        setSelectedId(initialNoteId)
+      } finally { busy.current = false; setChanging(false); onJumpHandled?.() }
     })()
-  }, [initialNoteId, selectedId, onJumpHandled])
+  }, [initialNoteId, selectedId, onJumpHandled, changing])
 
   async function choose(id: string): Promise<void> {
     if (busy.current || id === selectedId) return
     busy.current = true
+    setChanging(true)
     try { if (await editor.current?.flush() !== false) { setSelectedId(id); setError('') } }
-    finally { busy.current = false }
+    finally { busy.current = false; setChanging(false) }
   }
 
   async function create(): Promise<void> {
     if (busy.current) return
     busy.current = true
+    setChanging(true)
     setCreating(true)
     try {
       if (await editor.current?.flush() === false) return
@@ -57,12 +64,13 @@ export const NotesView = forwardRef<NotesViewHandle, {
       setPinned(false)
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
-    finally { setCreating(false); busy.current = false }
+    finally { setCreating(false); busy.current = false; setChanging(false) }
   }
 
   async function archive(value: boolean): Promise<void> {
     if (!selected || busy.current) return
     busy.current = true
+    setChanging(true)
     try {
       if (await editor.current?.flush() === false) return
       await invoke('note:archive', { id: selected.id, archived: value })
@@ -70,10 +78,10 @@ export const NotesView = forwardRef<NotesViewHandle, {
       setCreatedNote(null)
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
-    finally { busy.current = false }
+    finally { busy.current = false; setChanging(false) }
   }
 
-  return <div className="notes-view">
+  return <div className="notes-view" inert={changing} aria-busy={changing}>
     <header className="notes-header"><div><h1>ノート</h1><p>思考を残して、続きへ戻る。</p></div><Button variant="solid" size="sm" disabled={creating} onClick={() => void create()}>{creating ? '作成中…' : 'ノートを追加'}</Button></header>
     {error && <div className="note-error" role="alert">{error}</div>}
     <div className="notes-workspace">

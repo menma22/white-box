@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "date": "2026-10-06",
+  "status": "verified-with-listed-unverified-cases",
+  "productMeasuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+  "qaMeasuredHead": "130016c83ce352598283ca8378362dad3c1821b0",
+  "finalGatesComplete": true,
+  "originalPrHeads": {
+    "21": "48cc55f7a33147e0c3fd7ab946d7cd9324faeb0e",
+    "22": "c9c19782365353094a3842b05b76b5373fb69031",
+    "23": "123666b1c94224ffaa62b8e415dfca1e891fafdb",
+    "24": "779df6e566a77d0c4fef4c8ef575d885e565f799"
+  },
+  "repairsConsolidatedInPr": 24,
+  "earlierPrHeadsUnchanged": true,
+  "staticGates": [
+    {
+      "gate": "typecheck",
+      "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+      "exitCode": 0,
+      "time": "2026-10-06T21:17:29.3939151+09:00",
+      "log": "../reviews/20261006-strict-pr-review/evidence/typecheck-final.log",
+      "originalLog": "artifactreview/strict-20261006/typecheck-final.log"
+    },
+    {
+      "gate": "lint",
+      "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+      "exitCode": 0,
+      "time": "2026-10-06T21:17:32.1862984+09:00",
+      "log": "../reviews/20261006-strict-pr-review/evidence/lint-final.log",
+      "originalLog": "artifactreview/strict-20261006/lint-final.log"
+    },
+    {
+      "gate": "test",
+      "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+      "exitCode": 0,
+      "time": "2026-10-06T21:17:41.8346202+09:00",
+      "log": "../reviews/20261006-strict-pr-review/evidence/test-final.log",
+      "originalLog": "artifactreview/strict-20261006/test-final.log"
+    },
+    {
+      "gate": "pack",
+      "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+      "exitCode": 0,
+      "time": "2026-10-06T21:17:51.7282870+09:00",
+      "log": "../reviews/20261006-strict-pr-review/evidence/pack-final.log",
+      "originalLog": "artifactreview/strict-20261006/pack-final.log"
+    }
+  ],
+  "publishedLogMapping": "../reviews/20261006-strict-pr-review/evidence/log-transforms.json",
+  "unitTests": {
+    "passed": 617,
+    "failed": 0,
+    "files": 61,
+    "ownedProcessTests": 14
+  },
+  "storybook": {
+    "exitCode": 0,
+    "measuredHead": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+    "rendererUnchangedToFinal": true,
+    "evidence": "../reviews/20261006-strict-pr-review/evidence/storybook.log"
+  },
+  "runtimeSuites": [
+    {
+      "mode": "source-publication",
+      "scripts": 13,
+      "structuredAssertions": 410,
+      "evidence": "../reviews/20261006-strict-pr-review/evidence/final-source-publication.json"
+    },
+    {
+      "mode": "package-publication",
+      "scripts": 12,
+      "structuredAssertions": 399,
+      "evidence": "../reviews/20261006-strict-pr-review/evidence/final-package-publication.json"
+    }
+  ],
+  "quitModes": {
+    "default": 11,
+    "observerOff": 7,
+    "multipleWindows": 11,
+    "evidence": "../reviews/20261006-strict-pr-review/evidence/quit-final-checkpoint.json"
+  },
+  "buildProvenance": {
+    "appFiles": 864,
+    "compiledFiles": 135,
+    "packageEqualsBuild": true,
+    "compiledFingerprint": "28b567e2ffb0b1c1dc1bb690ea5ad4f336f639c5fbd8733d26f14ab40102edde",
+    "packageExecutableSha256": "46536526ebca2ce51d59b476d6352415b89250ce5383d8d08572146aa5a8a3f2",
+    "evidence": "../reviews/20261006-strict-pr-review/evidence/build-provenance-final.json"
+  },
+  "lineCoverage": {
+    "originalPrUnits": 8460,
+    "initialRepairUnits": 1915,
+    "postRepairUnits": 1098,
+    "checkpointRepairUnits": 61,
+    "qaReadinessUnits": 2,
+    "qaCdpRepairUnits": 18,
+    "meaning": "Per-fixed-diff purpose assignment; not a semantic correctness rate or unique final-line total."
+  },
+  "retainedFailureHistory": "../reviews/20261006-strict-pr-review/evidence/known-failures.json",
+  "limitations": [
+    "The old intermittent native quit timeout root cause is not established by subsequent passes.",
+    "A packaged Note return-shortcut timeout was retained; an observer demonstrated DOM absence before unlock on another transition, but did not establish that original timeout cause.",
+    "Not every common script proves natural exit; captured native code zero, PID absence and cleanup fallback are separated.",
+    "Native file-picker and physical titlebar close operation were not verified.",
+    "The real main heartbeat failure dialog is mapped by source; the faulted required-checkpoint probes use actual Store and controlled Ports, not native-dialog pixels.",
+    "OS power-loss durability and preservation of new fields by every old executable are outside measured guarantees.",
+    "Best-effort periodic heartbeat cannot guarantee uncommitted work after its last successful timestamp.",
+    "Daily-use EXE was not updated, PRs were not merged, and production contents/counts/hashes are excluded from public evidence."
+  ]
+}

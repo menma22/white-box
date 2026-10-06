@@ -1,0 +1,34 @@
+[
+  {
+    "gate": "typecheck",
+    "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+    "exitCode": 0,
+    "time": "2026-10-06T21:17:29.3939151+09:00",
+    "log": "../reviews/20261006-strict-pr-review/evidence/typecheck-final.log",
+    "originalLog": "artifactreview/strict-20261006/typecheck-final.log"
+  },
+  {
+    "gate": "lint",
+    "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+    "exitCode": 0,
+    "time": "2026-10-06T21:17:32.1862984+09:00",
+    "log": "../reviews/20261006-strict-pr-review/evidence/lint-final.log",
+    "originalLog": "artifactreview/strict-20261006/lint-final.log"
+  },
+  {
+    "gate": "test",
+    "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+    "exitCode": 0,
+    "time": "2026-10-06T21:17:41.8346202+09:00",
+    "log": "../reviews/20261006-strict-pr-review/evidence/test-final.log",
+    "originalLog": "artifactreview/strict-20261006/test-final.log"
+  },
+  {
+    "gate": "pack",
+    "measuredHead": "125026f7088487a429170f6276786a13f0e40c4c",
+    "exitCode": 0,
+    "time": "2026-10-06T21:17:51.7282870+09:00",
+    "log": "../reviews/20261006-strict-pr-review/evidence/pack-final.log",
+    "originalLog": "artifactreview/strict-20261006/pack-final.log"
+  }
+]

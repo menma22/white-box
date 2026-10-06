@@ -1,0 +1,7 @@
+node.exe : $ eslint apps/renderer/src apps/renderer/.storybook
+発生場所 C:\Users\mahim\AppData\Local\hermes\node\pnpm.ps1:16 文字:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ eslint apps/r...erer/.storybook:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

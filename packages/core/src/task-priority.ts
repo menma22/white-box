@@ -1,4 +1,4 @@
-import type { Session, Task } from './types.js'
+import type { Priority, Project, Session, Task } from './types.js'
 import { MINUTE, segmentRange, unpausedRanges } from './engine.js'
 import { validGoalDue } from './goal-map.js'
 
@@ -18,6 +18,7 @@ export interface TaskControl {
   risk: RiskLevel
   reasons: ('deadline-passed' | 'negative-slack' | 'aging')[]
   recommendationScore: number
+  projectPriority: Priority | null
 }
 
 export function stallWarningDays(value: number): number {
@@ -59,7 +60,7 @@ export function lastTaskWorkAt(task: Task, sessions: Session[], now: number): nu
   return last
 }
 
-export function taskControl(task: Task, sessions: Session[], now: number, warningDays: number): TaskControl {
+export function taskControl(task: Task, sessions: Session[], now: number, warningDays: number, projects: Project[] = []): TaskControl {
   const limit = stallWarningDays(warningDays)
   const end = deadlineEnd(task.due)
   const effort = task.remainingEffortMinutes
@@ -80,21 +81,22 @@ export function taskControl(task: Task, sessions: Session[], now: number, warnin
   }
   const riskWeight: Record<RiskLevel, number> = { normal: 0, warning: 1, 'high-risk': 2, overdue: 3 }
   const priorityWeight = { low: 0, normal: 1, high: 2 }
+  const projectPriority = projects.find((project) => project.id === task.projectId)?.priority ?? null
   return { task, deadlineEnd: end, slackMs, agingSince, agingDays, risk, reasons,
-    recommendationScore: priorityWeight[task.priority] + (agingDays ?? 0) / limit + riskWeight[risk] }
+    projectPriority, recommendationScore: priorityWeight[task.priority] + (projectPriority === null ? 0 : priorityWeight[projectPriority]) + (agingDays ?? 0) / limit + riskWeight[risk] }
 }
 
-export function taskWarnings(tasks: Task[], sessions: Session[], now: number, warningDays: number): TaskControl[] {
+export function taskWarnings(tasks: Task[], sessions: Session[], now: number, warningDays: number, projects: Project[] = []): TaskControl[] {
   const severity: Record<RiskLevel, number> = { normal: 0, warning: 1, 'high-risk': 2, overdue: 3 }
-  return tasks.map((task) => taskControl(task, sessions, now, warningDays))
+  return tasks.map((task) => taskControl(task, sessions, now, warningDays, projects))
     .filter((control) => control.risk !== 'normal')
     .sort((a, b) => severity[b.risk] - severity[a.risk] || b.recommendationScore - a.recommendationScore || a.task.order - b.task.order)
 }
 
-export function recommendTasks(tasks: Task[], sessions: Session[], now: number, warningDays: number): Task[] {
+export function recommendTasks(tasks: Task[], sessions: Session[], now: number, warningDays: number, projects: Project[] = []): Task[] {
   const statusWeight = { doing: 0, todo: 1, inbox: 2, done: 3 }
   return tasks.filter((task) => task.status !== 'done')
-    .map((task) => taskControl(task, sessions, now, warningDays))
+    .map((task) => taskControl(task, sessions, now, warningDays, projects))
     .sort((a, b) => statusWeight[a.task.status] - statusWeight[b.task.status] || b.recommendationScore - a.recommendationScore || a.task.order - b.task.order)
     .map((control) => control.task)
 }

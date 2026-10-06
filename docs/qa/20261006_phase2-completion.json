@@ -1,0 +1,350 @@
+{
+  "schema": 1,
+  "date": "2026-10-06",
+  "status": "verified-with-listed-unverified-cases",
+  "productMeasuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+  "qaMeasuredHead": "cd005590a151cf7f24bb442344e602d346864025",
+  "finalGatesComplete": true,
+  "completedAt": "2026-10-05T18:56:17.140699+00:00",
+  "staticGates": [
+    {
+      "name": "typecheck",
+      "measuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "measuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "exitCode": 0
+    },
+    {
+      "name": "tests",
+      "measuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "exitCode": 0
+    },
+    {
+      "name": "pack",
+      "measuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "exitCode": 0
+    },
+    {
+      "name": "storybook",
+      "measuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "exitCode": 0
+    }
+  ],
+  "unitTests": {
+    "passed": 480,
+    "failed": 0,
+    "testFiles": 53,
+    "dataIOWithRealStorePassed": 8,
+    "identityPassed": 14
+  },
+  "buildProvenance": {
+    "compiledFileCount": 131,
+    "compiledFingerprintAlgorithm": "SHA256 of UTF-8 compact JSON [relative path, SHA256] pairs, sorted by ASCII path ascending; no BOM or trailing newline",
+    "compiledFingerprint": "7dddbf24d0b494689f5ce3d7d3e00f069c0439d131a630407a38ec4d89c34af7",
+    "packageCompiledEqualsSourceBuild": true,
+    "packageExecutable": "release/White Box/White Box.exe",
+    "packageExecutableSha256": "46536526ebca2ce51d59b476d6352415b89250ce5383d8d08572146aa5a8a3f2",
+    "productSourcesUnchangedBetweenMeasuredHeads": true
+  },
+  "verifier": {
+    "planningHarnessSha256": "74f07d73a17112399bca025fb0ca743ac6417ba3903ff90aeca86a5d84fa6fb9",
+    "ownedProcessesSha256": "e03095a7c088819575d36def6a642b4c5b9bcc376e7424bc53ee70ae08836b1b",
+    "runtimeFilesEqualBetweenSourceAndPackage": true,
+    "runtimeFiles": [
+      {
+        "file": "dist-electron/presentation/main.js",
+        "sha256": "f00a246008a6ac513ed4175faff72a935667333372fe3e7c87cd2a8ad4625398"
+      },
+      {
+        "file": "apps/desktop/src/presentation/preload.cjs",
+        "sha256": "b184b596b641adebb995a5e964d44736bdd109b737a4cbe254d06769b31e706e"
+      },
+      {
+        "file": "dist-electron/app/handlers.js",
+        "sha256": "dd0fae290c2e06973427b37270160dd3f4919de6f203f20c234c886cce2c25af"
+      },
+      {
+        "file": "dist-electron/app/lifecycle.js",
+        "sha256": "45f89d7109575e55dc916c20e76055fff71149ce5af539b202f42cd6833a6248"
+      },
+      {
+        "file": "dist-electron/app/state.js",
+        "sha256": "902046728048be9e50e6624aef14f570237d62213a27b97b9ee8c1cbd4bd9c70"
+      },
+      {
+        "file": "dist-electron/infra/agent-service.js",
+        "sha256": "16b4b3283c25edc4d7eac854881f21c6a12ffc9e609eed89bf85c2f2906d74aa"
+      },
+      {
+        "file": "dist-electron/infra/dataio.js",
+        "sha256": "43cf8d51eb1a8a86d84575a5c8c2c61935d9c5623769e0787b5487f5fc0c74c7"
+      },
+      {
+        "file": "dist-electron/infra/renderer-flush.js",
+        "sha256": "26f52f0e0b32b748a6e87e0b6c64468f27d32a73985f2ed21fbd90b7ec98cf7b"
+      },
+      {
+        "file": "dist-electron/infra/windows.js",
+        "sha256": "e532b769dee6253a71d9e38e0a3d47a7619deb3a2f5b76a552b9fca119acb909"
+      },
+      {
+        "file": "dist/index.html",
+        "sha256": "8dee525b0be15201ac6dbe6954d162ad56747c620b75add2ce9df731cc67b446"
+      },
+      {
+        "file": "dist/assets/index-BV6sYv4d.js",
+        "sha256": "44db1764aa18626a1adf9f33ebf335f6b2eb24562f4d5bdb4d1b8f3388e13bba"
+      }
+    ]
+  },
+  "planning": {
+    "command": "powershell -NoProfile -File scripts/run-ui-e2e.ps1 -Worktree . -Scripts e2e-phase2-planning.mjs",
+    "source": {
+      "run": ".e2e/phase2-planning-run-DlOUU5",
+      "exitCode": 0,
+      "checkCount": 75,
+      "startedAt": "2026-10-05T18:51:05.443Z",
+      "completedAt": "2026-10-05T18:51:56.878Z",
+      "pngCount": 19,
+      "rendererErrorCount": 0,
+      "unexpectedApplicationErrorCount": 0,
+      "expectedApplicationRejectionCount": 18,
+      "naturalExitCodes": [
+        0,
+        0
+      ],
+      "signalCodes": [
+        null,
+        null
+      ],
+      "forcedCleanup": false,
+      "remainingOwnedProcessCount": 0,
+      "restartedDatabaseDeepEqual": true,
+      "resultSha256": "4dafdc7da94061a24b0d80ff2e053eea3a4537acd60f02d5040a4894c319b18b",
+      "databaseSha256": "d39132eb767797dccb404847c63558120069d8170558206eea3842514447b547"
+    },
+    "package": {
+      "run": ".e2e/phase2-planning-run-YxufIT",
+      "exitCode": 0,
+      "checkCount": 75,
+      "startedAt": "2026-10-05T18:52:30.563Z",
+      "completedAt": "2026-10-05T18:53:20.984Z",
+      "pngCount": 19,
+      "rendererErrorCount": 0,
+      "unexpectedApplicationErrorCount": 0,
+      "expectedApplicationRejectionCount": 18,
+      "naturalExitCodes": [
+        0,
+        0
+      ],
+      "signalCodes": [
+        null,
+        null
+      ],
+      "forcedCleanup": false,
+      "remainingOwnedProcessCount": 0,
+      "restartedDatabaseDeepEqual": true,
+      "resultSha256": "96e5e968a515c271400459b9fee0e8bd538ed4946692ca4fe41755f891eca84d",
+      "databaseSha256": "6b3ce422cafa7dac0a5f45e59fabd7078833464c90f77729df5f70a1e2958944"
+    },
+    "packageExecutableArgument": "release/White Box/White Box.exe",
+    "orderedCheckNames": [
+      "main: CDP is attached to this build",
+      "Legacy DB leaves new optional planning, Project Priority and structured Task context absent",
+      "Legacy free Notes, linked Note and day notes load unchanged",
+      "Week shows real activity before the closed, unset budget",
+      "940x620 Week retains visible activity and no horizontal overflow",
+      "Unset living hours remain blank without invented values or calculations",
+      "Missing hours prevent a save",
+      "Partial budget draft survives a tab change",
+      "Partial budget draft survives a week change",
+      "Budget failed save retains all input and blocks leaving the Week tab",
+      "Weekly Budget failure: disk and exposed memory roll back completely",
+      "All four allocation modes and personal defaults persist exactly",
+      "Budget displays 91h available and the minimum allocation shortage",
+      "Reuse opens the saved personal defaults without silently saving the next week",
+      "Next week reuses every allocation and living input",
+      "Legacy Project Priority stays unset in the real editor",
+      "Selecting Project Priority updates the unsaved editor draft",
+      "Project failed save retains priority and keeps the editor open",
+      "Project Priority failure: disk and exposed memory roll back completely",
+      "Project Priority changes independently from both Task priorities and unedited legacy Projects",
+      "The actual editor clears Project Priority through Electron without changing Task priorities",
+      "Fixed Work requires an external reason before registration",
+      "Fixed Work failed save retains Task, time and external reason",
+      "Fixed Work failure: disk and exposed memory roll back completely",
+      "Registering external schedules uses existing Tasks and does not create Tasks or Sessions",
+      "This week clips the boundary schedule to 30 minutes",
+      "Next week counts overlapping external schedules once: 150 minutes",
+      "Week exposes both real external schedules",
+      "Cancellation retains the original Fixed Work record and never starts a Session",
+      "Cancelled schedule remains inspectable in the actual UI",
+      "Today lists external work only when its interval belongs to today",
+      "Schedule registration and display still leave the app idle",
+      "Existing free Notes and linked Note are preserved before editing structured context",
+      "Problems, Decisions and Next Context save without replacing legacy Notes or linked Notes",
+      "Changing Task flushes the latest context draft",
+      "Changing tab flushes the selected Task context",
+      "Closing the detail flushes the latest decision",
+      "Task navigation flushes the existing linked Note editor",
+      "A failed linked Note save blocks tab navigation and retains the full draft",
+      "Linked Note failure: disk and exposed memory roll back completely",
+      "Retry flushes the linked Note and then permits navigation",
+      "start: CDP is attached to this build",
+      "Start shows saved Next Context for the selected existing Task",
+      "Failed Task context blocks tab, close, Task switch and start while retaining input",
+      "Task Context failure: disk and exposed memory roll back completely",
+      "Successful start flushes the entire retained context first",
+      "current: CDP is attached to this build",
+      "Current Work failed save blocks end, switch and close while retaining the context and active Session",
+      "External end and switch requests also respect the failed Current Work draft",
+      "An external close request reaches the native close event and retains the failed draft",
+      "Current Work failed update keeps persisted context unchanged",
+      "Switching current Task saves the latest context before the Session segment changes",
+      "current: CDP is attached to this build",
+      "Closing and reopening Current Work retains the latest decision",
+      "An external end request flushes the Current Work context before ending the Session",
+      "review: CDP is attached to this build",
+      "Strict public planning IPC rejects unknown keys without changing saved state",
+      "Existing free Notes, daily notes and linked Note identity remain intact",
+      "A new weekly draft remains distinct from the saved budget before quitting",
+      "An incomplete new week draft does not invent the remaining living hours or commit a budget",
+      "The final context draft is still unsaved before the actual quit request",
+      "first: natural quit exits with zero and leaves no owned PID",
+      "Natural quit flushes the final Task context and preserves every other Database field",
+      "main: CDP is attached to this build",
+      "Restart deeply restores the full saved file and every exposed Database field",
+      "Restarted Task detail shows saved Next Context and legacy Notes",
+      "Restarted linked Note editor retains the entire recovered draft",
+      "Restarted Week keeps personal budgets and default reuse available",
+      "Natural quit and restart retain the unsaved weekly draft without changing the saved budget",
+      "Restart also restores a partially entered new week with the missing hours still blank",
+      "restart: natural quit exits with zero and leaves no owned PID",
+      "Final natural quit preserves the full restarted Database",
+      "Every monitored renderer has no console errors or uncaught exceptions",
+      "App logs contain no unexpected application errors",
+      "No owned Electron PID remains after both natural shutdowns"
+    ]
+  },
+  "quit": {
+    "command": "powershell -NoProfile -File scripts/run-ui-e2e.ps1 -Worktree . -Scripts e2e-quit.mjs",
+    "observed": {
+      "run": ".e2e-quit/run-WPYket",
+      "observer": true,
+      "exitCode": 0,
+      "checkCount": 9,
+      "naturalExitCodes": [
+        0,
+        0
+      ],
+      "signalCodes": [
+        null,
+        null
+      ],
+      "remainingOwnedProcessCount": 0,
+      "forcedCleanup": false,
+      "harnessSha256": "6e00a1a23262f49a727f5eba06a48010dd4d4ba856e238ab8061b780d71e43e7"
+    },
+    "withoutObserver": {
+      "run": ".e2e-quit/run-4FwkaR",
+      "observer": false,
+      "exitCode": 0,
+      "checkCount": 5,
+      "naturalExitCodes": [
+        0,
+        0
+      ],
+      "signalCodes": [
+        null,
+        null
+      ],
+      "remainingOwnedProcessCount": 0,
+      "forcedCleanup": false,
+      "harnessSha256": "6e00a1a23262f49a727f5eba06a48010dd4d4ba856e238ab8061b780d71e43e7"
+    }
+  },
+  "commonRegressions": {
+    "count": 11,
+    "scripts": [
+      "e2e.mjs",
+      "e2e-goals.mjs",
+      "e2e-dependencies.mjs",
+      "e2e-activity.mjs",
+      "e2e-task-priority.mjs",
+      "e2e-agents.mjs",
+      "e2e-notes.mjs",
+      "e2e-session-modes.mjs",
+      "e2e-start-reminder.mjs",
+      "e2e-presence-candidates.mjs",
+      "e2e-timeline.mjs"
+    ],
+    "source": {
+      "firstPrefixPassed": 4,
+      "firstPrefixMeasuredHead": "f6bacc104fb434faa8b16ee580c2895271ade82f",
+      "firstBatchExitCode": 1,
+      "failedRunPreserved": ".e2e/task-priority-run-FA608z",
+      "firstBatchFailure": "Task Priority fixture used a civil previous day equal to the current day at the configured 04:00 boundary; repaired in the harness.",
+      "remainingPassed": 7,
+      "remainingExitCode": 0,
+      "remainingMeasuredHead": "9090c96ebe4d587af82659ba2a7365ae3c723f0f",
+      "wholeFirstBatchPassed": false
+    },
+    "package": {
+      "passed": 11,
+      "exitCode": 0,
+      "measuredHead": "cd005590a151cf7f24bb442344e602d346864025"
+    }
+  },
+  "limitations": {
+    "nativeWindowsFilePicker": {
+      "verified": false,
+      "errorCode": "0x80070005",
+      "operation": "GetCursorPos",
+      "systemLockConfirmed": false,
+      "importWasClicked": false,
+      "dataIOUnitTestsAreNativeUIEvidence": false
+    },
+    "physicalTitlebarX": {
+      "verified": false,
+      "nativeCloseEventVerifiedRoute": "Public IPC from another window reaches BrowserWindow.close and its native close event"
+    },
+    "historical15SecondQuit": {
+      "reproduced": false,
+      "rootCause": "unknown"
+    },
+    "priorPidPresenceFailure": {
+      "run": ".e2e/phase2-planning-run-Jkv7Bs",
+      "pidReuseConfirmedAsHistoricalCause": false
+    },
+    "dataScope": "Isolated QA data and profiles; production installation and data were not modified."
+  },
+  "evidenceBindings": [
+    {
+      "name": "phase2-completion-final-gates.json",
+      "sha256": "cd81e4253fcde6998ec550236a8929c9ab43b33ed411ae7b2d13bb7fa5669ccc"
+    },
+    {
+      "name": "phase2-completion-final-tests.json",
+      "sha256": "6728723fdb04688189ea304c77705f864db70a335fb029656294a54dafb7513c"
+    },
+    {
+      "name": "phase2-completion-provenance-qa-final.json",
+      "sha256": "410e3bcb79129df44079a29848f0c4a871dd8a5f256342fdd75867430c07135e"
+    },
+    {
+      "name": "phase2-completion-final-source-ui.log",
+      "sha256": "d53188a0394f66c9dbb1cbcb99e85353b79b55442dde74c9363148d4a49d0209"
+    },
+    {
+      "name": "phase2-completion-final-source-ui-remaining.log",
+      "sha256": "6b451d53e522d561bdf9f7d373ffd83c656ad7aef740bd0a6a3d3aa919333595"
+    },
+    {
+      "name": "phase2-completion-native-ui-blocked.json",
+      "sha256": "c1ca014b199dd23901473e6c93829f512c6a517a7a8f22744b37a29d7ce456cd"
+    }
+  ]
+}

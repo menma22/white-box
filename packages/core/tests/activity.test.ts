@@ -33,6 +33,18 @@ describe('日・週の実績', () => {
     expect(activityDayKeys([s], at(5, 5), 4)).toEqual(['2026-10-05', '2026-10-04'])
   })
 
+  it('日境界の設定を変えると同じ記録を再配分し、全体時間は変えない', () => {
+    const startedAt = at(5, 4, 30)
+    const endedAt = at(5, 5, 30)
+    const s = session({ startedAt, endedAt, segments: [{ id: 'a', taskId: 'a', startedAt, endedAt }] })
+    expect(activityDayKeys([s], endedAt, 4)).toEqual(['2026-10-05'])
+    expect(activityDayKeys([s], endedAt, 5)).toEqual(['2026-10-05', '2026-10-04'])
+    expect(activitySummary([s], [], endedAt, dayRange('2026-10-05', 4)).focusMs).toBe(60 * MINUTE)
+    expect(activitySummary([s], [], endedAt, dayRange('2026-10-05', 5)).focusMs).toBe(30 * MINUTE)
+    expect(activitySummary([s], [], endedAt, dayRange('2026-10-04', 5)).focusMs).toBe(30 * MINUTE)
+    expect(focusMs(s, endedAt)).toBe(60 * MINUTE)
+  })
+
   it('停止・除外の重なりを二重に減算せず、内訳も重ねない', () => {
     const s = session({ pauses: [{ startedAt: at(5, 3, 40), endedAt: at(5, 4, 10), reason: 'manual' }, { startedAt: at(5, 3, 50), endedAt: at(5, 4, 20), reason: 'excluded' }] })
     const summary = activitySummary([s], [], at(5, 5), { startedAt: at(5, 3), endedAt: at(5, 5) })
@@ -87,6 +99,34 @@ describe('日・週の実績', () => {
     expect(summary.projectMs.get(null)).toBe(summary.focusMs)
   })
 
+  it('日付にならない時刻を日付列挙へ入れず、正常な履歴は残す', () => {
+    const valid = session()
+    const invalid = [
+      session({ startedAt: 1e20, endedAt: 1e20 + 1_000_000 }),
+      session({ endedAt: Infinity }),
+      session({ startedAt: NaN }),
+      session({ startedAt: -Infinity, endedAt: at(5, 5) }),
+    ]
+    expect(activityDayKeys([valid, ...invalid], at(5, 5), 4)).toEqual(['2026-10-05', '2026-10-04'])
+  })
+
+  it('長い記録も表示期間だけを列挙し、全体合計と元の記録は保つ', () => {
+    const startedAt = new Date(1800, 0, 1, 4).getTime()
+    const endedAt = new Date(2400, 0, 1, 4).getTime()
+    const s = session({ startedAt, endedAt, segments: [{ id: 'a', taskId: 'a', startedAt, endedAt }] })
+    const period = { startedAt: dayRange('2026-10-01', 4).startedAt, endedAt: dayRange('2026-11-01', 4).startedAt }
+    const keys = activityDayKeys([s], endedAt, 4, period)
+    expect(keys).toHaveLength(31)
+    expect(keys[0]).toBe('2026-10-31')
+    expect(keys[30]).toBe('2026-10-01')
+    expect(activitySummary([s], [], endedAt, period).focusMs).toBe(period.endedAt - period.startedAt)
+    expect(activitySummary([s], [], endedAt, { startedAt, endedAt }).focusMs).toBe(endedAt - startedAt)
+    expect(s.startedAt).toBe(startedAt)
+    expect(s.endedAt).toBe(endedAt)
+    expect(activityDayKeys([session({ startedAt: period.endedAt, endedAt: period.endedAt })], endedAt, 4, period)).toEqual([])
+    expect(activityDayKeys([session({ startedAt: period.startedAt, endedAt: period.startedAt })], endedAt, 4, period)).toEqual(['2026-10-01'])
+  })
+
   it('完了指標は人間が完了にした時刻で数え、進捗や目標を推測しない', () => {
     const done = { ...task('done', 'p'), status: 'done' as const, progress: 70, doneAt: at(5, 9) }
     expect(activitySummary([], [done, task('work', 'p')], at(5, 10), dayRange('2026-10-05', 4)).completedTasks).toEqual([done])
@@ -97,5 +137,30 @@ describe('日・週の実績', () => {
     expect(shiftDay('2026-12-31', 1)).toBe('2027-01-01')
     expect(weekKey('2026-10-04')).toBe('2026-09-28')
     expect(weekKey('2026-10-05')).toBe('2026-10-05')
+  })
+
+  it.each([
+    { month: 2, day: 8, key: '2026-03-08' },
+    { month: 10, day: 1, key: '2026-11-01' },
+  ])('夏時間切替日の $key も履歴と日・週の合計を保つ', ({ month, day, key }) => {
+    const originalTimezone = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      const startedAt = new Date(2026, month, day, 3, 30).getTime()
+      const endedAt = new Date(2026, month, day, 4, 30).getTime()
+      const s = session({ startedAt, endedAt, segments: [{ id: 'a', taskId: 'a', startedAt, endedAt }] })
+      const keys = activityDayKeys([s], endedAt, 4)
+      expect(keys).toEqual([key, shiftDay(key, -1)])
+      const daily = keys.map((day) => activitySummary([s], [], endedAt, dayRange(day, 4)).focusMs)
+      expect(daily).toEqual([30 * MINUTE, 30 * MINUTE])
+      expect(daily.reduce((sum, ms) => sum + ms, 0)).toBe(focusMs(s, endedAt))
+      expect(activitySummary([s], [], endedAt, weekRange(key, 4)).focusMs).toBe(focusMs(s, endedAt))
+      const afterBoundary = session({ startedAt: startedAt + 40 * MINUTE, endedAt, segments: [{ id: 'a', taskId: 'a', startedAt: startedAt + 40 * MINUTE, endedAt }] })
+      expect(activityDayKeys([afterBoundary], endedAt, 4)).toEqual([key])
+      expect(activitySummary([afterBoundary], [], endedAt, dayRange(key, 4)).focusMs).toBe(20 * MINUTE)
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ
+      else process.env.TZ = originalTimezone
+    }
   })
 })
