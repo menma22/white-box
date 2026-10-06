@@ -47,7 +47,7 @@ export function focusMs(session: Session, now: number): number {
   return Math.max(0, gross - pausedMsWithin(session.pauses, session.startedAt, end, now))
 }
 
-function focusEndOrNow(session: Session, now: number): number {
+export function focusEndOrNow(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
   if (session.endedAt !== null || session.mode === 'stopwatch') return end
   return plannedReachedAt(session, now) ?? end
@@ -127,13 +127,18 @@ export function totalRangeMs(ranges: TimeRange[]): number {
 }
 
 export function segmentFocusMs(session: Session, segment: TaskSegment, now: number): number {
+  const { startedAt: start, endedAt: end } = segmentRange(session, segment, now)
+  const gross = Math.max(0, end - start)
+  return Math.max(0, gross - pausedMsWithin(session.pauses, start, end, now))
+}
+
+export function segmentRange(session: Session, segment: TaskSegment, now: number): TimeRange {
   const sessionEnd = focusEndOrNow(session, now)
   const start = session.segments[0]?.id === segment.id ? session.startedAt : Math.max(segment.startedAt, session.startedAt)
   const end = session.segments[session.segments.length - 1]?.id === segment.id
     ? sessionEnd
     : Math.min(segment.endedAt ?? sessionEnd, sessionEnd)
-  const gross = Math.max(0, end - start)
-  return Math.max(0, gross - pausedMsWithin(session.pauses, start, end, now))
+  return { startedAt: start, endedAt: end }
 }
 
 export function remainingMs(session: Session, now: number): number {
@@ -180,9 +185,13 @@ export function dayStartTs(key: string, dayStartHour: number): number {
   return new Date(y, m - 1, d, dayStartHour, 0, 0, 0).getTime()
 }
 
-export function sessionsOfDay(sessions: Session[], key: string, dayStartHour: number): Session[] {
+export function sessionsOfDay(sessions: Session[], key: string, dayStartHour: number, now = Date.now()): Session[] {
+  const from = dayStartTs(key, dayStartHour)
+  const next = new Date(from)
+  next.setDate(next.getDate() + 1)
+  const to = next.getTime()
   return sessions
-    .filter((s) => dayKey(s.startedAt, dayStartHour) === key)
+    .filter((s) => s.startedAt < to && (sessionEndOrNow(s, now) > from || s.startedAt >= from))
     .sort((a, b) => a.startedAt - b.startedAt)
 }
 

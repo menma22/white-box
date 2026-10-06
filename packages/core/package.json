@@ -5,6 +5,10 @@
   "type": "module",
   "description": "両プロセスで使う純粋な時間計算と型。外部依存ゼロ",
   "exports": {
+    "./activity": {
+      "types": "./dist/activity.d.ts",
+      "default": "./dist/activity.js"
+    },
     "./task-control": {
       "types": "./dist/task-control.d.ts",
       "default": "./dist/task-control.js"

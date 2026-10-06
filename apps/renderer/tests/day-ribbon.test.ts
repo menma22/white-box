@@ -78,7 +78,8 @@ describe('2行のタイムライン', () => {
     const s = session({ endedAt: null, segments: [{ id: 'seg', taskId: 'task', startedAt: T0, endedAt: null }], pauses: [{ startedAt: T0 + MINUTE, endedAt: null, reason: 'manual' }] })
     const items = ribbonRows([s], T0 + 3 * HOUR).flatMap((r) => r.items)
     expect(items.reduce((sum, i) => sum + i.focusMs, 0)).toBe(MINUTE)
-    expect(items.filter((i) => i.kind === 'work' && i.live)).toHaveLength(1)
+    expect(items.filter((i) => i.kind === 'work' && i.live)).toHaveLength(0)
+    expect(items.filter((i) => i.kind === 'pause' && i.live)).toHaveLength(1)
   })
 
   it('日付をまたぐ記録を連続した時刻で保持する', () => {

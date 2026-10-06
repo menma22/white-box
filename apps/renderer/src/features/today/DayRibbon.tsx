@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Session } from '@white-box/core/types'
+import type { Session, TimeRange } from '@white-box/core/types'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { formatClock, formatDuration, MINUTE } from '@white-box/core/engine'
@@ -13,10 +13,10 @@ function duration(ms: number): string {
   return ms < MINUTE ? `${Math.floor(ms / 1000)}s` : formatDuration(ms, 'compact')
 }
 
-export function DayRibbon({ sessions, now }: { sessions: Session[]; now: number }) {
+export function DayRibbon({ sessions, now, period }: { sessions: Session[]; now: number; period?: TimeRange }) {
   const state = useData()
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const rows = ribbonRows(sessions, now)
+  const rows = ribbonRows(sessions, now, period)
   if (!rows.length) return null
   const selected = rows.flatMap((row) => row.items).find((item) => item.key === selectedKey)
   const project = (item: RibbonItem) => projectById(state, taskById(state, item.taskId)?.projectId ?? null)

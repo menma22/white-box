@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useApp, useData } from '@/stores/app'
-import { dayKeysWithSessions, dayTotalMs, sessionsForDay, todayKey } from '@/lib/selectors'
+import { dayKeysWithSessions, todayKey } from '@/lib/selectors'
+import { activitySummary, dayRange } from '@white-box/core/activity'
 import { BigDuration, Empty } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import { SessionRow } from '@/features/sessions/SessionRow'
@@ -9,11 +10,12 @@ import { PresenceCandidates } from '@/features/presence/PresenceCandidates'
 export function HistoryView() {
   const state = useData()
   const now = useApp((s) => s.now)
-  const keys = useMemo(() => dayKeysWithSessions(state), [state.sessions])
+  const keys = useMemo(() => dayKeysWithSessions(state, now), [state.sessions, state.settings.dayStartHour, now])
   const today = todayKey(state, now)
   const [open, setOpen] = useState<string[]>([today])
 
-  const totals = useMemo(() => keys.map((k) => dayTotalMs(state, k, now)), [keys, state.sessions, now])
+  const summaries = useMemo(() => keys.map((k) => activitySummary(state.sessions, state.tasks, now, dayRange(k, state.settings.dayStartHour))), [keys, state.sessions, state.tasks, state.settings.dayStartHour, now])
+  const totals = summaries.map((summary) => summary.focusMs)
   const max = Math.max(1, ...totals)
   const grand = totals.reduce((a, b) => a + b, 0)
 
@@ -49,7 +51,8 @@ export function HistoryView() {
         <PresenceCandidates />
         {keys.map((key, i) => {
           const total = totals[i] ?? 0
-          const sessions = sessionsForDay(state, key)
+          const summary = summaries[i]!
+          const sessions = summary.sessions
           const expanded = open.includes(key)
           const d = new Date(`${key}T00:00:00`)
           return (
@@ -74,7 +77,7 @@ export function HistoryView() {
               {expanded && (
                 <div className="hday-body">
                   {[...sessions].reverse().map((s) => (
-                    <SessionRow key={s.id} session={s} now={now} />
+                    <SessionRow key={s.id} session={s} now={now} inPeriod={{ ms: summary.sessionMs.get(s.id) ?? 0, label: 'この日' }} />
                   ))}
                 </div>
               )}

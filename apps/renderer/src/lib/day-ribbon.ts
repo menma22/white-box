@@ -1,5 +1,6 @@
-import type { Session } from '@white-box/core/types'
-import { HOUR, pausedMsWithin } from '@white-box/core/engine'
+import type { Session, TimeRange } from '@white-box/core/types'
+import { HOUR } from '@white-box/core/engine'
+import { activityTimeline } from '@white-box/core/activity'
 
 export interface RibbonItem {
   key: string
@@ -18,10 +19,10 @@ export interface RibbonRow {
   items: RibbonItem[]
 }
 
-export function ribbonRows(sessions: Session[], now: number): RibbonRow[] {
+export function ribbonRows(sessions: Session[], now: number, period?: TimeRange): RibbonRow[] {
   if (!sessions.length) return []
-  const first = Math.min(...sessions.map((s) => s.startedAt))
-  const last = Math.max(...sessions.map((s) => s.endedAt ?? now))
+  const first = Math.max(period?.startedAt ?? -Infinity, Math.min(...sessions.map((s) => s.startedAt)))
+  const last = Math.min(period?.endedAt ?? Infinity, Math.max(...sessions.map((s) => s.endedAt ?? now)))
   const startDate = new Date(first)
   startDate.setMinutes(0, 0, 0)
   const start = startDate.getTime()
@@ -34,28 +35,18 @@ export function ribbonRows(sessions: Session[], now: number): RibbonRow[] {
     }
   })
 
-  for (const session of sessions) {
-    const end = session.endedAt ?? now
-    const add = (key: string, from: number, to: number, kind: RibbonItem['kind'], taskId: string | null) => {
-      for (const row of rows) {
-        const startedAt = Math.max(from, session.startedAt, row.startedAt)
-        const endedAt = Math.min(to, end, row.endedAt)
-        if (endedAt <= startedAt) continue
-        row.items.push({
-          key: `${session.id}:${key}:${row.startedAt}`, taskId, kind, startedAt, endedAt,
-          focusMs: kind === 'work' ? endedAt - startedAt - pausedMsWithin(session.pauses, startedAt, endedAt, now) : 0,
-          live: session.endedAt === null && to === end && endedAt === end,
-        })
-      }
+  for (const item of activityTimeline(sessions, now, period ?? { startedAt: first, endedAt: last })) {
+    const session = sessions.find((s) => s.id === item.sessionId)!
+    for (const row of rows) {
+      const startedAt = Math.max(item.startedAt, row.startedAt)
+      const endedAt = Math.min(item.endedAt, row.endedAt)
+      if (endedAt <= startedAt) continue
+      row.items.push({
+        key: `${item.sessionId}:${item.kind}:${item.startedAt}:${row.startedAt}`, taskId: item.taskId, kind: item.kind, startedAt, endedAt,
+        focusMs: item.kind === 'work' ? endedAt - startedAt : 0,
+        live: session.endedAt === null && item.endedAt === now && endedAt === now,
+      })
     }
-    session.segments.forEach((segment, index) => {
-      const from = index === 0 ? session.startedAt : segment.startedAt
-      const to = index === session.segments.length - 1 ? end : segment.endedAt ?? end
-      add(segment.id, from, to, 'work', segment.taskId)
-    })
-    session.pauses.forEach((pause, index) => {
-      add(`pause-${index}`, pause.startedAt, pause.endedAt ?? end, pause.reason === 'excluded' ? 'excluded' : 'pause', null)
-    })
   }
   return rows
 }

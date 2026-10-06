@@ -13,6 +13,7 @@
 | 境界 | `pnpm run lint` | レンダラが `apps/desktop` を覗いていないか（eslint の import 制限） |
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
 | 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物の IPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
+| 今日・週の実績 | `node scripts/e2e-activity.mjs` | 日・週境界、Project/Task別の和、最近14日、実IPCの時刻編集・停止・除外・満了、削除Task、最小画面幅、保存と再起動 |
 | 依存関係・外部待ち | `node scripts/e2e-dependencies.mjs` | 旧DB互換・開始ガード・循環拒否・削除後のリンク保持・外部待ちUI・確認導線・保存と再起動。WHITEBOX_EXE経路対応 |
 | 開始通知 | `node scripts/e2e-start-reminder.mjs` | 実設定UI・保存・再起動・監視helperの起動と終了。WHITEBOX_EXE経路も対応 |
 | Windows入力監視 | `node scripts/verify-input-activity.mjs` | 実GetAsyncKeyState helperの数値出力と停止。入力文字・生の回数は証拠に保存しない |

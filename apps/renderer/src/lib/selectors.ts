@@ -1,5 +1,6 @@
 import type { AppState, ID, Project, Session, Task, TaskStatus } from '@white-box/core/types'
-import { dayKey, focusByTaskAcross, focusMs, sessionsOfDay } from '@white-box/core/engine'
+import { dayKey, focusByTaskAcross, sessionsOfDay } from '@white-box/core/engine'
+import { activityDayKeys, activitySummary, dayRange } from '@white-box/core/activity'
 
 export const STATUS_ORDER: TaskStatus[] = ['inbox', 'todo', 'doing', 'done']
 
@@ -98,17 +99,16 @@ export function todayKey(state: AppState, now: number): string {
   return dayKey(now, state.settings.dayStartHour)
 }
 
-export function sessionsForDay(state: AppState, key: string): Session[] {
-  return sessionsOfDay(state.sessions, key, state.settings.dayStartHour)
+export function sessionsForDay(state: AppState, key: string, now = Date.now()): Session[] {
+  return sessionsOfDay(state.sessions, key, state.settings.dayStartHour, now)
 }
 
-export function dayKeysWithSessions(state: AppState): string[] {
-  const keys = new Set(state.sessions.map((s) => dayKey(s.startedAt, state.settings.dayStartHour)))
-  return [...keys].sort().reverse()
+export function dayKeysWithSessions(state: AppState, now = Date.now()): string[] {
+  return activityDayKeys(state.sessions, now, state.settings.dayStartHour)
 }
 
 export function dayTotalMs(state: AppState, key: string, now: number): number {
-  return sessionsForDay(state, key).reduce((sum, s) => sum + focusMs(s, now), 0)
+  return activitySummary(state.sessions, state.tasks, now, dayRange(key, state.settings.dayStartHour)).focusMs
 }
 
 export function projectColor(project: Project | null): string {
