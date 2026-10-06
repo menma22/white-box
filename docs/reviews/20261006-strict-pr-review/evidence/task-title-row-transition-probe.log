@@ -1,0 +1,1 @@
+PASS GoalTasks completed-row collapse: actual runEditorAction freezes window, waits for actual title participant, and failed title save leaves completed row/editor mounted with error.

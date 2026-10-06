@@ -1,0 +1,29 @@
+Waiting for the White Box UI E2E lock...
+UI E2E lock acquired: .
+Evidence: .\.e2e\notes-run-fd1IIo
+PASS first: CDP is attached to this build "file:///<checkout>/dist/index.html#main"
+PASS Legacy database loads empty notes and preserves tasks
+PASS Two clicks during creation produce one note
+PASS State broadcasts retain the current draft
+PASS Autosave stores title and body without creating more notes
+PASS Tab shortcut retains the failed draft and the note editor
+PASS Tab click also retains the failed draft
+PASS Leaving after retry persists the entire failed draft
+PASS Project, task, pin and future date persist
+PASS Strict IPC rejects misspelled changes without overwriting the body
+PASS Search matches all words across title and body
+PASS Creating another note flushes the selected note before switching
+PASS Archive preserves content, links, pin and date
+PASS Daily view displays the pinned reminder
+PASS Reminder opens the exact saved note
+PASS 940x620 viewport retains usable list and editor with no horizontal overflow {"width":940,"height":620,"editor":455.41668701171875,"body":230,"list":256.91668701171875,"overflow":0,"editorWidth":413.3333435058594}
+PASS Existing tasks and daily notes stay unchanged
+Cleanup: {"pid":25780,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+PASS restart: CDP is attached to this build "file:///<checkout>/dist/index.html#main"
+PASS Restart restores every note with content, links and reminder state
+PASS Restarted editor is linked to the original note
+PASS Acknowledging clears the date and retains the pinned content
+PASS Renderer has no console errors or uncaught exceptions []
+Cleanup: {"pid":34012,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Evidence: .\.e2e\notes-run-fd1IIo
+UI E2E lock released.

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "origin": "artifactreview/strict-20261006/test-before-legacy-fix.log",
+  "failure": {
+    "file": "apps/desktop/tests/goal-ops.test.ts",
+    "test": "旧DBの既存項目を変えず空の道標を補い、取り込み後も再読込と置換で保持する",
+    "cause": "Settings parser received undefined for a recognized legacy v1 envelope"
+  },
+  "productCorrection": "Validate raw.settings only when defined; normalize missing settings with defaults; reject explicit null",
+  "regressions": {
+    "file": "apps/desktop/tests/storage-integrity.test.ts",
+    "scope": [
+      "recognized v1 envelope without settings",
+      "saved dayNotes retained",
+      "fresh Store reload",
+      "explicit settings:null rejection"
+    ],
+    "latestFullSuitePassed": true
+  },
+  "separateExpectationCorrection": {
+    "scope": "S13 synthetic store-save fixture",
+    "cause": "raw input was incorrectly compared with normalized Store.data",
+    "productChangeRequired": false
+  }
+}

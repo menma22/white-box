@@ -1,0 +1,306 @@
+{
+  "fingerprint": "82bf060cb087935cea75de51d7837b168d56e5d4feea4889ec342af556fdde3e",
+  "comparison": {
+    "repository": "menma22/white-box",
+    "base": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+    "head": "125026f7088487a429170f6276786a13f0e40c4c",
+    "working_tree_included": false,
+    "scope": "Only the additional required shutdown recovery-checkpoint repair. Preserve all prior 97e583d purpose inventories and suite evidence as historical snapshots."
+  },
+  "purposes": {
+    "PshutdownRecoveryCheckpoint": "Require a successful recovery checkpoint before final shutdown persistence/service stop, while preserving existing periodic best-effort heartbeat behavior; synchronize StorePort/actual Store/prepareQuit and add two real-Store write/rename fault regressions with the actual prepareQuit wired into the test SystemPort."
+  },
+  "assignments": {
+    "1": "PshutdownRecoveryCheckpoint",
+    "2": "PshutdownRecoveryCheckpoint",
+    "3": "PshutdownRecoveryCheckpoint",
+    "4": "PshutdownRecoveryCheckpoint",
+    "5": "PshutdownRecoveryCheckpoint",
+    "6": "PshutdownRecoveryCheckpoint",
+    "7": "PshutdownRecoveryCheckpoint",
+    "8": "PshutdownRecoveryCheckpoint",
+    "9": "PshutdownRecoveryCheckpoint",
+    "10": "PshutdownRecoveryCheckpoint",
+    "11": "PshutdownRecoveryCheckpoint",
+    "12": "PshutdownRecoveryCheckpoint",
+    "13": "PshutdownRecoveryCheckpoint",
+    "14": "PshutdownRecoveryCheckpoint",
+    "15": "PshutdownRecoveryCheckpoint",
+    "16": "PshutdownRecoveryCheckpoint",
+    "17": "PshutdownRecoveryCheckpoint",
+    "18": "PshutdownRecoveryCheckpoint",
+    "19": "PshutdownRecoveryCheckpoint",
+    "20": "PshutdownRecoveryCheckpoint",
+    "21": "PshutdownRecoveryCheckpoint",
+    "22": "PshutdownRecoveryCheckpoint",
+    "23": "PshutdownRecoveryCheckpoint",
+    "24": "PshutdownRecoveryCheckpoint",
+    "25": "PshutdownRecoveryCheckpoint",
+    "26": "PshutdownRecoveryCheckpoint",
+    "27": "PshutdownRecoveryCheckpoint",
+    "28": "PshutdownRecoveryCheckpoint",
+    "29": "PshutdownRecoveryCheckpoint",
+    "30": "PshutdownRecoveryCheckpoint",
+    "31": "PshutdownRecoveryCheckpoint",
+    "32": "PshutdownRecoveryCheckpoint",
+    "33": "PshutdownRecoveryCheckpoint",
+    "34": "PshutdownRecoveryCheckpoint",
+    "35": "PshutdownRecoveryCheckpoint",
+    "36": "PshutdownRecoveryCheckpoint",
+    "37": "PshutdownRecoveryCheckpoint",
+    "38": "PshutdownRecoveryCheckpoint",
+    "39": "PshutdownRecoveryCheckpoint",
+    "40": "PshutdownRecoveryCheckpoint",
+    "41": "PshutdownRecoveryCheckpoint",
+    "42": "PshutdownRecoveryCheckpoint",
+    "43": "PshutdownRecoveryCheckpoint",
+    "44": "PshutdownRecoveryCheckpoint",
+    "45": "PshutdownRecoveryCheckpoint",
+    "46": "PshutdownRecoveryCheckpoint",
+    "47": "PshutdownRecoveryCheckpoint",
+    "48": "PshutdownRecoveryCheckpoint",
+    "49": "PshutdownRecoveryCheckpoint",
+    "50": "PshutdownRecoveryCheckpoint",
+    "51": "PshutdownRecoveryCheckpoint",
+    "52": "PshutdownRecoveryCheckpoint",
+    "53": "PshutdownRecoveryCheckpoint",
+    "54": "PshutdownRecoveryCheckpoint",
+    "55": "PshutdownRecoveryCheckpoint",
+    "56": "PshutdownRecoveryCheckpoint",
+    "57": "PshutdownRecoveryCheckpoint",
+    "58": "PshutdownRecoveryCheckpoint",
+    "59": "PshutdownRecoveryCheckpoint",
+    "60": "PshutdownRecoveryCheckpoint",
+    "61": "PshutdownRecoveryCheckpoint"
+  },
+  "coverage": {
+    "files": 4,
+    "hunks": 6,
+    "units": 61,
+    "added": 56,
+    "deleted": 5,
+    "metadata": 0,
+    "purposes": 1,
+    "missing": 0,
+    "duplicate_assignments": 0,
+    "deleted_tests_or_comments": 0
+  },
+  "counts_by_purpose": {
+    "PshutdownRecoveryCheckpoint": {
+      "added": 56,
+      "deleted": 5,
+      "metadata": 0
+    }
+  },
+  "classification_groups": [
+    {
+      "units": "1-2",
+      "path": "apps/desktop/src/app/lifecycle.ts:120",
+      "purpose": "PshutdownRecoveryCheckpoint",
+      "rationale": "Opt in at the mandatory shutdown checkpoint; existing catch resets quitting and rethrows before database save or ticker stop."
+    },
+    {
+      "units": "3-4",
+      "path": "apps/desktop/src/app/ports.ts:13",
+      "purpose": "PshutdownRecoveryCheckpoint",
+      "rationale": "Optional port argument carries the mandatory checkpoint requirement without invalidating zero-argument callers/adapters."
+    },
+    {
+      "units": "5-9",
+      "path": "apps/desktop/src/infra/store.ts:201",
+      "purpose": "PshutdownRecoveryCheckpoint",
+      "rationale": "Real Store retains the same temp-write/bounded rename mechanism and rethrows only under explicit requireSuccess; ordinary marker calls still swallow write/rename failure."
+    },
+    {
+      "units": "10-11",
+      "path": "apps/desktop/tests/store-save.test.ts:10",
+      "purpose": "PshutdownRecoveryCheckpoint",
+      "rationale": "Import actual prepareQuit alongside existing actual recovery instead of testing an unconnected fake quit action."
+    },
+    {
+      "units": "12-61",
+      "path": "apps/desktop/tests/store-save.test.ts:161",
+      "purpose": "PshutdownRecoveryCheckpoint",
+      "rationale": "Two fault cases traverse receive/handler/test SystemPort/real prepareQuit/real Store, assert canceled stop and unchanged bytes, retry normally, then reload/recover the successful checkpoint."
+    }
+  ],
+  "primary_sources": [
+    {
+      "path": "docs/decisions.md",
+      "lines": "226-234",
+      "primary_requirement": "Decision025 requires the recovery marker and database to save before stopping services; any save failure cancels shutdown and displays an error.",
+      "content_sha256_at_classification": "6ba63ba9d4c27cef22fdc15a323769fbeb24990183b8793ad0a022d7c53fdc11"
+    },
+    {
+      "path": "docs/stories/20261006_story_phase2-completion.md",
+      "lines": "15-20,24,32-33",
+      "primary_requirement": "Cancel failed shutdown and permit continued work; await renderer preparation; do not claim the historical unreproduced native hang is solved.",
+      "content_sha256_at_classification": "bbee0d24cb26f88b7575288fd68726c46e3589de949fb3efc1bc56d7854a14bb"
+    },
+    {
+      "path": "docs/product-spec.md",
+      "lines": "99-107",
+      "primary_requirement": "Declared execution records must preserve what/when work occurred.",
+      "content_sha256_at_classification": "2b4d5379907232d83863ae8ce0dd5fc1d1cedf6bab7b72f9e4dbfc4aaee5b2ee"
+    },
+    {
+      "path": "docs/architecture.md",
+      "lines": "117-140",
+      "primary_requirement": "Recovery uses the latest successful marker/action; ordinary periodic marker failure remains best-effort and previous committed files remain intact.",
+      "content_sha256_at_classification": "e2c6c36101e4e7595f8df25a1e95aa3246612e9ca172ecc0d7aa0b04cac8ac02"
+    }
+  ],
+  "explicit_scope": "Parent authorized this required-checkpoint repair, retained periodic best-effort compatibility, prohibited source/QA/build/UI edits for this audit, and supplied fixed base/head. Current document hashes identify requirements read; documentary publication is outside this comparison.",
+  "conditions": [
+    {
+      "id": "C1",
+      "verdict": "satisfied",
+      "condition": "Successful no-fault shutdown saves the exact quit-time marker and final database before stopping ticker; restart retains the full declared interval.",
+      "sources": [
+        "Decision025",
+        "completion-story:17"
+      ],
+      "evidence": [
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-ZNk8kJ/results.json",
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-Ygtt2H/results.json",
+        "apps/desktop/src/app/lifecycle.ts:117"
+      ],
+      "observed": "Both control probes record 60 minutes, one DB rename, updated quit marker and zero lost focus."
+    },
+    {
+      "id": "C2",
+      "verdict": "satisfied",
+      "condition": "A required marker write or replacement failure cancels shutdown, clears quitting, keeps ticker active, preserves old marker/database bytes, and does not perform final DB rename.",
+      "sources": [
+        "Decision025",
+        "completion-story:16-17"
+      ],
+      "evidence": [
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-Ygtt2H/results.json",
+        "apps/desktop/tests/store-save.test.ts:161"
+      ],
+      "observed": "Both fixed real-Store probe faults cancel, keep tickerRunning=true and databaseRenames=0. Committed tests add exact DB/marker-byte assertions."
+    },
+    {
+      "id": "C3",
+      "verdict": "satisfied",
+      "condition": "Fault removal allows a normal retry and restart recovery retains the new checkpoint instead of the previously stale marker.",
+      "sources": [
+        "Decision025",
+        "completion-story:16-17"
+      ],
+      "evidence": [
+        "apps/desktop/tests/store-save.test.ts:197",
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-Ygtt2H/results.json"
+      ],
+      "observed": "New regressions assert successful retry, ticker stop, marker at 35 minutes and fresh Store recovery at that marker. The independent fixed probe separately confirms no-fault 60-minute recovery; this audit did not rerun the new test suite."
+    },
+    {
+      "id": "C4",
+      "verdict": "satisfied",
+      "condition": "Ordinary periodic and wake heartbeat failures remain nonthrowing; the optional flag does not change existing zero-argument calls, prior-byte preservation, or retry bounds.",
+      "sources": [
+        "architecture periodic compatibility",
+        "explicit parent preservation scope"
+      ],
+      "evidence": [
+        "apps/desktop/src/infra/store.ts:201",
+        "apps/desktop/src/presentation/main.ts:88",
+        "apps/desktop/src/presentation/main.ts:159",
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-ZNk8kJ/results.json",
+        "artifactreview/strict-20261006/shutdown-heartbeat-check/run-Ygtt2H/results.json"
+      ],
+      "observed": "Both probes tolerate all 19 failed periodic writes or 76 failed bounded periodic rename attempts before quitting; only required shutdown failure now propagates."
+    },
+    {
+      "id": "C5",
+      "verdict": "satisfied",
+      "condition": "The actual production before-quit path receives the required checkpoint error, releases prepared editors, displays the existing failure dialog, and clears preparingQuit without stopping later services.",
+      "sources": [
+        "Decision025",
+        "completion-story:17-18"
+      ],
+      "evidence": [
+        "apps/desktop/src/presentation/main.ts:169",
+        "apps/desktop/src/app/lifecycle.ts:117"
+      ],
+      "observed": "Unchanged before-quit callback calls real prepareQuit before service stops; its existing catch/release/native-error dialog and finally reset handle the newly propagated error."
+    },
+    {
+      "id": "C6",
+      "verdict": "unverified",
+      "condition": "Native renderer preparation, failure dialog and actual service continuation under required checkpoint faults are observed in the newly built source/package app; final whole-suite and native exit outcomes belong to the new125 snapshot.",
+      "sources": [
+        "completion-story:18,20,32-33"
+      ],
+      "evidence": [
+        "Parent scheduled fresh gates and 13/12 UI suites; artifacts will be independently counted after their final logs exist."
+      ],
+      "observed": "This inventory task does not run UI/build/tests. Historical97 successes are not reused as125 runtime evidence."
+    }
+  ],
+  "deleted_guarantee_checks": [
+    {
+      "units": [
+        "1"
+      ],
+      "retained_guarantee": "Shutdown still records alive time before main save and ticker stop; swallowing that mandatory failure is intentionally removed to meet Decision025."
+    },
+    {
+      "units": [
+        "3",
+        "5"
+      ],
+      "retained_guarantee": "Zero-argument StorePort and actual Store callers remain compatible through optional/default options; periodic failure semantics stay best-effort."
+    },
+    {
+      "units": [
+        "7"
+      ],
+      "retained_guarantee": "Catch still swallows ordinary heartbeat failure and preserves the existing comment; only explicit mandatory success rethrows the original cause."
+    },
+    {
+      "units": [
+        "10"
+      ],
+      "retained_guarantee": "Existing restoreOpenSession import/tests remain; actual prepareQuit is added for a properly connected regression path."
+    }
+  ],
+  "independent_probe_evidence": {
+    "baseline": {
+      "path": "artifactreview/strict-20261006/shutdown-heartbeat-check/run-ZNk8kJ/results.json",
+      "sha256": "dea1eddbb5615698382c4924c2654e0f9256564885878d6c5d1c433bbb709ca8",
+      "matched_commit": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+      "source_provenance_matches_commit": true,
+      "expected_cancellation": false
+    },
+    "fixed": {
+      "path": "artifactreview/strict-20261006/shutdown-heartbeat-check/run-Ygtt2H/results.json",
+      "sha256": "ef95226852fe2c3597543b1858b041da60d9548509693fc9320a53f4d9bf9337",
+      "matched_commit": "125026f7088487a429170f6276786a13f0e40c4c",
+      "source_provenance_matches_commit": true,
+      "expected_cancellation": true
+    }
+  },
+  "reproduction": {
+    "valid_baseline": "run-ZNk8kJ",
+    "fixed_probe": "run-Ygtt2H",
+    "baseline_control_minutes": 60,
+    "baseline_fault_recovery_minutes": 55,
+    "baseline_fault_loss_minutes": 5,
+    "fixed_fault_outcome": "shutdown canceled; ticker continues; no final DB rename",
+    "excluded_baseline": "The first root red regression used a fake SystemPort that never called prepareQuit; it does not establish the product failure. Only the independent ZNk8kJ probe is counted as the before baseline."
+  },
+  "test_boundaries": [
+    "New committed tests use real Store, actual receive/handlers, actual prepareQuit and actual restoreOpenSession; their SystemPort fake calls prepareQuit synchronously.",
+    "Production SystemPort invokes app.quit and Electron before-quit awaits renderer preparation asynchronously. The unit ok:false reply is not evidence that the actual public quit IPC returns a failure reply; production failure is surfaced by the existing native error dialog.",
+    "The preparingQuit=false assertion in the synchronous fake begins false; it is not a measured native true-to-false preparation transition. The production finally reset is inspected separately.",
+    "The probe ticker is a fake Port whose stop invocation is recorded; healthy/faulting native ticker/runtime behavior requires separate runtime evidence.",
+    "Exception-safety preservation does not establish physical power-loss or disk-flush durability, and does not identify the historical intermittent quit-hang root cause."
+  ],
+  "scope_exclusions": [
+    "Renderer, core and all QA scripts are unchanged97-to125.",
+    "Previous97 inventories and source/package-suite tables remain byte-for-byte unmodified by this classifier.",
+    "Later documentary publication and newly rerun UI-suite results are separate evidence scopes."
+  ]
+}

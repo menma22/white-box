@@ -1,0 +1,12 @@
+Waiting for the White Box UI E2E lock...
+UI E2E lock acquired: .
+Evidence: .\.e2e-quit\run-jwGnRW
+PASS first: verified CDP browser PID and main page belong to this launch
+PASS first: native process exited with code zero
+PASS Natural shutdown preserves the complete database
+PASS restart: verified CDP browser PID and main page belong to this launch
+PASS Restart preserves the complete database
+PASS restart: native process exited with code zero
+PASS All owned Electron processes are absent
+Evidence: .\.e2e-quit\run-jwGnRW
+UI E2E lock released.

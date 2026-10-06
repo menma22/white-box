@@ -1,0 +1,152 @@
+{
+  "fingerprint": "26232892b7b4727dc36ab3d0e62a6c61db99773fc732f8a94d5ab2c4047f0709",
+  "comparison": {
+    "repository": "menma22/white-box",
+    "base": "125026f7088487a429170f6276786a13f0e40c4c",
+    "head": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48",
+    "working_tree_included": false,
+    "product_commit": "125026f7088487a429170f6276786a13f0e40c4c",
+    "qa_commit": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48"
+  },
+  "purposes": {
+    "PqaNotesReadiness": "Wait for the observable completed Today transition, unlocked Main and absent DOM status/dialog plus two animation frames before the existing Ctrl+7 return; preserve original verify/key order/expectations without mutating product state."
+  },
+  "assignments": {
+    "1": "PqaNotesReadiness",
+    "2": "PqaNotesReadiness"
+  },
+  "coverage": {
+    "files": 1,
+    "hunks": 1,
+    "units": 2,
+    "added": 2,
+    "deleted": 0,
+    "metadata": 0,
+    "purposes": 1,
+    "missing": 0,
+    "duplicates": 0,
+    "deleted_tests_or_comments": 0
+  },
+  "counts_by_purpose": {
+    "PqaNotesReadiness": {
+      "added": 2,
+      "deleted": 0,
+      "metadata": 0
+    }
+  },
+  "changed_locations": [
+    {
+      "unit": "1",
+      "file": "scripts/e2e-notes.mjs",
+      "head_line": 254,
+      "reason": "Read-only signals wait for completed editor navigation and an unlocked Today target before shortcut dispatch"
+    },
+    {
+      "unit": "2",
+      "file": "scripts/e2e-notes.mjs",
+      "head_line": 255,
+      "reason": "Allow two browser paint frames before the unchanged return key"
+    }
+  ],
+  "primary_sources": [
+    {
+      "path": "docs/decisions.md",
+      "lines": "226-234",
+      "condition": "Input stays locked until the saved transition completes; failed operations cancel.",
+      "content_sha256_at_classification": "6ba63ba9d4c27cef22fdc15a323769fbeb24990183b8793ad0a022d7c53fdc11"
+    },
+    {
+      "path": "docs/stories/20261006_story_phase2-completion.md",
+      "lines": "15-20,32-33",
+      "condition": "Actual UI verification respects save/transition locking and preserves failed drafts.",
+      "content_sha256_at_classification": "bbee0d24cb26f88b7575288fd68726c46e3589de949fb3efc1bc56d7854a14bb"
+    },
+    {
+      "path": "docs/verification.md",
+      "lines": "51",
+      "condition": "Observe real state and preserve failures; successful remeasurement does not diagnose an earlier timeout.",
+      "content_sha256_at_classification": "875c4741953d59e6af1695e3245fb4b869902818712fa7823f51531a8a54e31b"
+    },
+    {
+      "kind": "explicit parent task",
+      "condition": "Readiness-only QA; preserve Ctrl+7 expectations, product125 and historical failed batch. Do not claim causal resolution of earlier timeout."
+    }
+  ],
+  "conditions": [
+    {
+      "id": "Q1",
+      "verdict": "satisfied",
+      "condition": "Wait for Main present, inert=false, aria-busy not true, no editor-flush-status/DOM dialog, and active Today key1, then two frames before the same Ctrl+7.",
+      "evidence": [
+        "scripts/e2e-notes.mjs:254",
+        "apps/renderer/src/lib/useEditorFlush.ts:48"
+      ]
+    },
+    {
+      "id": "Q2",
+      "verdict": "satisfied",
+      "condition": "Prior key dispatches/assertions remain, with no product mutation or source change.",
+      "evidence": [
+        "Removing exactly the added two lines recovers the complete old script text.",
+        "Git apps/packages tree hashes125==15."
+      ]
+    },
+    {
+      "id": "Q3",
+      "verdict": "satisfied",
+      "condition": "Official strengthened source script completes22 original checks, save/retry and restart under product125/QA15.",
+      "evidence": [
+        ".e2e/notes-run-fd1IIo/result.json",
+        "artifactreview/strict-20261006/notes-source-ready-final.log"
+      ],
+      "scope": "One official source rerun, not the observer diagnostic copy."
+    },
+    {
+      "id": "Q4",
+      "verdict": "unverified",
+      "condition": "Original package return-to-notes timeout has a proven cause or is eliminated generally.",
+      "evidence": [
+        ".e2e/notes-run-g4uzMR/result.json",
+        ".e2e/notes-run-g4uzMR/failure.txt",
+        "artifactreview/strict-20261006/notes-navigation-check/navigation-trace.json"
+      ],
+      "scope": "Main locking observed in another transition motivates readiness; it does not establish the original timeout cause."
+    }
+  ],
+  "preserved_failure": {
+    "product_commit": "125026f7088487a429170f6276786a13f0e40c4c",
+    "qa_commit": "125026f7088487a429170f6276786a13f0e40c4c",
+    "run": ".e2e/notes-run-g4uzMR",
+    "result": ".e2e/notes-run-g4uzMR/result.json",
+    "result_sha256": "e2b1de12ca5680868cef308e8409f357be6a992a381babf1831961118ff536a1",
+    "script_exit_code": 1,
+    "recorded_passed_checks": 8,
+    "recorded_failed_check_objects": 0,
+    "failure_file": ".e2e/notes-run-g4uzMR/failure.txt",
+    "failure": "Timed out: return to notes",
+    "interpretation": "Failure occurred before another check was recorded; zero failed check objects is not success. The prior package batch stopped after six successful scripts and this failing Notes script."
+  },
+  "diagnostic_evidence": {
+    "run": ".e2e/notes-run-nXgC90",
+    "checks": 22,
+    "exit_code": 0,
+    "observation": "Observer copy keeps original verify/key order and no readiness wait; diagnostic timing evidence, excluded from official rerun counts."
+  },
+  "official_source_rerun": {
+    "run": ".e2e/notes-run-fd1IIo",
+    "result": ".e2e/notes-run-fd1IIo/result.json",
+    "result_sha256": "07a9d7a2125ebac5d3a618a238bffec97d4b9b036f79cacfa84ad52b42db105a",
+    "script_sha256": "629f2904c029b617bdecddb4abbfbbda498adf272ac87fe885e7b2c73e2b3a42",
+    "log": "artifactreview/strict-20261006/notes-source-ready-final.log",
+    "log_sha256": "8391d830118d77222b8e510af116264e31316b2ddf550f2a2a06f990c46cc594",
+    "checks": 22,
+    "exit_code": 0
+  },
+  "limits": [
+    "DOM readiness is observed; native-dialog absence beyond the DOM selector is not claimed.",
+    "Two animation frames are browser scheduling/paint readiness, not a copied business transition.",
+    "125 source13 evidence remains immutable; QA15 source publication must compose unchanged12 with the official new Notes run.",
+    "New full package12 result awaits independent accounting; the old failed125 batch remains failed.",
+    "No product/source/build/UI changed in this artifact audit."
+  ]
+}

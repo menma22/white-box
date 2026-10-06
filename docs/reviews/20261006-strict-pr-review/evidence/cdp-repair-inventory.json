@@ -1,0 +1,151 @@
+{
+  "base": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48",
+  "head": "130016c83ce352598283ca8378362dad3c1821b0",
+  "units": [
+    {
+      "id": "1",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 1,
+      "kind": "added",
+      "line": 117,
+      "content": "      clearTimeout(p.timer)"
+    },
+    {
+      "id": "2",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "deleted",
+      "line": 120,
+      "content": "    ws.addEventListener('error', reject)"
+    },
+    {
+      "id": "3",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 121,
+      "content": "    const disconnected = () => {"
+    },
+    {
+      "id": "4",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 122,
+      "content": "      const cause = new Error('CDP connection closed')"
+    },
+    {
+      "id": "5",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 123,
+      "content": "      for (const request of pending.values()) { clearTimeout(request.timer); request.reject(cause) }"
+    },
+    {
+      "id": "6",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 124,
+      "content": "      pending.clear()"
+    },
+    {
+      "id": "7",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 125,
+      "content": "      reject(cause)"
+    },
+    {
+      "id": "8",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 126,
+      "content": "    }"
+    },
+    {
+      "id": "9",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 127,
+      "content": "    ws.addEventListener('error', disconnected)"
+    },
+    {
+      "id": "10",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 2,
+      "kind": "added",
+      "line": 128,
+      "content": "    ws.addEventListener('close', disconnected)"
+    },
+    {
+      "id": "11",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 3,
+      "kind": "deleted",
+      "line": 127,
+      "content": "            pending.set(id, { resolve: res, reject: rej })"
+    },
+    {
+      "id": "12",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 3,
+      "kind": "added",
+      "line": 135,
+      "content": "            if (ws.readyState !== WebSocket.OPEN) { rej(new Error('CDP connection closed')); return }"
+    },
+    {
+      "id": "13",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 3,
+      "kind": "added",
+      "line": 136,
+      "content": "            const timer = setTimeout(() => { pending.delete(id); rej(new Error('CDP request timed out')) }, 10_000)"
+    },
+    {
+      "id": "14",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 3,
+      "kind": "added",
+      "line": 137,
+      "content": "            pending.set(id, { resolve: res, reject: rej, timer })"
+    },
+    {
+      "id": "15",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 4,
+      "kind": "deleted",
+      "line": 333,
+      "content": "    await main.evaluate('void window.whitebox.call(\"app:quit\")')"
+    },
+    {
+      "id": "16",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 4,
+      "kind": "added",
+      "line": 343,
+      "content": "    let quitResponseError = null"
+    },
+    {
+      "id": "17",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 4,
+      "kind": "added",
+      "line": 344,
+      "content": "    void main.evaluate('void window.whitebox.call(\"app:quit\")').catch((cause) => { quitResponseError = String(cause) })"
+    },
+    {
+      "id": "18",
+      "file": "a/scripts/e2e.mjs b/scripts/e2e.mjs",
+      "hunk": 5,
+      "kind": "added",
+      "line": 348,
+      "content": "    console.log('Quit response observation:', JSON.stringify({ error: quitResponseError, exitCode: child.exitCode, signalCode: child.signalCode }))"
+    }
+  ],
+  "fingerprint": "d0ebf90c7b0035db2ff8dbb315b6b90f753747dfec0b621f0ee360d65153adad"
+}

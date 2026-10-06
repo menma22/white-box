@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "projects": [],
+  "tasks": [],
+  "sessions": [
+    {
+      "id": "bad",
+      "state": "running"
+    }
+  ],
+  "settings": {
+    "displayName": "",
+    "defaultSessionMinutes": 50,
+    "defaultSessionMode": "timer",
+    "pomodoroBreakMinutes": 5,
+    "pomodoroAutoResume": false,
+    "defaultExtendMinutes": 15,
+    "extendOptions": [
+      5,
+      10,
+      15,
+      25,
+      50
+    ],
+    "shortcuts": {
+      "startPause": "",
+      "currentWork": "",
+      "dashboard": ""
+    },
+    "launchAtLogin": false,
+    "autoPauseOnSuspend": true,
+    "soundOnExpire": true,
+    "dayStartHour": 4,
+    "lastWelcomeDate": null,
+    "stallWarningDays": 3,
+    "showSessionCard": true,
+    "onboardedAt": null,
+    "remindToStart": false,
+    "startReminderMinutes": 3,
+    "enableAgentApi": false
+  },
+  "dayNotes": {},
+  "agentRequests": {},
+  "taskSuggestions": [],
+  "notes": [],
+  "goalMap": {
+    "nodes": {},
+    "heads": [],
+    "activeHeadId": null,
+    "issues": [],
+    "history": [],
+    "ui": {
+      "view": "map",
+      "headsOpen": true,
+      "doneOpen": false,
+      "resolvedOpen": false,
+      "showHidden": false
+    }
+  },
+  "presenceCandidates": [],
+  "goalMapImports": []
+}

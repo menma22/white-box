@@ -1,0 +1,495 @@
+{
+  "base": "97e583d59ac39e43d3570fb9173a3ecf77c1bec7",
+  "head": "125026f7088487a429170f6276786a13f0e40c4c",
+  "units": [
+    {
+      "id": "1",
+      "file": "a/apps/desktop/src/app/lifecycle.ts b/apps/desktop/src/app/lifecycle.ts",
+      "hunk": 1,
+      "kind": "deleted",
+      "line": 120,
+      "content": "    ctx.store.markAlive()"
+    },
+    {
+      "id": "2",
+      "file": "a/apps/desktop/src/app/lifecycle.ts b/apps/desktop/src/app/lifecycle.ts",
+      "hunk": 1,
+      "kind": "added",
+      "line": 120,
+      "content": "    ctx.store.markAlive({ requireSuccess: true })"
+    },
+    {
+      "id": "3",
+      "file": "a/apps/desktop/src/app/ports.ts b/apps/desktop/src/app/ports.ts",
+      "hunk": 1,
+      "kind": "deleted",
+      "line": 13,
+      "content": "  markAlive(): void"
+    },
+    {
+      "id": "4",
+      "file": "a/apps/desktop/src/app/ports.ts b/apps/desktop/src/app/ports.ts",
+      "hunk": 1,
+      "kind": "added",
+      "line": 13,
+      "content": "  markAlive(options?: { requireSuccess?: boolean }): void"
+    },
+    {
+      "id": "5",
+      "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+      "hunk": 1,
+      "kind": "deleted",
+      "line": 201,
+      "content": "  markAlive(): void {"
+    },
+    {
+      "id": "6",
+      "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+      "hunk": 1,
+      "kind": "added",
+      "line": 201,
+      "content": "  markAlive(options: { requireSuccess?: boolean } = {}): void {"
+    },
+    {
+      "id": "7",
+      "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+      "hunk": 2,
+      "kind": "deleted",
+      "line": 206,
+      "content": "    } catch {"
+    },
+    {
+      "id": "8",
+      "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 206,
+      "content": "    } catch (cause) {"
+    },
+    {
+      "id": "9",
+      "file": "a/apps/desktop/src/infra/store.ts b/apps/desktop/src/infra/store.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 207,
+      "content": "      if (options.requireSuccess) throw cause"
+    },
+    {
+      "id": "10",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 1,
+      "kind": "deleted",
+      "line": 10,
+      "content": "import { restoreOpenSession } from '../src/app/lifecycle.js'"
+    },
+    {
+      "id": "11",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 1,
+      "kind": "added",
+      "line": 10,
+      "content": "import { prepareQuit, restoreOpenSession } from '../src/app/lifecycle.js'"
+    },
+    {
+      "id": "12",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 161,
+      "content": "  it.each(['write', 'rename'])('cancels actual quit after heartbeat %s failure and preserves recovery on retry', async (operation) => {"
+    },
+    {
+      "id": "13",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 162,
+      "content": "    store.data.tasks[0] = { ...store.data.tasks[0]!, status: 'doing' }"
+    },
+    {
+      "id": "14",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 163,
+      "content": "    store.data.sessions = [createSession({ taskId: 'saved', taskTitle: 'saved', mode: 'stopwatch', plannedMs: 50 * 60_000, now: startedAt })]"
+    },
+    {
+      "id": "15",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 164,
+      "content": "    store.save()"
+    },
+    {
+      "id": "16",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 165,
+      "content": "    const clock = vi.spyOn(Date, 'now').mockReturnValue(goodAt)"
+    },
+    {
+      "id": "17",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 166,
+      "content": "    store.markAlive()"
+    },
+    {
+      "id": "18",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 167,
+      "content": "    const beforeMarker = fs.readFileSync(store.runtimePath, 'utf8')"
+    },
+    {
+      "id": "19",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 168,
+      "content": "    const beforeDatabase = fs.readFileSync(store.dbPath, 'utf8')"
+    },
+    {
+      "id": "20",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 169,
+      "content": "    const quitAt = goodAt + 5 * 60_000"
+    },
+    {
+      "id": "21",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 170,
+      "content": "    clock.mockReturnValue(quitAt)"
+    },
+    {
+      "id": "22",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 171,
+      "content": "    const error = Object.assign(new Error('heartbeat is unavailable'), { code: 'EIO' })"
+    },
+    {
+      "id": "23",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 172,
+      "content": "    const nativeWrite = fs.writeFileSync"
+    },
+    {
+      "id": "24",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 173,
+      "content": "    const nativeRename = fs.renameSync"
+    },
+    {
+      "id": "25",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 174,
+      "content": "    const fault = operation === 'write'"
+    },
+    {
+      "id": "26",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 175,
+      "content": "      ? vi.spyOn(fs, 'writeFileSync').mockImplementation((destination, data, options) => {"
+    },
+    {
+      "id": "27",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 176,
+      "content": "        if (String(destination) === `${store.runtimePath}.tmp`) throw error"
+    },
+    {
+      "id": "28",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 177,
+      "content": "        nativeWrite(destination, data, options)"
+    },
+    {
+      "id": "29",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 178,
+      "content": "      })"
+    },
+    {
+      "id": "30",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 179,
+      "content": "      : vi.spyOn(fs, 'renameSync').mockImplementation((source, destination) => {"
+    },
+    {
+      "id": "31",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 180,
+      "content": "        if (String(destination) === store.runtimePath) throw error"
+    },
+    {
+      "id": "32",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 181,
+      "content": "        nativeRename(source, destination)"
+    },
+    {
+      "id": "33",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 182,
+      "content": "      })"
+    },
+    {
+      "id": "34",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 183,
+      "content": "    const ctx = fakeCtx(store.data)"
+    },
+    {
+      "id": "35",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 184,
+      "content": "    ctx.store = store"
+    },
+    {
+      "id": "36",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 185,
+      "content": "    ctx.now = () => quitAt"
+    },
+    {
+      "id": "37",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 186,
+      "content": "    ctx.system.quit = () => { prepareQuit(ctx); ctx.calls.push('quit') }"
+    },
+    {
+      "id": "38",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 187,
+      "content": "    const handlers = createHandlers(ctx)"
+    },
+    {
+      "id": "39",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 188,
+      "content": "    expect((await receive(handlers, 'app:quit', {}))).toMatchObject({ ok: false, error: String(error) })"
+    },
+    {
+      "id": "40",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 189,
+      "content": "    expect(ctx.runtime.quitting).toBe(false)"
+    },
+    {
+      "id": "41",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 190,
+      "content": "    expect(ctx.runtime.preparingQuit).toBe(false)"
+    },
+    {
+      "id": "42",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 191,
+      "content": "    expect(ctx.calls).not.toContain('ticker:stop')"
+    },
+    {
+      "id": "43",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 192,
+      "content": "    expect(ctx.calls).not.toContain('quit')"
+    },
+    {
+      "id": "44",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 193,
+      "content": "    expect(fs.readFileSync(store.dbPath, 'utf8')).toBe(beforeDatabase)"
+    },
+    {
+      "id": "45",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 194,
+      "content": "    expect(fs.readFileSync(store.runtimePath, 'utf8')).toBe(beforeMarker)"
+    },
+    {
+      "id": "46",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 195,
+      "content": "    fault.mockRestore()"
+    },
+    {
+      "id": "47",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 196,
+      "content": ""
+    },
+    {
+      "id": "48",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 197,
+      "content": "    expect((await receive(handlers, 'app:quit', {})).ok).toBe(true)"
+    },
+    {
+      "id": "49",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 198,
+      "content": "    expect(ctx.calls).toContain('ticker:stop')"
+    },
+    {
+      "id": "50",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 199,
+      "content": "    expect(ctx.calls).toContain('quit')"
+    },
+    {
+      "id": "51",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 200,
+      "content": "    expect(store.readLastAlive()).toBe(quitAt)"
+    },
+    {
+      "id": "52",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 201,
+      "content": "    const reopened = new Store(directory)"
+    },
+    {
+      "id": "53",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 202,
+      "content": "    const restarted = fakeCtx(reopened.data)"
+    },
+    {
+      "id": "54",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 203,
+      "content": "    restarted.store = reopened"
+    },
+    {
+      "id": "55",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 204,
+      "content": "    restarted.now = () => quitAt + 10 * 60_000"
+    },
+    {
+      "id": "56",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 205,
+      "content": "    restarted.publish = () => reopened.save()"
+    },
+    {
+      "id": "57",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 206,
+      "content": "    restoreOpenSession(restarted)"
+    },
+    {
+      "id": "58",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 207,
+      "content": "    expect(restarted.runtime.recovery?.lastKnownAt).toBe(quitAt)"
+    },
+    {
+      "id": "59",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 208,
+      "content": "    expect(focusMs(reopened.data.sessions[0]!, restarted.now())).toBe(35 * 60_000)"
+    },
+    {
+      "id": "60",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 209,
+      "content": "  })"
+    },
+    {
+      "id": "61",
+      "file": "a/apps/desktop/tests/store-save.test.ts b/apps/desktop/tests/store-save.test.ts",
+      "hunk": 2,
+      "kind": "added",
+      "line": 210,
+      "content": ""
+    }
+  ],
+  "fingerprint": "82bf060cb087935cea75de51d7837b168d56e5d4feea4889ec342af556fdde3e"
+}

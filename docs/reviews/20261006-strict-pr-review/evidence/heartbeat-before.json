@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "stage": "before",
+  "origin": "artifactreview/strict-20261006/heartbeat-atomic-probe/run-tmECIC/result.json",
+  "fixture": {
+    "data": "synthetic only",
+    "nativeUserDataLookup": "stubbed or isolated explicit QA directory",
+    "productionDatabaseIncluded": false
+  },
+  "sourceMode": "current TypeScript transpiled in memory; Electron native user-data lookup stubbed only",
+  "clockMode": "Date.now replaced only inside this standalone process; system clock untouched",
+  "sourceSnapshot": {
+    "sha256": {
+      "apps/desktop/src/infra/store.ts": "6f9ca605d0db9e4897cc19ec9679a74120d4fd372e176d735cbad119204bfd84",
+      "apps/desktop/src/infra/database-validation.ts": "32f86ca7028a6aa3085331f3184afe65acfce1a79578192a7b619da27c9cce81",
+      "apps/desktop/src/domain/task-hierarchy.ts": "1c20f066350791f795703fc431793860d2446d0ebbba09ac4878669523899493",
+      "apps/desktop/src/app/lifecycle.ts": "aef92240b830042bac32bb84d45e7d637a5ad4f36f190a1f78ef057d4b25773c",
+      "apps/desktop/src/domain/session-ops.ts": "8c21916d966413c55ce51cfaef90da310f92355469b355a79b87d0b515b01602",
+      "apps/desktop/src/app/state.ts": "ca3947e9219ce61ff9486ad503ca8e4784205e72a99dcc6eb964bbd8c7da97b0",
+      "apps/desktop/src/app/commit.ts": "8e4bbfe34aeea550f64b604c48bbe56c51e964541153f5179c81127615117b84",
+      "apps/desktop/tests/helpers.ts": "c30a4fb9ce0f8827638fb5269c90afecf9f6b009fd8650b8066a586dbc534bbf"
+    }
+  },
+  "timeline": {
+    "startedAt": 1791244800000,
+    "goodAt": 1791246600000,
+    "failedAt": 1791246601000,
+    "nextAt": 1791246602000,
+    "restartedAt": 1791248400000
+  },
+  "goodBytes": "{\"lastTickAt\":1791246600000}",
+  "control": {
+    "marker": 1791246600000,
+    "recoveryAt": 1791246600000,
+    "recoveredFocusMs": 1800000
+  },
+  "failure": {
+    "code": "ENOSPC",
+    "model": "runtime.json truncated and partially written before the write throws",
+    "markAliveThrew": false,
+    "injectedWrites": 1,
+    "previousGoodBytesPreserved": false,
+    "bytes": "{\"lastTickAt\":"
+  },
+  "restartAfterFailedWrite": {
+    "marker": null,
+    "recoveryAt": 1791244800000,
+    "recoveredFocusMs": 0
+  },
+  "recoveryLossMs": 1800000,
+  "nextSuccessfulHeartbeat": {
+    "marker": 1791246602000,
+    "recoveryAt": 1791246602000,
+    "recoveredFocusMs": 1802000
+  },
+  "mainDatabaseControl": {
+    "saveThrew": true,
+    "previousBytesPreserved": true,
+    "reloadedUnsavedChange": null
+  },
+  "limits": [
+    "Fault injection demonstrates exception safety of filesystem writes, not an actual power-loss experiment.",
+    "Temporary-file replacement would preserve the previous marker on partial-write failure; it does not establish OS/disk power-loss durability without additional flush guarantees.",
+    "Loss requires an app interruption before another successful heartbeat; a later successful heartbeat repairs the marker, as tested."
+  ],
+  "probeAssertionsPassed": true
+}

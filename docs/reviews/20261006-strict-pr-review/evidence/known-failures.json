@@ -1,0 +1,44 @@
+{
+  "failures": [
+    {
+      "artifact": ".e2e/task-priority-run-XpI31l/result.json",
+      "stage": "repair-in-progress",
+      "exitCode": 1,
+      "checksPassedBeforeTimeout": 61,
+      "rendererErrors": [],
+      "failure": "Restarted own native app did not exit within 15 seconds after quit request; own-process cleanup was used.",
+      "rootCauseEstablished": false,
+      "resultSha256": "938854963589ed8d156299b08331e058a7d132013e5cb104f27be0c35d339e30"
+    },
+    {
+      "artifact": ".e2e/phase2-planning-run-IjlXpb/failure.txt",
+      "stage": "repair-in-progress",
+      "failure": "Error: CDP timeout: Runtime.enable\n    at Timeout._onTimeout (file:///<checkout>/scripts/e2e-phase2-planning.mjs:75:65)\n    at listOnTimeout (node:internal/timers:585:17)\n    at process.processTimers (node:internal/timers:521:7)",
+      "sha256": "a472b0d8f8a8281788911b961de03d9cb0358301e13221a82c8fc2610e6e5076"
+    },
+    {
+      "artifact": ".e2e/task-priority-run-U2wlYs/failure.txt",
+      "stage": "repair-in-progress",
+      "failure": "Error: CDP timeout: Page.captureScreenshot\n    at Timeout._onTimeout (file:///<checkout>/scripts/e2e-task-priority.mjs:78:65)\n    at listOnTimeout (node:internal/timers:585:17)\n    at process.processTimers (node:internal/timers:521:7)",
+      "sha256": "6de90b4189a272403f8309236549d3b4549c4598108f7113467d6c830799d6c4"
+    },
+    {
+      "artifact": ".e2e/notes-run-g4uzMR/result.json",
+      "stage": "product125/QA125 package",
+      "exitCode": 1,
+      "checksPassedBeforeTimeout": 8,
+      "failure": "Timed out: return to notes",
+      "rendererErrors": [],
+      "rootCauseEstablished": false
+    },
+    {
+      "artifact": "artifactreview/strict-20261006/e2e-package-ready-final.log",
+      "stage": "product125/QA15 package",
+      "exitCode": 13,
+      "failure": "Detected unsettled top-level await while awaiting own closing main page app:quit response",
+      "rootCauseEstablishedByActualFunctionProbe": true,
+      "fixedAtQa": "130016c83ce352598283ca8378362dad3c1821b0"
+    }
+  ],
+  "limits": "Failures are retained as observed; later passes do not prove the old native quit root cause."
+}

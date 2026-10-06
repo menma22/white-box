@@ -1,0 +1,40 @@
+Waiting for the White Box UI E2E lock...
+UI E2E lock acquired: .
+対象: .\node_modules\.pnpm\electron@33.4.11\node_modules\electron\dist\electron.exe
+PASS 壊れた引数は契約で拒否される
+PASS 未知のコマンドは拒否される
+PASS 綴り違いのキーは黙って捨てず拒否される
+PASS ショートカットが空のままでも設定の更新が通る
+PASS セッションが始まる
+PASS 一時停止すると paused になる — "paused"
+PASS 停止中は実作業が増えない — {"before":2849,"after":2849}
+PASS 休憩を始めると paused になる
+PASS 休憩終了時刻が状態に入る
+PASS ミニカードが休憩タイマーを表示する — {"labels":["経過","休憩"],"body":"経過\n0m\n休憩\n00:01"}
+PASS 休憩終了後も明示的な再開までは paused のまま
+PASS 休憩終了通知が記録される
+PASS 休憩通知から再開できる
+PASS タスクを切り替えると Foreground が変わる
+PASS 切り替えで区間が 2 つになる — 2
+PASS 終了後に live が消える
+PASS レビュー対象が指定される
+PASS セッションが 1 本保存されている — 1
+PASS 終了時刻が入っている
+PASS 一時停止と休憩が閉じている
+PASS 手動停止時間がテスト側の実測範囲に収まる — {"manualPausedMs":2532,"floor":2521,"ceil":2542}
+PASS 停止時間に手動停止と休憩の両方が入る — 5772
+PASS 停止ぶんが実作業から引かれている — {"gross":11101,"pausedTotal":5772}
+PASS 区間が 2 本、どちらも閉じている
+PASS イベントが記録されている — ["session_started","task_started","paused","resumed","paused","resumed","task_switched","session_ended","progress_updated","progress_updated"]
+PASS ひとことが保存されている
+PASS 進捗がタスクへ反映される — 45
+PASS 完了にしたタスクが Done になる — "done"
+PASS 進捗の変化が記録に残る
+PASS バックアップが作られている
+PASS 既にデータのある DB はオンボーディング済みになる — 1791290694342
+PASS ショートカットは空のまま保存される — {"startPause":"","currentWork":"","dashboard":""}
+
+すべて通った
+Quit response observation: {"error":null,"exitCode":0,"signalCode":null}
+PASS 保存した検証アプリが自然終了する
+UI E2E lock released.

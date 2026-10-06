@@ -1,0 +1,143 @@
+{
+  "repeatLimit": 3,
+  "repeatsExecuted": 3,
+  "productChangesForQuitDiagnosis": false,
+  "nativeQuitsObserved": 6,
+  "nativeQuitsSuccessful": 6,
+  "originalNativeFailureReproduced": false,
+  "originalNativeFailureResolved": false,
+  "limits": [
+    "Observer instrumentation and process snapshots may affect timing.",
+    "The original unobserved forced cleanup remains an unresolved failure.",
+    "The native-timeout live capture path was added but not exercised because all six native quits completed.",
+    "One repeated flow failed at Page.captureScreenshot despite normal native shutdown.",
+    "The original void app:quit then immediate page CDP close sequence was retained for all three repeats.",
+    "The optional keep-page diagnostic mode was not tested."
+  ],
+  "runs": [
+    {
+      "run": ".e2e/task-priority-run-gxX2I6",
+      "exitCode": 1,
+      "checksPassed": 60,
+      "checksTotal": 60,
+      "rendererErrors": 0,
+      "failure": "Error: CDP timeout: Page.captureScreenshot",
+      "native": [
+        {
+          "pid": 13516,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 24,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285236928,
+          "quitEvaluationReturnedAt": 1791285236928,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-gxX2I6/quit-13516.jsonl"
+        },
+        {
+          "pid": 31848,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 28,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285168677,
+          "quitEvaluationReturnedAt": 1791285168676,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-gxX2I6/quit-31848.jsonl"
+        }
+      ]
+    },
+    {
+      "run": ".e2e/task-priority-run-FacI8w",
+      "exitCode": 0,
+      "checksPassed": 61,
+      "checksTotal": 61,
+      "rendererErrors": 0,
+      "failure": null,
+      "native": [
+        {
+          "pid": 26708,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 28,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285377790,
+          "quitEvaluationReturnedAt": 1791285377790,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-FacI8w/quit-26708.jsonl"
+        },
+        {
+          "pid": 28076,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 25,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285368929,
+          "quitEvaluationReturnedAt": 1791285368928,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-FacI8w/quit-28076.jsonl"
+        }
+      ]
+    },
+    {
+      "run": ".e2e/task-priority-run-Re8LUb",
+      "exitCode": 0,
+      "checksPassed": 61,
+      "checksTotal": 61,
+      "rendererErrors": 0,
+      "failure": null,
+      "native": [
+        {
+          "pid": 42448,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 31,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285498465,
+          "quitEvaluationReturnedAt": 1791285498465,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-Re8LUb/quit-42448.jsonl"
+        },
+        {
+          "pid": 52160,
+          "nativeExitCode": 0,
+          "ipcToExitMs": 27,
+          "flushReplyOk": true,
+          "persistenceReturned": true,
+          "willQuitWithNoWindows": true,
+          "forcedKill": false,
+          "timedOut": false,
+          "ownedRemaining": 0,
+          "pageClosedAt": 1791285506275,
+          "quitEvaluationReturnedAt": 1791285506275,
+          "keepQuitPage": false,
+          "trace": ".e2e/task-priority-run-Re8LUb/quit-52160.jsonl"
+        }
+      ]
+    }
+  ],
+  "qaSourceSha256": {
+    "scripts/e2e-task-priority.mjs": "070f254608200dc9a51c4b1ba9877b46d40dd4b712bf74196d08c884fa82e835",
+    "scripts/quit-observer.mjs": "36769dec40089ec152dba1aa2db15e478dd792e06c06d46f455e21b2e7f7a5cc"
+  }
+}

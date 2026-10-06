@@ -14,7 +14,7 @@
 | 通し確認 | `node scripts/e2e.mjs` | 実アプリを起動し、本物の IPC を叩いて `data.json` を読み返す |
 | 道標の統合 | `node scripts/e2e-goals.mjs` | 目標・問題・タスクの本物の IPC、UI、旧データ取り込み、保存と再起動。画面画像も出力 |
 | 残作業・Slack・Aging・警告 | `node scripts/e2e-task-priority.mjs` | Welcome/Board/Today/Week の警告、任意の分/時間入力、旧 Inbox のコミット、進捗とメモの違い、必須待ちと推奨順序、保存と再起動。`WHITEBOX_EXE` 経路と画面 PNG・エラー監視に対応 |
-| 今日・週の実績 | `node scripts/e2e-activity.mjs` | 日・週境界、Project/Task別の和、最近14日、実IPCの時刻編集・停止・除外・満了、削除Task、最小画面幅、保存と再起動 |
+| 今日・週・履歴の実績 | `node scripts/e2e-activity.mjs` | 日・週境界、Project/Task別の和、最近14日、実IPCの時刻編集・停止・除外・満了、削除Task、月別Historyと全期間合計、最小画面幅、保存と再起動 |
 | 依存関係・外部待ち | `node scripts/e2e-dependencies.mjs` | 旧DB互換・開始ガード・循環拒否・削除後のリンク保持・外部待ちUI・確認導線・保存と再起動。WHITEBOX_EXE経路対応 |
 | 週の時間配分・固定予定・再開文脈 | `node scripts/e2e-phase2-planning.mjs` | 実画面での4方式の週予算、未入力・再利用・下書き、Project Priority、Fixed Work、Task/linked Note、保存失敗時の入力保持、別窓からの終了・切替、自然終了・再起動。WHITEBOX_EXE経路対応 |
 | 終了イベント・保存・窓・PID | `node scripts/e2e-quit.mjs` | 隔離したソース版で実際の終了イベントと保存、自然終了・再起動後のDB全体、所有PIDの不在を観測。`WHITEBOX_QUIT_LIVE=1`で複数窓、`WHITEBOX_QUIT_OBSERVER=0`で観測器なしでも確認 |
@@ -48,11 +48,15 @@ Windowsで複数worktreeから実アプリを検証するときは、`powershell
 
 `scripts/e2e.mjs` は公開済みの `window.whitebox` だけを使う。**ここに本体の処理を書き写さないこと**（写した瞬間に、本体が変わっても誰も気づけない第2の実装が生まれる）。
 
+保存のレビューでは実ファイルへのwrite/rename故障、破損DBの再起動、旧v1取込、重複ID、深い階層・循環、取込前後の生存記録、同一項目の複数窓競合を確認する。期待する失敗の前に正常系が通ることを測り、失敗後のDB・画面・下書きも確認する。通常のE2E終了は `app:quit` と終了コード・所有PID不在で判定し、強制終了を成功の証拠に数えない。2026-10-06の厳密レビューの具体例と未確認事項は [レビュー入口](reviews/20261006-strict-pr-review/README.md) に記録する。
+
 ## 検証器そのものを疑う
 
 過去に実際に踏んだ落とし穴。同じ形をしたものを見たら、まず検証の側を疑う。
 
 ### 撮影台は「表示」しないと合成されない
+
+Task Priorityの検証では、CDPの撮影・前面化より先に、起動PIDが所有するWin32窓の実表示を確認する。CSSの `visibility` だけではnativeの非表示を見つけられない。終了専用のCDP接続も、同じbrowser WebSocket上で起動PID・生成時刻・対象ページを確認してから書込を送る。portの番号だけで所有を判定しない。
 
 **非表示のウィンドウは DOM が変わっても再合成されない。** タブを切り替えても最初のフレームが撮れ続け、**検証器が嘘をつく**。
 
@@ -80,7 +84,7 @@ Windowsで複数worktreeから実アプリを検証するときは、`powershell
 
 「開始」「延長」「終了」「レビュー保存」は、呼び出したウィンドウ自身を閉じる。その窓から結果を待つと、返事が届く前に実行コンテキストごと消える。
 
-- 本体側: `closeLater()` が 150ms 待ってから閉じる（`setImmediate` では IPC の返事と競合する）
+- 本体側: `closeWindowsLater()` が予約時の窓を保持し、150ms 待ってからその窓だけを閉じる（`setImmediate` では IPC の返事と競合する）
 - 検証側: これらのコマンドは投げっぱなしにして、結果はファイルで確かめる
 
 ## 見た目は必ずピクセルで見る

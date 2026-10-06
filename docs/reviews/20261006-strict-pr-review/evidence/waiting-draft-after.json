@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "stage": "final_source_97e583d5",
+  "origin": ".e2e/task-priority-run-C4bJ5H/waiting-save-close.json",
+  "fixture": {
+    "data": "synthetic only",
+    "nativeUserDataLookup": "stubbed or isolated explicit QA directory",
+    "productionDatabaseIncluded": false
+  },
+  "sourceSnapshot": {
+    "revision": "97e583d5",
+    "mode": "source Electron; final integrated frontend and desktop build"
+  },
+  "observations": {
+    "reason": {
+      "open": true,
+      "draft": "保存に失敗しても残す待ちの理由",
+      "alert": true,
+      "savedUnchanged": true
+    },
+    "external": {
+      "open": true,
+      "who": "保存失敗の待ち担当",
+      "what": "保存失敗の確認内容",
+      "alert": true,
+      "savedUnchanged": true
+    }
+  },
+  "run": {
+    "exitCode": 0,
+    "checks": 65,
+    "passed": 65,
+    "failed": 0,
+    "rendererErrors": 0
+  },
+  "nativeMainVisibleBeforeCdpActivation": {
+    "first": true,
+    "restart": true
+  },
+  "screenshots": {
+    "reason": "pr21-waiting-reason.png",
+    "external": "pr21-waiting-external.png"
+  },
+  "limits": [
+    "Source and packaged runs are recorded separately; captured screenshots do not by themselves establish manual pixel approval."
+  ],
+  "packaged": {
+    "sourceRevision": "97e583d5",
+    "origin": ".e2e/task-priority-run-UoBEvq/waiting-save-close.json",
+    "observations": {
+      "reason": {
+        "open": true,
+        "draft": "保存に失敗しても残す待ちの理由",
+        "alert": true,
+        "savedUnchanged": true
+      },
+      "external": {
+        "open": true,
+        "who": "保存失敗の待ち担当",
+        "what": "保存失敗の確認内容",
+        "alert": true,
+        "savedUnchanged": true
+      }
+    },
+    "run": {
+      "exitCode": 0,
+      "checks": 65,
+      "failed": 0,
+      "rendererErrors": 0
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "stage": "partial_renderer_integration",
+  "origin": ".e2e/task-priority-run-U2wlYs/result.json",
+  "fixture": {
+    "data": "synthetic only",
+    "nativeUserDataLookup": "stubbed or isolated explicit QA directory",
+    "productionDatabaseIncluded": false
+  },
+  "observations": {
+    "reason": {
+      "open": true,
+      "draft": "保存に失敗しても残す待ちの理由",
+      "alert": true,
+      "savedUnchanged": true
+    },
+    "external": {
+      "open": true,
+      "who": "保存失敗の待ち担当",
+      "what": "保存失敗の確認内容",
+      "alert": true,
+      "savedUnchanged": true
+    }
+  },
+  "measurement": {
+    "renderer": "Renderer build at 2026-10-06 20:37 JST",
+    "desktop": "Fixed e05feeba compiled desktop; newer Store source edits were not compiled during this partial run",
+    "sourceSnapshot": [
+      {
+        "path": "dist/assets/index-1uBoYO6P.css",
+        "sha256": "6C3D3F3F50F7D375A93C22C795AE00BC798F43FBC1710F5A44049815090E83DA",
+        "modified": "2026-10-06T11:37:10.2582584Z"
+      },
+      {
+        "path": "dist/assets/index-CEjrNWY0.js",
+        "sha256": "3D85745F4E3FF35217A4FAFB25EE69BCA398FC122DC9985A024AB06604CBE6F2",
+        "modified": "2026-10-06T11:37:10.2592576Z"
+      },
+      {
+        "path": "dist/index.html",
+        "sha256": "DBFADBC79193D1DDEA2353B210425E20E9D838F6B2E10C479E99F44C1FEF8E5A",
+        "modified": "2026-10-06T11:37:10.2592576Z"
+      },
+      {
+        "path": "dist-electron/presentation/main.js",
+        "sha256": "0D7BB66C1E29301965B4F490F7E79AE2F17AD5ADE0D45FD5E74ECCC05A7B3922",
+        "modified": "2026-10-06T11:22:07.2743650Z"
+      },
+      {
+        "path": "dist-electron/infra/store.js",
+        "sha256": "54E08E05E71E07D162B618BC6832B784DD7F0C9C21F62CD1D94C26DC0D989B2C",
+        "modified": "2026-10-06T11:22:07.2089045Z"
+      },
+      {
+        "path": "dist-electron/infra/dataio.js",
+        "sha256": "1CE1A6A696C56F79EFE00BBDD568C6FF0AA78F429406D2F05E90F60630708C23",
+        "modified": "2026-10-06T11:22:07.2177804Z"
+      },
+      {
+        "path": "apps/renderer/src/features/board/task-control-draft.ts",
+        "sha256": "FFE792F40DCA45CBD94AED1B4B56F1088DDFA60A26EACA8F22AC0FA92FE58C43",
+        "modified": "2026-10-06T11:31:54.2376932Z"
+      },
+      {
+        "path": "apps/renderer/src/features/board/TaskControlEditor.tsx",
+        "sha256": "DE5B0A0C03312D5CFE2A5A11EDE1D5F4B7F9160B87A201F4E7D170A47BA82F53",
+        "modified": "2026-10-06T11:31:54.4291214Z"
+      }
+    ],
+    "limits": "Full integrated build and final UI regression remain required. Final screenshot timeout means this complete script run is not PASS."
+  },
+  "run": {
+    "exitCode": 1,
+    "emittedChecks": 62,
+    "passed": 62,
+    "failed": 0,
+    "observedRendererErrors": 0,
+    "finalRendererCheckExecuted": false,
+    "failure": "CDP timeout: Page.captureScreenshot after restart"
+  }
+}
