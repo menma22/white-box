@@ -251,6 +251,8 @@ async function verify() {
   await key('1', 'Digit1', 2)
   await until(() => page.evaluate('!document.querySelector(".notes-view")'), 'successful retry leaves notes')
   check('Leaving after retry persists the entire failed draft', read().notes.find(note=>note.id===first.id).body.startsWith('失敗しても'))
+  await until(() => page.evaluate(`(() => { const main=document.querySelector('.win.main'); return main && !main.inert && main.getAttribute('aria-busy')!=='true' && !document.querySelector('.editor-flush-status,[role="dialog"]') && document.querySelector('.rail-tab.is-active .rail-tab-key')?.textContent==='1'; })()`), 'Today is ready for the return shortcut')
+  await page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
   await key('7', 'Digit7', 2)
   await until(() => page.evaluate('Boolean(document.querySelector(".notes-view"))'), 'return to notes')
   await click('.note-list-item')
