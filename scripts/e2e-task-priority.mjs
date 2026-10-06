@@ -241,7 +241,27 @@ async function waitingDetail(label, focused = true) {
     document.querySelector('.task-control input[type="checkbox"]').checked
   `))
   if (!focused) return
-  await until(() => page.evaluate(`document.querySelector('.task-control')?.contains(document.activeElement)`), label+' waiting editor focused')
+  try {
+    await until(() => page.evaluate(`document.querySelector('.task-control')?.contains(document.activeElement)`), label+' waiting editor focused')
+  } catch (error) {
+    const diagnostic = await page.evaluate(`(() => {
+      const target = document.querySelector('[data-task-detail-section="waiting"]');
+      const active = document.activeElement;
+      const rect = target?.getBoundingClientRect();
+      return { targetConnected: target?.isConnected ?? false, targetInert: Boolean(target?.closest('[inert]')), activeElement: { tag: active?.tagName, className: String(active?.className), section: active?.dataset?.taskDetailSection ?? null }, rect: rect ? { top: rect.top, bottom: rect.bottom } : null };
+    })()`)
+    fs.writeFileSync(path.join(RUN, 'waiting-focus-failure.json'), JSON.stringify({ label, ...diagnostic }, null, 2))
+    console.log('Waiting focus diagnostic: '+JSON.stringify({ label, ...diagnostic }))
+    throw error
+  }
+  const focusState = await page.evaluate(`(() => {
+    const target = document.querySelector('[data-task-detail-section="waiting"]');
+    const ancestors = [];
+    for (let element = target; element; element = element.parentElement) ancestors.push({ tag: element.tagName, className: String(element.className), inert: element.hasAttribute('inert') });
+    return { ancestors, targetInert: Boolean(target?.closest('[inert]')), targetFocused: document.activeElement === target };
+  })()`)
+  fs.writeFileSync(path.join(RUN, label.toLowerCase().replace(/\W+/g, '-')+'-waiting-focus.json'), JSON.stringify(focusState, null, 2))
+  check(label+' focuses after all ancestor saving locks are released',focusState.targetFocused && !focusState.targetInert && focusState.ancestors.every((ancestor) => !ancestor.inert),focusState)
   check(label+' click itself focuses the visible waiting and predecessor editor',await page.evaluate(`(() => {
     const r=document.querySelector('input[aria-label="Blocked の理由"]').getBoundingClientRect();
     return r.top>=0 && r.bottom<=innerHeight && document.querySelector('.task-control').contains(document.activeElement) && Boolean(document.querySelector('.task-control .external-summary'));
@@ -393,6 +413,12 @@ try {
     await page.evaluate(`document.querySelector('.detail [role="alert"]').scrollIntoView({block:'center'})`)
     await screenshot('02b-save-failure-visible')
     await click('.detail-close')
+    check('Failed duration save blocks detail close and retains the entered draft',await page.evaluate(`Boolean(document.querySelector('.detail')) && document.querySelector(${JSON.stringify(effortInput)}).value==='3'`))
+    await fill(effortInput,'2')
+    await click('.detail-title')
+    await until(() => page.evaluate(`!document.querySelector('.detail [role="alert"]')`), 'explicitly reverted duration clears error')
+    await click('.detail-close')
+    await until(() => page.evaluate('!document.querySelector(".detail")'), 'reverted detail closes')
     await page.evaluate(`(() => {
       const select=document.querySelector('[data-warning-task="deadline-overdue"] select');
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'high');

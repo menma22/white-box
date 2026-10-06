@@ -509,6 +509,33 @@ async function verifyTaskContext() {
   await until(() => page.evaluate(`document.querySelector('.restart-context')?.innerText.includes('保存失敗の入力から')`), 'Current Work restart context')
   await disclose('.current-body > details.phase2-disclosure')
   await contextEdit('nextContext', '現在の仕事を切り替える直前の、最新の手がかり。')
+  const currentPage = page
+  page = main
+  await contextEdit('nextContext', '別の窓で先に保存した手がかり。')
+  await button('文脈を保存', contextScope)
+  await until(() => savedTask('task-a').nextContext === '別の窓で先に保存した手がかり。', 'other window context committed')
+  page = currentPage
+  await until(() => page.evaluate(`document.querySelector('${contextScope}').innerText.includes('別の画面で同じ文脈')`), 'same-field context conflict visible')
+  await click('.titlebar-close')
+  check('Conflicting Task edits retain both saved text and the local draft and block close', savedTask('task-a').nextContext === '別の窓で先に保存した手がかり。' && await page.evaluate(`document.querySelector('${contextScope} [aria-label="次にすること・再開の手がかり"]').value==='現在の仕事を切り替える直前の、最新の手がかり。'`))
+  await screenshot('09a-task-context-conflict', contextScope)
+  await contextEdit('nextContext', '本人が競合を確認して選んだ文脈。')
+  await button('この入力で文脈を保存', contextScope)
+  await until(() => savedTask('task-a').nextContext === '本人が競合を確認して選んだ文脈。', 'explicit context conflict resolution')
+  check('Explicit conflict resolution commits the chosen context text', await page.evaluate(`!document.querySelector('${contextScope}').innerText.includes('別の画面で同じ文脈')`))
+  await linkedEditor()
+  const previousBody = read().notes[0].body
+  await fill('[aria-label="ノートの本文"]', 'この窓に残すノートの書きかけ。')
+  const otherNote = await main.evaluate(`window.whitebox.call('note:update',{id:${JSON.stringify(linkedNote.id)},patch:{body:'別の窓で保存したノート。'},expected:{body:${JSON.stringify(previousBody)}}})`)
+  assert.equal(otherNote.ok, true, JSON.stringify(otherNote))
+  await until(() => page.evaluate(`document.querySelector('.note-editor').innerText.includes('別の画面で同じ項目')`), 'linked note conflict visible')
+  await wait(750)
+  check('Linked Note conflict stops autosave and preserves both texts', read().notes[0].body === '別の窓で保存したノート。' && await page.evaluate(`document.querySelector('[aria-label="ノートの本文"]').value==='この窓に残すノートの書きかけ。'`))
+  await screenshot('09b-linked-note-conflict', '.note-editor')
+  await button('最新の内容を使う', '.note-editor')
+  check('Accepting the latest Note explicitly restores the saved text', await page.evaluate(`document.querySelector('[aria-label="ノートの本文"]').value==='別の窓で保存したノート。'`))
+  await call('note:update', { id: linkedNote.id, patch: { body: previousBody } })
+  await contextEdit('nextContext', '現在の仕事を切り替える直前の、最新の手がかり。')
   const endBefore = read()
   beginSaveFault('Current Work isolated write and transition rejection', ['task:update', 'session:end', 'session:switchTask', 'window:close'])
   try {

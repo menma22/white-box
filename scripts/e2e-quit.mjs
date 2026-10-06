@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import { createHash } from 'node:crypto'
 import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
@@ -44,6 +44,28 @@ function processSnapshot(inventory = readWindowsProcesses()) {
   fs.writeFileSync(path.join(RUN, 'owned-process-observation.json'), JSON.stringify(processObservation, null, 2))
   return processObservation.remaining
 }
+function verifiedBrowserPid(processInfo, expectedPid) {
+  const browsers = processInfo.filter((process) => process.type === 'browser')
+  assert.equal(browsers.length, 1, 'CDP identifies one browser process')
+  assert.equal(browsers[0].id, expectedPid, 'CDP browser belongs to the launched Electron PID')
+  return browsers[0].id
+}
+function verifiedBrowserEndpoint(url, port) {
+  const endpoint = new URL(url)
+  assert.equal(endpoint.protocol, 'ws:', 'CDP browser endpoint uses local WebSocket')
+  assert.ok(['127.0.0.1', 'localhost'].includes(endpoint.hostname), 'CDP browser endpoint is loopback')
+  assert.equal(endpoint.port, String(port), 'CDP browser endpoint uses the launch port')
+  assert.ok(endpoint.pathname.startsWith('/devtools/browser/'), 'CDP endpoint addresses the browser')
+  assert.equal(endpoint.username, '', 'CDP endpoint has no credentials')
+  assert.equal(endpoint.password, '', 'CDP endpoint has no credentials')
+  return endpoint.href
+}
+function verifiedMainTarget(targetInfos, expectedUrl) {
+  const targets = targetInfos.filter((target) => target.type === 'page' && target.url.endsWith('#main'))
+  assert.equal(targets.length, 1, 'Verified browser has one main page')
+  assert.equal(targets[0].url, expectedUrl, 'Main page belongs to the expected build')
+  return targets[0]
+}
 async function launch(label) {
   const server = net.createServer()
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
@@ -63,30 +85,57 @@ async function launch(label) {
   assert.ok(childIdentity && child.exitCode === null && child.signalCode === null, 'Launched Electron is live when its identity is registered')
   ownedProcesses.registerRoot(childIdentity, { parentPid: process.pid, name: path.basename(electron), notBefore: launchStartedAt })
   processSnapshot(inventory)
-  const target = await until(async () => (await (await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })).json()).find((item) => item.url.endsWith('#main')), 'main target')
-  socket = new WebSocket(target.webSocketDebuggerUrl)
-  await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }) })
+  const discoveredUrl = await until(async () => (await (await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(1500), redirect: 'error' })).json()).webSocketDebuggerUrl, 'browser CDP endpoint')
+  const browserUrl = verifiedBrowserEndpoint(discoveredUrl, port)
+  const browserSocket = new WebSocket(browserUrl)
+  socket = browserSocket
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Browser CDP connection timeout')), 10000)
+    browserSocket.addEventListener('open', () => { clearTimeout(timer); resolve() }, { once: true })
+    browserSocket.addEventListener('error', (error) => { clearTimeout(timer); reject(error) }, { once: true })
+  })
   let sequence = 0
   const pending = new Map()
-  socket.addEventListener('close', () => {
+  browserSocket.addEventListener('close', () => {
     for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('CDP connection closed')) }
     pending.clear()
   })
-  socket.addEventListener('message', ({ data }) => {
+  browserSocket.addEventListener('message', ({ data }) => {
     const message = JSON.parse(data)
     const request = pending.get(message.id)
     if (!request) return
     pending.delete(message.id)
     clearTimeout(request.timer)
-    if (message.error || message.result?.exceptionDetails) request.reject(new Error(JSON.stringify(message.error || message.result.exceptionDetails)))
-    else request.resolve(message.result.result.value)
+    if (message.sessionId !== request.sessionId) request.reject(new Error('Unexpected CDP session response'))
+    else if (message.error || message.result?.exceptionDetails) request.reject(new Error(JSON.stringify(message.error || message.result.exceptionDetails)))
+    else request.resolve(message.result)
   })
-  const evaluate = (expression) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
+    if (browserSocket.readyState !== WebSocket.OPEN) { reject(new Error('Browser CDP connection is not open')); return }
     const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error('Renderer evaluation timeout')) }, 5000)
-    pending.set(id, { resolve, reject, timer })
-    socket.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }))
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 5000)
+    pending.set(id, { resolve, reject, timer, sessionId })
+    browserSocket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
   })
+  const { processInfo } = await send('SystemInfo.getProcessInfo')
+  const browserPid = verifiedBrowserPid(processInfo, child.pid)
+  const currentIdentity = readWindowsProcesses().find((process) => process.ProcessId === child.pid)
+  assert.ok(currentIdentity && sameProcess(currentIdentity, childIdentity) && child.exitCode === null && child.signalCode === null, 'Verified Electron identity remains live')
+  const expectedUrl = pathToFileURL(path.join(ROOT, 'dist', 'index.html')).href + '#main'
+  const targetInfos = await until(async () => {
+    const { targetInfos } = await send('Target.getTargets')
+    return targetInfos.some((target) => target.type === 'page' && target.url.endsWith('#main')) ? targetInfos : null
+  }, 'main target in verified browser')
+  const target = verifiedMainTarget(targetInfos, expectedUrl)
+  const { sessionId } = await send('Target.attachToTarget', { targetId: target.targetId, flatten: true })
+  assert.equal(typeof sessionId, 'string', 'Browser CDP attaches a renderer session')
+  const evaluate = async (expression) => {
+    const guarded = `(() => { if (location.href !== ${JSON.stringify(expectedUrl)}) throw new Error('Quit E2E target URL changed'); return (${expression}); })()`
+    const result = await send('Runtime.evaluate', { expression: guarded, awaitPromise: true, returnByValue: true }, sessionId)
+    return result.result.value
+  }
+  check(`${label}: verified CDP browser PID and main page belong to this launch`, browserPid === child.pid && await evaluate('location.href') === expectedUrl)
+  fs.writeFileSync(path.join(RUN, `${label}-cdp-identity.json`), JSON.stringify({ browserPid, expectedPid: child.pid, browserUrl, targetId: target.targetId, expectedUrl, targetUrl: target.url, sessionId }, null, 2))
   await until(() => evaluate('Boolean(window.whitebox)'), 'preload ready')
   fs.writeFileSync(path.join(RUN, `${label}-processes.json`), JSON.stringify(processSnapshot(), null, 2))
   return evaluate

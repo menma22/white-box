@@ -375,6 +375,27 @@ async function verifyTodayAndLive() {
   return { expectedMinutes, timerTodayMinutes }
 }
 
+async function verifyHistory(expectedToday) {
+  await navigate('記録', '.history')
+  const allTime = durationMinutes((await amounts('.history')).total)
+  check('History retains the independent all-time total across month paging', allTime === 215 + expectedToday)
+  const expectedDays = { [shift(previousMonday, -1)]: 30, [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [today]: expectedToday }
+  for (const month of new Set(Object.keys(expectedDays).map((day) => day.slice(0, 7)))) {
+    await page.evaluate(`(() => { const input=document.querySelector('.history-month-navigation input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(month)}); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); })()`)
+    await until(() => page.evaluate(`document.querySelector('.history .activity-note').textContent.includes(${JSON.stringify(month)})`), 'History month ' + month)
+    const daily = await page.evaluate(`[...document.querySelectorAll('.hday-total')].map(el=>el.textContent)`)
+    const expected = Object.entries(expectedDays).filter(([day]) => day.startsWith(month)).reduce((sum, [, minutes]) => sum + minutes, 0)
+    check('Selected history month preserves all corresponding daily minutes ' + month, daily.length <= 31 && daily.reduce((sum, value) => sum + durationMinutes(value), 0) === expected && durationMinutes((await amounts('.history')).total) === allTime)
+    await screenshot('07-history-' + month)
+  }
+  await button('今月', '.history-month-navigation')
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
+  const layout = await page.evaluate(`(() => { const root=document.querySelector('.history'), nav=root.querySelector('.history-month-navigation'); return { overflow:Math.max(document.documentElement.scrollWidth-innerWidth,root.scrollWidth-root.clientWidth), buttons:nav.querySelectorAll('button').length, height:nav.getBoundingClientRect().height, month:nav.querySelector('input').value }; })()`)
+  check('Minimum History view keeps bounded date navigation visible without horizontal overflow', layout.overflow <= 1 && layout.buttons === 3 && layout.height > 20 && layout.month === today.slice(0, 7), layout)
+  await screenshot('08-minimum-history')
+  await page.send('Emulation.clearDeviceMetricsOverride')
+}
+
 let exitCode = 1
 try {
   console.log(`Evidence: ${RUN}`)
@@ -392,6 +413,7 @@ try {
   check('The saved exclusion and historical session IDs survive reload', restarted.sessions.find((session) => session.id === pauseId).pauses.some((pause) => pause.reason === 'excluded') && Object.values(historical).every((id) => restarted.sessions.some((session) => session.id === id)))
   await verifyWeek(expected.expectedMinutes + expected.timerTodayMinutes)
   await screenshot('06-restarted-today')
+  await verifyHistory(expected.expectedMinutes + expected.timerTodayMinutes)
   check('Renderer has no console errors or uncaught exceptions', errors.length === 0, errors)
   check('Screenshots contain captured PNG evidence', fs.readdirSync(RUN).filter((name) => name.endsWith('.png')).length >= 8 && fs.readdirSync(RUN).filter((name) => name.endsWith('.png')).every((name) => fs.statSync(path.join(RUN, name)).size > 1000))
   exitCode = 0
