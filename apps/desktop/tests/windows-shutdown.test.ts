@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { allWindows, getWindow, openWindow, setWindowOpeningGuard, setWindowCloseGuard, toggleWindow } from '../src/infra/windows.js'
+import { allWindows, closeWindowsLater, getWindow, openWindow, setWindowOpeningGuard, setWindowCloseGuard, toggleWindow } from '../src/infra/windows.js'
 
 const native = vi.hoisted(() => ({ created: 0, shows: 0 }))
 vi.mock('electron', async () => {
@@ -7,8 +7,9 @@ vi.mock('electron', async () => {
   return {
     BrowserWindow: class extends EventEmitter {
       webContents = { setWindowOpenHandler: vi.fn() }
+      destroyed = false
       constructor() { super(); native.created++ }
-      isDestroyed() { return false }
+      isDestroyed() { return this.destroyed }
       isVisible() { return false }
       isFocused() { return false }
       isMinimized() { return false }
@@ -22,7 +23,10 @@ vi.mock('electron', async () => {
       close() {
         let prevented = false
         this.emit('close', { preventDefault: () => { prevented = true } })
-        if (!prevented) this.emit('closed')
+        if (!prevented) {
+          this.destroyed = true
+          this.emit('closed')
+        }
       }
     },
     screen: { getCursorScreenPoint: () => ({ x: 0, y: 0 }), getDisplayNearestPoint: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } }) },
@@ -30,10 +34,78 @@ vi.mock('electron', async () => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   setWindowCloseGuard(async () => () => {}, () => true)
   for (const win of allWindows()) win.close()
   setWindowOpeningGuard(() => true)
   setWindowCloseGuard(async () => () => {})
+})
+
+describe('予約した窓の遅延close', () => {
+  it('does not close a reopened window when a second close request remains queued', async () => {
+    vi.useFakeTimers()
+    const original = openWindow('current')!
+    closeWindowsLater('current')
+    await vi.advanceTimersByTimeAsync(100)
+    closeWindowsLater('current')
+    await vi.advanceTimersByTimeAsync(50)
+    expect(original.isDestroyed()).toBe(true)
+    const reopened = openWindow('current')!
+    const close = vi.spyOn(reopened, 'close')
+    await vi.advanceTimersByTimeAsync(100)
+    expect(close).not.toHaveBeenCalled()
+    expect(getWindow('current')).toBe(reopened)
+  })
+
+  it('preserves the 150 ms delay and native input preparation for the original window', async () => {
+    vi.useFakeTimers()
+    const original = openWindow('current')!
+    const prepare = vi.fn(async () => () => {})
+    setWindowCloseGuard(prepare)
+    closeWindowsLater('current')
+    await vi.advanceTimersByTimeAsync(149)
+    expect(prepare).not.toHaveBeenCalled()
+    expect(original.isDestroyed()).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(prepare).toHaveBeenCalledWith('current')
+    expect(original.isDestroyed()).toBe(true)
+  })
+
+  it('does not call close again when the original window was already destroyed', async () => {
+    vi.useFakeTimers()
+    const original = openWindow('current')!
+    const close = vi.spyOn(original, 'close')
+    closeWindowsLater('current')
+    original.close()
+    await Promise.resolve()
+    await Promise.resolve()
+    close.mockClear()
+    await vi.advanceTimersByTimeAsync(150)
+    expect(close).not.toHaveBeenCalled()
+  })
+
+  it('does not close a window created after a request with no existing window', async () => {
+    vi.useFakeTimers()
+    closeWindowsLater('current')
+    const created = openWindow('current')!
+    const close = vi.spyOn(created, 'close')
+    await vi.advanceTimersByTimeAsync(150)
+    expect(close).not.toHaveBeenCalled()
+    expect(getWindow('current')).toBe(created)
+  })
+
+  it.each(['preparingQuit', 'quitting'] as const)('does not close while runtime.%s becomes active before the callback', async (state) => {
+    vi.useFakeTimers()
+    const runtime = { preparingQuit: false, quitting: false }
+    setWindowOpeningGuard(() => !runtime.preparingQuit && !runtime.quitting)
+    const original = openWindow('current')!
+    const close = vi.spyOn(original, 'close')
+    closeWindowsLater('current')
+    runtime[state] = true
+    await vi.advanceTimersByTimeAsync(150)
+    expect(close).not.toHaveBeenCalled()
+    expect(getWindow('current')).toBe(original)
+  })
 })
 
 describe('終了中の窓', () => {

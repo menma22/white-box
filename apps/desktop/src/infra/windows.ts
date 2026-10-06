@@ -274,6 +274,16 @@ export function closeWindow(kind: WindowKind): void {
   getWindow(kind)?.close()
 }
 
+export function closeWindowsLater(...kinds: WindowKind[]): void {
+  const targets = kinds.map(getWindow)
+  setTimeout(() => {
+    if (!canOpenWindow()) return
+    for (const win of targets) {
+      if (win && !win.isDestroyed()) win.close()
+    }
+  }, 150)
+}
+
 export function toggleWindow(kind: WindowKind): void {
   const win = getWindow(kind)
   if (win && win.isVisible() && win.isFocused()) win.close()

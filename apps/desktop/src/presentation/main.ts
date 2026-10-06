@@ -20,7 +20,7 @@ import { applyShortcuts, unregisterShortcuts } from '../infra/shortcuts.js'
 import { Store } from '../infra/store.js'
 import { createTray } from '../infra/tray.js'
 import { createTicker } from '../infra/ticker.js'
-import { APP_ROOT, broadcast, closeWindow, openWindow, toggleWindow, observeCurrentWorkWindow, setWindowOpeningGuard, setWindowCloseGuard, setWindowDraftProfile, getWindow } from '../infra/windows.js'
+import { APP_ROOT, broadcast, closeWindow, closeWindowsLater, openWindow, toggleWindow, observeCurrentWorkWindow, setWindowOpeningGuard, setWindowCloseGuard, setWindowDraftProfile, getWindow } from '../infra/windows.js'
 import { RendererFlush } from '../infra/renderer-flush.js'
 import { registerIpc } from './ipc.js'
 import { createAgentService } from '../infra/agent-service.js'
@@ -97,7 +97,7 @@ if (!app.requestSingleInstanceLock()) {
         close: closeWindow,
         toggle: toggleWindow,
         minimizeFocused: () => BrowserWindow.getFocusedWindow()?.minimize(),
-        closeLater: (...kinds) => void setTimeout(() => kinds.forEach(closeWindow), 150),
+        closeLater: closeWindowsLater,
       },
       ticker,
       system: {
