@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, powerMonitor } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, powerMonitor } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -9,7 +9,10 @@ if (!traceDirectory || !process.env.WHITEBOX_DATA_DIR || !process.argv.some((arg
 const append = fs.appendFileSync.bind(fs)
 const tracePath = path.join(traceDirectory, `quit-${process.pid}.jsonl`)
 const trace = (event, detail = {}) => append(tracePath, JSON.stringify({ at: Date.now(), pid: process.pid, event, ...detail }) + '\n')
-const windows = () => BrowserWindow.getAllWindows().map((win) => ({ id: win.id, url: win.webContents.getURL(), loading: win.webContents.isLoading(), rendererPid: win.webContents.getOSProcessId(), visible: win.isVisible() }))
+const windows = () => BrowserWindow.getAllWindows().map((win) => {
+  try { return { id: win.id, url: win.webContents.getURL(), loading: win.webContents.isLoading(), rendererPid: win.webContents.getOSProcessId(), visible: win.isVisible(), focused: win.isFocused() } }
+  catch (error) { return { id: win.id, error: String(error) } }
+})
 let quitting = false
 
 trace('bootstrap', { main: path.join(ROOT, 'dist-electron', 'presentation', 'main.js') })
@@ -20,6 +23,17 @@ process.on('exit', (code) => trace('process-exit', { code }))
 app.on('browser-window-created', (_event, win) => {
   trace('window-created', { id: win.id, quitting })
   for (const event of ['close', 'closed', 'ready-to-show']) win.on(event, () => trace(`window-${event}`, { id: win.id, quitting }))
+  win.on('close', (event) => queueMicrotask(() => trace('window-close-decision', { id: win.id, prevented: event.defaultPrevented, quitting })))
+  for (const event of ['did-finish-load', 'destroyed', 'unresponsive', 'responsive', 'render-process-gone']) {
+    win.webContents.on(event, (_event, detail) => trace(`renderer-${event}`, { id: win.id, detail, quitting }))
+  }
+  const send = win.webContents.send
+  win.webContents.send = function (channel, ...args) {
+    const flush = channel === 'whitebox:flush-request' || channel === 'whitebox:flush-release'
+    if (flush) trace('renderer-flush-send', { id: win.id, senderId: this.id, channel, payload: args[0] })
+    try { return send.call(this, channel, ...args) }
+    catch (error) { if (flush) trace('renderer-flush-send-throw', { id: win.id, channel, error: String(error) }); throw error }
+  }
 })
 app.whenReady().then(() => {
   for (const event of ['resume', 'unlock-screen', 'suspend', 'lock-screen']) powerMonitor.on(event, () => trace(`power-${event}`, { quitting }))
@@ -55,6 +69,24 @@ ipcMain.handle = function (channel, listener) {
       throw error
     }
   })
+}
+const ipcOn = ipcMain.on
+ipcMain.on = function (channel, listener) {
+  if (channel !== 'whitebox:flush-ready' && channel !== 'whitebox:flush-reply') return ipcOn.call(this, channel, listener)
+  return ipcOn.call(this, channel, function (event, ...args) {
+    trace('renderer-flush-ipc-received', { channel, senderId: event.sender.id, payload: args[0] })
+    try {
+      const result = listener.call(this, event, ...args)
+      trace('renderer-flush-ipc-return', { channel, senderId: event.sender.id })
+      return result
+    } catch (error) { trace('renderer-flush-ipc-throw', { channel, error: String(error) }); throw error }
+  })
+}
+const showErrorBox = dialog.showErrorBox
+dialog.showErrorBox = function (title, content) {
+  trace('native-error-box-start', { title, content, quitting })
+  try { return showErrorBox.call(this, title, content) }
+  finally { trace('native-error-box-return', { quitting }) }
 }
 for (const method of ['writeFileSync', 'renameSync', 'existsSync', 'copyFileSync']) {
   const original = fs[method]
