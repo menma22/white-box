@@ -7,8 +7,10 @@ import { BigDuration } from '@/components/ui'
 import { ActivityBreakdown } from './ActivityBreakdown'
 import { ActivityTrend } from './ActivityTrend'
 import { SessionRow } from '@/features/sessions/SessionRow'
+import { TaskWarnings } from '@/features/task-control/TaskWarnings'
+import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 
-export function WeekView() {
+export function WeekView({ onOpenTask }: { onOpenTask?: (id: string, target?: TaskDetailTarget) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const today = todayKey(state, now)
@@ -30,6 +32,7 @@ export function WeekView() {
       </div></div>
       <div className="today-total"><BigDuration ms={summary.focusMs} size={46} /><span className="label">週の実作業</span></div>
     </header>
+    {offset === 0 && <TaskWarnings state={state} now={now} onOpenTask={onOpenTask} compact />}
     <div className="today-strip">
       <div className="metric"><span className="num metric-value">{days.filter((d) => d.summary.focusMs > 0).length}</span><span className="label">記録のある日</span></div>
       <div className="metric"><span className="num metric-value">{summary.sessions.length}</span><span className="label">セッション</span></div>

@@ -15,7 +15,7 @@ export function SettingsView() {
   const [saved, setSaved] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
+  // Record<string, unknown> はキーの綴り違いを型検査で拾えないため、送信する patch は Partial<Settings> で縛る。
   const patch = (p: Partial<Settings>) => {
     setError(null)
     void invoke('settings:update', { patch: p }).catch((err) => setError(String(err).replace(/^(Error:\s*)+/, '')))
@@ -134,7 +134,7 @@ export function SettingsView() {
             />
             <span className="set-unit">時</span>
           </Row>
-          <Row label="停滞とみなす日数" hint="「重要」にしたタスクがこの日数動いていなければ、朝の画面で聞く。">
+          <Row label="Todo の警告までの日数" hint="作業・進捗の記録がない期間。この日数で Warning、2 倍で High Risk。Inbox は数えない。">
             <input
               className="input num set-num"
               type="number"
@@ -244,7 +244,7 @@ export function SettingsView() {
           >
             書き出す
           </button>
-          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import')}>
+          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import').catch((failure) => setError(String(failure).replace(/^(Error:\s*)+/, '')))}>
             読み込む
           </button>
           <button type="button" className="btn btn-quiet btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:reveal')}>

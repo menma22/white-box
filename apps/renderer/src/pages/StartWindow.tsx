@@ -25,8 +25,8 @@ export function StartWindow() {
   useEscape(true, () => void cmd.closeSelf())
 
   const matches = useMemo(
-    () => candidateTasks(state).filter((t) => matchTask(state, t, query)),
-    [state, query],
+    () => candidateTasks(state, now).filter((t) => matchTask(state, t, query)),
+    [state, query, now],
   )
   const exact = matches.some((t) => t.title.toLowerCase() === query.trim().toLowerCase())
   const canCreate = query.trim().length > 0 && !exact

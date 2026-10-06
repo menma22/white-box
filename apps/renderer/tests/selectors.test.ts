@@ -109,8 +109,8 @@ describe('selectors', () => {
     const now = 10 * 86_400_000
     const s = state({
       tasks: [
-        task({ id: 'stalled', priority: 'high', status: 'todo', createdAt: 0 }),
-        task({ id: 'fresh', priority: 'high', status: 'todo', createdAt: now - 86_400_000 }),
+        task({ id: 'stalled', priority: 'high', status: 'todo', createdAt: 0, committedAt: 0 }),
+        task({ id: 'fresh', priority: 'high', status: 'todo', createdAt: now - 86_400_000, committedAt: now - 86_400_000 }),
         task({ id: 'normal-old', priority: 'normal', status: 'todo', createdAt: 0 }),
         task({ id: 'inbox-high', priority: 'high', status: 'inbox', createdAt: 0 }),
         task({ id: 'done-high', priority: 'high', status: 'done', createdAt: 0 }),
@@ -141,6 +141,18 @@ describe('selectors', () => {
       ],
     })
     expect(candidateTasks(s).map((t) => t.id)).toEqual(['doing', 'todo-high', 'todo-low', 'inbox'])
+  })
+
+  it('リスクが高くてもarchiveは除き、Blockedは理由を見せる候補として残す', () => {
+    const now = new Date(2026, 9, 5, 12).getTime()
+    const s = state({
+      projects: [{ id: 'archived', name: '過去の仕事', hue: 1, archived: true, order: 0, createdAt: 0, updatedAt: 0 }],
+      tasks: [
+        task({ id: 'archived-risk', projectId: 'archived', priority: 'high', committedAt: 0, due: '2026-10-04' }),
+        task({ id: 'blocked', blocked: true, committedAt: now }),
+      ],
+    })
+    expect(candidateTasks(s, now).map((t) => t.id)).toEqual(['blocked'])
   })
 
   it('matchTask はタスク名とプロジェクト名を大文字小文字を区別せず見る', () => {

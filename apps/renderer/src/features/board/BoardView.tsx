@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import {
@@ -14,19 +14,23 @@ import {
 import type { Task, TaskStatus } from '@white-box/core/types'
 import { Chip, ProgressBar, Segmented } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
-import { TaskDetail } from './TaskDetail'
+import { TaskDetail, type TaskDetailTarget } from './TaskDetail'
 import { GoalTasks } from '@/features/goals/GoalTasks'
+import { TaskWarnings } from '@/features/task-control/TaskWarnings'
+import { taskControl } from '@white-box/core/task-priority'
+import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 import { ExternalWaiting } from './ExternalWaiting'
 import { taskBlockReasons, unfinishedPredecessors } from '@white-box/core/task-control'
 
-export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, onTaskJumpHandled }: {
+export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initialTaskId = null, initialTaskTarget, onTaskJumpHandled }: {
   onJumpGoal?: (id: string) => void; initialView?: 'board' | 'list'; initialTaskId?: string | null
-  onTaskJumpHandled?: () => void
+  initialTaskTarget?: TaskDetailTarget; onTaskJumpHandled?: () => void
 }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const [filter, setFilter] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const [selectedTarget, setSelectedTarget] = useState<TaskDetailTarget>()
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropAt, setDropAt] = useState<{ status: TaskStatus; index: number } | null>(null)
   const [newProject, setNewProject] = useState('')
@@ -35,6 +39,26 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
   const [error, setError] = useState('')
 
   const spent = useMemo(() => focusByTask(state, now), [state.sessions, now])
+
+  useEffect(() => {
+    if (!initialTaskId) return
+    if (initialTaskTarget) {
+      setView('board')
+      setSelected(initialTaskId)
+      setSelectedTarget(initialTaskTarget)
+      onTaskJumpHandled?.()
+    } else {
+      setView('list')
+      setSelected(null)
+      setSelectedTarget(undefined)
+    }
+  }, [initialTaskId, initialTaskTarget, onTaskJumpHandled])
+
+  function openTask(id: string, target?: TaskDetailTarget) {
+    setView('board')
+    setSelected(id)
+    setSelectedTarget(target)
+  }
 
   function visible(tasks: Task[]): Task[] {
     return filter ? tasks.filter((t) => t.projectId === filter) : tasks
@@ -91,8 +115,10 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
         <Segmented value={view} onChange={setView} options={[{ value: 'board', label: 'ボード' }, { value: 'list', label: '一覧' }]} />
       </header>
 
+      <TaskWarnings state={state} now={now} projectId={filter} onOpenTask={openTask} />
+
       {error && <p className="task-command-error" role="alert">{error}</p>}
-      <ExternalWaiting projectId={filter} onSelect={setSelected} />
+      <ExternalWaiting projectId={filter} onSelect={(id) => openTask(id, { section: 'waiting' })} />
       {view === 'list' ? <GoalTasks onJump={onJumpGoal} initialTaskId={initialTaskId} onJumpHandled={onTaskJumpHandled} projectId={filter} /> : <>
       <div className="board-cols">
         {STATUS_ORDER.map((status) => {
@@ -130,7 +156,7 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
                 {roots.map((task, i) => (
                   <div key={task.id}>
                     {dropAt?.status === status && dropAt.index === i && <div className="drop-line" />}
-                    <Card task={task} depth={0} spent={spent} selectedId={selected} onSelect={setSelected} onDragStart={setDragId} dragId={dragId} />
+                    <Card task={task} depth={0} spent={spent} selectedId={selected} onSelect={openTask} onDragStart={setDragId} dragId={dragId} />
                   </div>
                 ))}
                 {dropAt?.status === status && dropAt.index >= roots.length && <div className="drop-line" />}
@@ -142,7 +168,7 @@ export function BoardView({ onJumpGoal = () => {}, initialView = 'board', initia
       </div>
 
       </>}
-      {selected && <TaskDetail key={selected} taskId={selected} onClose={() => setSelected(null)} onSelectTask={setSelected} />}
+      {selected && <TaskDetail key={selected} taskId={selected} target={selectedTarget} onClose={() => setSelected(null)} onSelectTask={openTask} />}
     </div>
   )
 }
@@ -194,6 +220,7 @@ function Card({
   dragId: string | null
 }) {
   const state = useData()
+  const now = useApp((s) => s.now)
   const project = projectById(state, task.projectId)
   const children = nestedChildren(state, task)
   const [open, setOpen] = useState(true)
@@ -249,6 +276,8 @@ function Card({
             </span>
           )}
         </div>
+
+        {task.status !== 'done' && task.status !== 'inbox' && <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />}
 
         {task.status !== 'done' && (task.progress > 0 || task.status === 'doing') && (
           <div className="card-progress">

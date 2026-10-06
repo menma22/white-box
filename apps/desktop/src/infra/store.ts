@@ -14,6 +14,7 @@ import type { Database, Settings } from '@white-box/core/types'
 import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
+import { stallWarningDays, validateTaskPlanning } from '@white-box/core/task-priority'
 
 const DB_VERSION = 1
 const RENAME_RETRY_LIMIT = 3
@@ -55,6 +56,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
   const goalMap = parsed.goalMap === undefined ? emptyGoalMap() : parseGoalMap(parsed.goalMap)
   const tasks = parsed.tasks ?? []
   for (const task of tasks) {
+    validateTaskPlanning(task)
     TaskControlSchema.parse({ blocked: task.blocked, blockReason: task.blockReason, hardDependencies: task.hardDependencies, recommendedPredecessors: task.recommendedPredecessors, externalBlock: task.externalBlock })
     validGoalDue(task.due)
     if (task.goalNodeId != null && !Object.hasOwn(goalMap.nodes, task.goalNodeId)) throw new Error('タスクが存在しない目標を参照しています')
@@ -68,7 +70,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     projects: parsed.projects ?? [],
     tasks,
     sessions: parsed.sessions ?? [],
-    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}), stallWarningDays: stallWarningDays(parsed.settings?.stallWarningDays ?? DEFAULT_SETTINGS.stallWarningDays) },
     dayNotes: parsed.dayNotes ?? {},
     agentRequests: AgentRequestsSchema.parse(parsed.agentRequests ?? {}),
     taskSuggestions: TaskSuggestionSchema.array().parse(parsed.taskSuggestions ?? []),

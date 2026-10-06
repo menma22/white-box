@@ -72,6 +72,10 @@ export const TaskSchema = z.object({
   createdInSessionId: IdSchema.nullable(),
   due: z.string().nullable().optional(),
   goalNodeId: IdSchema.nullable().optional(),
+  remainingEffortMinutes: z.number().finite().nonnegative().nullable().optional(),
+  safetyBufferMinutes: z.number().finite().nonnegative().nullable().optional(),
+  committedAt: z.number().finite().nonnegative().nullable().optional(),
+  lastProgressAt: z.number().finite().nonnegative().nullable().optional(),
 })
 
 export const OutcomeStatusSchema = z.enum(['pending', 'achieved', 'not-achieved'])
@@ -227,7 +231,7 @@ export const SettingsSchema = z.object({
   soundOnExpire: z.boolean(),
   dayStartHour: z.number(),
   lastWelcomeDate: z.string().nullable(),
-  stallWarningDays: z.number(),
+  stallWarningDays: z.number().finite().positive(),
   showSessionCard: z.boolean(),
   onboardedAt: z.number().nullable(),
   remindToStart: z.boolean().optional(),

@@ -23,7 +23,7 @@ export function CurrentWorkWindow() {
 
   const current = taskById(state, tick?.activeTaskId ?? null)
   const currentProject = projectById(state, current?.projectId ?? null)
-  const others = candidateTasks(state).filter((t) => t.id !== current?.id)
+  const others = candidateTasks(state, now).filter((t) => t.id !== current?.id)
   const subtasks = current ? childrenOf(state, current.id) : []
   const timer = tick ? liveTimerPresentation(tick, state.breakTimer, now) : null
   const session = state.sessions.find((s) => s.id === tick?.sessionId)

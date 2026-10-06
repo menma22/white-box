@@ -5,10 +5,15 @@ import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, S
 import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { Priority, Task, TaskStatus } from '@white-box/core/types'
+import { taskControl } from '@white-box/core/task-priority'
+import { OptionalDurationField } from '@/features/task-control/OptionalDurationField'
+import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
 import { taskExecutionProblem } from '@white-box/core/task-control'
 import { TaskControlEditor } from './TaskControlEditor'
 
-export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void }) {
+export type TaskDetailTarget = { section: 'waiting' }
+
+export function TaskDetail({ taskId, onClose, onSelectTask, target }: { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void; target?: TaskDetailTarget }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
@@ -16,6 +21,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
   const [notes, setNotes] = useState(task?.notes ?? '')
   const editingTitle = useRef(false)
   const editingNotes = useRef(false)
+  const body = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
@@ -29,6 +35,9 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
   useEffect(() => {
     if (!editingNotes.current) setNotes(task?.notes ?? '')
   }, [taskId, task?.notes])
+  useEffect(() => {
+    if (!target) body.current?.scrollTo({ top: 0 })
+  }, [taskId, target])
 
   if (!task) return null
 
@@ -66,7 +75,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
 
       {error && <p className="task-command-error" role="alert">{error}</p>}
 
-      <div className="detail-body">
+      <div className="detail-body" ref={body}>
         <textarea
           className="detail-title"
           value={title}
@@ -78,6 +87,8 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
             if (title.trim() && title !== task.title) patch({ title: title.trim() })
           }}
         />
+
+        {executionProblem && <p className="task-control-hint" data-execution-problem>開始できない理由: {executionProblem}</p>}
 
         <div className="detail-grid">
           <div className="detail-field">
@@ -117,6 +128,12 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
             <span className="label">締切</span>
             <input className="input" type="date" value={task.due ?? ''} onChange={(e) => patch({ due: e.target.value || null })} />
           </label>
+          <OptionalDurationField label="残作業の見積（任意）" value={task.remainingEffortMinutes} onSave={(remainingEffortMinutes) => invoke('task:update', { id: task.id, patch: { remainingEffortMinutes } })} />
+          <OptionalDurationField label="安全余裕（任意）" value={task.safetyBufferMinutes} onSave={(safetyBufferMinutes) => invoke('task:update', { id: task.id, patch: { safetyBufferMinutes } })} />
+          <div className="detail-field">
+            <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays)} />
+            <p className="task-control-hint">見積は残作業。セッションを記録しても自動で減らさない。Slack は締切日末までの暦時間から見積と安全余裕を引いた値。休息や他の仕事は引かない。安全余裕なしなら 0 を入力する。</p>
+          </div>
           <label className="detail-field">
             <span className="label">目標（道標）</span>
             <select className="input" value={task.goalNodeId ?? ''} onChange={(e) => patch({ goalNodeId: e.target.value || null })}>
@@ -156,7 +173,7 @@ export function TaskDetail({ taskId, onClose, onSelectTask }: { taskId: string; 
           </div>
         </div>
 
-        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} />
+        <TaskControlEditor key={task.id} task={task} save={save} onRelated={onSelectTask} focusRequest={target} />
 
         <div className="detail-field">
           <span className="label">メモ</span>
