@@ -20,6 +20,7 @@ export function CalendarEditor({ block, startedAt, endedAt, onClose }: { block?:
   const running = useRef<Promise<boolean> | null>(null)
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial.current)
   const life = draft.category !== 'work'
+  const recurring = block?.repeat === 'weekly'
   function update(patch: Partial<typeof draft>) { setDraft((value) => ({ ...value, ...patch })); setError(''); setConfirm(null) }
   useDraftParticipant(async () => {
     if (running.current) return running.current
@@ -81,13 +82,13 @@ export function CalendarEditor({ block, startedAt, endedAt, onClose }: { block?:
             <div className="calendar-weekdays" role="group" aria-label="繰り返す曜日">{DAYS.map(({ day, label }) => <button key={day} type="button" aria-pressed={draft.weekdays.includes(day)} aria-label={label + '曜日に繰り返す'} disabled={saving} onClick={() => update({ weekdays: draft.weekdays.includes(day) ? draft.weekdays.filter((value) => value !== day) : [...draft.weekdays, day] })}>{label}</button>)}</div>
             <div className="calendar-repeat-presets"><button type="button" disabled={saving} onClick={() => update({ weekdays: [1, 2, 3, 4, 5] })}>平日</button><button type="button" disabled={saving} onClick={() => update({ weekdays: [0, 1, 2, 3, 4, 5, 6] })}>毎日</button></div>
             <label className="calendar-field">繰り返しの終了日 <span className="calendar-optional">任意</span><input className="input" type="date" aria-label="繰り返しの終了日" min={draft.start.slice(0, 10)} value={draft.until} disabled={saving} onChange={(event) => update({ until: event.target.value })} /></label>
-            <p className="calendar-hint">開始日から指定した曜日に繰り返す。{block ? '変更・取消は、この定型予定全体に適用される。' : '夜をまたぐ時間も登録できる。'}</p>
           </>}
+          {(draft.repeat || recurring) && <p className="calendar-hint">{draft.repeat && '開始日から指定した曜日に繰り返す。'}{recurring ? '変更・取消は、この定型予定全体に適用される。' : '夜をまたぐ時間も登録できる。'}</p>}
         </div>
         {life && <p className="calendar-hint">週の時間予算でも、この時間を最低限確保する。</p>}
         {error && <p className="task-command-error" role="alert">{error} 入力は残っている。</p>}
         {confirm && <div className="calendar-confirm" role="alert">
-          <p>{confirm === 'discard' ? '保存前の入力を破棄して閉じる？' : draft.repeat ? 'この定型予定全体を取り消す？ 実績の記録はそのまま残る。' : 'この予定を取り消す？ 実績の記録はそのまま残る。'}</p>
+          <p>{confirm === 'discard' ? '保存前の入力を破棄して閉じる？' : recurring ? 'この定型予定全体を取り消す？ 実績の記録はそのまま残る。' : 'この予定を取り消す？ 実績の記録はそのまま残る。'}</p>
           <div className="modal-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setConfirm(null)}>編集へ戻る</button><button type="button" className="btn btn-danger btn-sm" disabled={saving} onClick={() => confirm === 'discard' ? onClose() : void cancel()}>{confirm === 'discard' ? '入力を破棄して閉じる' : '取り消す'}</button></div>
         </div>}
         <footer className="calendar-editor-actions">
