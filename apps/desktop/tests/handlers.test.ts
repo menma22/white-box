@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（60 コマンド）', () => {
+describe('ユースケースの網羅（67 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -25,6 +25,10 @@ describe('ユースケースの網羅（60 コマンド）', () => {
     db.goalMap.issues = [{ id: 'i1', text: '難点', kind: 'problem', nodeId: null, resolved: false, createdAt: 0 }]
     db.presenceCandidates = [{ id: 'candidate', sessionId: 'finished', startedAt: 0, endedAt: 10_000, status: 'pending', createdAt: 10_000, reviewedAt: null }]
     const ctx = fakeCtx(db)
+    ctx.googleCalendar = {
+      configure: () => {}, connect: async () => {}, cancelConnect: () => {}, disconnect: () => {}, select: () => {}, sync: async () => {},
+      create: async (a) => ({ id: 'remote', calendarId: a.calendarId, title: a.title, startedAt: a.startedAt, endedAt: a.endedAt, allDay: false }),
+    }
     db.fixedWork = [{ id: 'fixed1', taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議', cancelled: false, createdAt: 0, updatedAt: 0 }]
     db.calendarBlocks = [{ id: 'calendar1', title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null, cancelled: false, createdAt: 0, updatedAt: 0 }]
     db.weeklyBudgetDefaults = { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] }
@@ -37,6 +41,13 @@ describe('ユースケースの網羅（60 コマンド）', () => {
     ctx.runtime.recovery = { sessionId, lastKnownAt: ctx.now() }
 
     const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'googleCalendar:configure': { clientId: 'client', clientSecret: 'secret' },
+      'googleCalendar:connect': {},
+      'googleCalendar:cancelConnect': {},
+      'googleCalendar:disconnect': {},
+      'googleCalendar:select': { calendarIds: [] },
+      'googleCalendar:sync': { startedAt: 0, endedAt: 86400000 },
+      'googleCalendar:create': { calendarId: 'primary', title: 'Event', startedAt: 0, endedAt: 3600000, requestId: 'request' },
       'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
       'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
       'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },

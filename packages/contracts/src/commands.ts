@@ -1,3 +1,4 @@
+import { GOOGLE_CALENDAR_COMMANDS } from './google-calendar.js'
 /**
  * 画面⇄メインプロセスの全コマンド契約。ここが両者の唯一の合意点。
  *
@@ -37,6 +38,7 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...GOOGLE_CALENDAR_COMMANDS,
   ...PLANNING_COMMANDS,
   ...CALENDAR_COMMANDS,
   ...PRESENCE_COMMANDS,

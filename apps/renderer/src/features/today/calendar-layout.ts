@@ -1,8 +1,8 @@
-import type { TimeRange } from '@white-box/core/types'
+import type { GoogleCalendarEvent, TimeRange } from '@white-box/core/types'
 
 export interface CalendarEvent extends TimeRange {
   key: string
-  kind: 'planned' | 'actual' | 'routine' | 'fixed'
+  kind: 'planned' | 'actual' | 'routine' | 'fixed' | 'google'
   title: string
   color?: string
   blockId?: string
@@ -10,6 +10,8 @@ export interface CalendarEvent extends TimeRange {
   taskId?: string | null
   live?: boolean
   recurring?: boolean
+  allDay?: boolean
+  googleEvent?: GoogleCalendarEvent
 }
 export interface CalendarPosition {
   event: CalendarEvent
@@ -22,8 +24,9 @@ export interface CalendarPosition {
 function minute(at: number, period: TimeRange): number {
   if (at <= period.startedAt) return 0
   if (at >= period.endedAt) return 1440
-  const date = new Date(at)
-  return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60
+  const date = new Date(at), boundary = new Date(period.startedAt)
+  const civilDays = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(boundary.getFullYear(), boundary.getMonth(), boundary.getDate())) / 86_400_000
+  return civilDays * 1440 + date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60 - boundary.getHours() * 60 - boundary.getMinutes()
 }
 
 export function layoutDayEvents(events: CalendarEvent[], period: TimeRange, minimumMinutes = 0): CalendarPosition[] {

@@ -8,7 +8,7 @@ import { toLocalInput } from '@/lib/session-edit'
 import { useDraftParticipant } from '@/lib/useEditorFlush'
 
 const DAYS = [{ day: 1, label: '月' }, { day: 2, label: '火' }, { day: 3, label: '水' }, { day: 4, label: '木' }, { day: 5, label: '金' }, { day: 6, label: '土' }, { day: 0, label: '日' }]
-export function CalendarEditor({ block, startedAt, endedAt, onClose }: { block?: CalendarBlock; startedAt: number; endedAt: number; onClose: () => void }) {
+export function CalendarEditor({ block, startedAt, endedAt, onClose, onGoogle }: { block?: CalendarBlock; startedAt: number; endedAt: number; onClose: () => void; onGoogle?: () => void }) {
   const state = useData()
   const initial = useRef({ title: block?.title ?? '', start: toLocalInput(block?.startedAt ?? startedAt), end: toLocalInput(block?.endedAt ?? endedAt),
     category: block?.category ?? 'work', projectId: block?.projectId ?? '', taskId: block?.taskId ?? '', repeat: block?.repeat === 'weekly',
@@ -58,6 +58,7 @@ export function CalendarEditor({ block, startedAt, endedAt, onClose }: { block?:
     <div className="calendar-editor">
       <header className="calendar-editor-head"><div><span className="label">WEEK PLANNER</span><h2 id="calendar-editor-title">{block ? '予定を編集' : '予定をつくる'}</h2></div><button type="button" className="calendar-close" aria-label="予定の編集を閉じる" disabled={saving} onClick={close}>×</button></header>
       <form onSubmit={(event) => { event.preventDefault(); void save() }}>
+        {onGoogle && <div className="google-plan-target"><span>保存先: White Box</span><button type="button" className="btn btn-ghost btn-sm" disabled={dirty || saving} onClick={onGoogle}>Google カレンダーへ保存する</button>{dirty && <small>保存先の切り替えは入力前に選べる。</small>}</div>}
         <label className="calendar-field">タイトル<input className="input calendar-title-input" required maxLength={500} aria-label="タイトル" placeholder="何に時間を使う？" value={draft.title} disabled={saving} onChange={(event) => update({ title: event.target.value })} /></label>
         <div className="calendar-field-pair">
           <label className="calendar-field">開始<input className="input" type="datetime-local" required aria-label="開始" value={draft.start} disabled={saving} onChange={(event) => update({ start: event.target.value })} /></label>

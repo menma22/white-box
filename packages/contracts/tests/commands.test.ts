@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 60 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(60)
+  it('コマンドは 67 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(67)
   })
 
   it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
@@ -78,6 +78,13 @@ describe('コマンド契約', () => {
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
   const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'googleCalendar:configure': { clientId: 'client', clientSecret: 'secret' },
+      'googleCalendar:connect': {},
+      'googleCalendar:cancelConnect': {},
+      'googleCalendar:disconnect': {},
+      'googleCalendar:select': { calendarIds: [] },
+      'googleCalendar:sync': { startedAt: 0, endedAt: 86400000 },
+      'googleCalendar:create': { calendarId: 'primary', title: 'Event', startedAt: 0, endedAt: 3600000, requestId: 'request' },
     'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
     'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
     'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },

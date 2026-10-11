@@ -1,0 +1,42 @@
+.google-calendar-settings { display: grid; gap: 14px; }
+.google-calendar-settings .set-title, .google-calendar-settings .set-note { margin: 0; }
+.google-status { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px; font-size: 13px; color: var(--text-2); overflow-wrap: anywhere; }
+.google-status strong { color: var(--accent-deep); font-weight: 600; }
+.google-credentials { padding: 14px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r-md); }
+.google-credentials summary { cursor: pointer; font-size: 14px; }
+.google-credentials[open] summary { margin-bottom: 12px; }
+.google-credentials form { display: grid; gap: 14px; margin-top: 14px; }
+.google-calendar-selection { border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 14px; margin: 0; min-width: 0; }
+.google-calendar-selection legend { font-size: 13px; color: var(--text-2); padding-inline: 6px; }
+.google-calendar-selection label { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+.google-calendar-selection label > span { overflow-wrap: anywhere; }
+.google-calendar-selection small { margin-left: auto; color: var(--text-3); font-size: 12px; flex: none; }
+.google-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.google-settings-dialog .set-block { margin: 0; padding: 0; border: 0; }
+.google-plan-target { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; padding: 8px 12px; border: 1px solid var(--line-soft); border-radius: var(--r-sm); font-size: 13px; color: var(--text-2); }
+.google-plan-target small { width: 100%; }
+.google-week-status { display: flex; align-items: center; justify-content: center; position: relative; height: 30px; width: 30px; border-radius: var(--r-pill); color: var(--text-2); border: 1px solid var(--line-soft); flex: none; font-size: 13px; font-weight: 600; }
+.google-week-status:hover { background: var(--accent-soft); color: var(--accent); }
+.google-week-status i { position: absolute; width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--accent); right: 1px; top: 1px; }
+.google-week-status.has-error i { background: var(--amber); }
+.calendar-event.is-google { background: var(--accent-soft); border: 1px dashed var(--accent-line); border-left: 3px solid var(--accent); }
+.calendar-all-day-label { padding-top: 7px; text-align: center; font-size: 11px; color: var(--text-3); border-bottom: 1px solid var(--calendar-day-header-line); }
+.calendar-all-day-cell { min-height: 32px; padding: 4px 3px; display: flex; flex-direction: column; gap: 3px; border-left: 1px solid var(--calendar-line-faint); border-bottom: 1px solid var(--calendar-day-header-line); }
+.calendar-all-day-event { display: block; text-align: left; width: 100%; padding: 3px 5px; font-size: 12px; line-height: 1.3; border-radius: 4px; background: var(--accent-soft); color: var(--accent-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
+.calendar-all-day-event:hover { background: var(--done-soft); }
+.google-day { border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--panel); padding: 18px; margin: 20px 0; }
+.google-day > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.google-day h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.google-day > header span { font-size: 12px; color: var(--text-3); }
+.google-day-all-day { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+.google-day-all-day > span { font-size: 12px; color: var(--text-3); padding-right: 6px; }
+.google-day-all-day button { padding: 5px 10px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent-deep); font-size: 13px; }
+.google-day-scroll { overflow-x: auto; padding: 0 20px 5px; }
+.google-day-axis { position: relative; height: 25px; min-width: 600px; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.google-day-axis > span { position: absolute; transform: translateX(-50%); }
+.google-day-track { position: relative; min-width: 600px; background-image: linear-gradient(to right, var(--line) 1px, transparent 1px); background-size: var(--google-grid-size) 100%; }
+.google-day-event { position: absolute; height: 30px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; padding: 5px 7px; background: var(--accent-soft); color: var(--accent-deep); border: 1px dashed var(--accent-line); border-radius: var(--r-sm); font-size: 12px; }
+.google-event-detail { display: grid; gap: 12px; }
+.google-event-detail h2 { font-size: 22px; margin: 0; overflow-wrap: anywhere; }
+.google-event-detail p { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .google-calendar-selection label { flex-wrap: wrap; } .google-calendar-selection small { margin-left: 24px; } }

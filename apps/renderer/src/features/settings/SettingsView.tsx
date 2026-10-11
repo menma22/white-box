@@ -5,6 +5,7 @@ import { projectColor } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/format'
 import { Modal } from '@/components/ui'
 import type { Settings } from '@white-box/core/types'
+import { GoogleCalendarSettings } from '@/features/google-calendar/GoogleCalendarSettings'
 
 export function SettingsView() {
   const state = useData()
@@ -30,6 +31,7 @@ export function SettingsView() {
         </div>
       </header>
       {error && <p className="set-error" role="alert">{error}</p>}
+      <GoogleCalendarSettings />
 
       <section className="set-block">
         <h2 className="set-title">あなたのこと</h2>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp, useData } from '@/stores/app'
 import { todayKey } from '@/lib/selectors'
 import { BigDuration, Empty } from '@/components/ui'
@@ -11,12 +11,19 @@ import { ActivityTrend } from './ActivityTrend'
 import { TaskWarnings } from '@/features/task-control/TaskWarnings'
 import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 import { FixedWorkOverview } from '@/features/board/FixedWorkOverview'
+import { GoogleDayTimeline } from '@/features/google-calendar/GoogleDayTimeline'
+import { GoogleEventDetail } from '@/features/google-calendar/GoogleEventDetail'
+import { selectedGoogleEvents, type GoogleEvent } from '@/features/google-calendar/google-calendar'
+import { useGoogleCalendarRange } from '@/features/google-calendar/useGoogleCalendarRange'
 
 export function TodayView({ onOpenTask }: { onOpenTask?: (id: string, target?: TaskDetailTarget) => void }) {
   const state = useData()
   const now = useApp((s) => s.now)
   const key = todayKey(state, now)
   const period = dayRange(key, state.settings.dayStartHour)
+  const googleError = useGoogleCalendarRange(Boolean(state.googleCalendar?.connected), period.startedAt, period.endedAt, state.googleCalendar)
+  const googleEvents = selectedGoogleEvents(state.googleCalendar, period)
+  const [googleEvent, setGoogleEvent] = useState<GoogleEvent | null>(null)
   const summary = useMemo(() => activitySummary(state.sessions, state.tasks, now, period), [state.sessions, state.tasks, now, key, state.settings.dayStartHour])
   const { sessions, focusMs: total, pausedMs: paused, managementMs: managing, excludedMs: excluded } = summary
 
@@ -50,6 +57,9 @@ export function TodayView({ onOpenTask }: { onOpenTask?: (id: string, target?: T
       </div>
 
       <FixedWorkOverview period={period} onOpenTask={onOpenTask} />
+      {state.googleCalendar?.connected && <GoogleDayTimeline events={googleEvents} period={period} onEvent={setGoogleEvent} />}
+      {(googleError || state.googleCalendar?.error) && <p className="task-command-error" role="alert">Google の予定: {googleError || state.googleCalendar?.error} 設定の Google カレンダーから再同期できる。</p>}
+      <GoogleEventDetail event={googleEvent} calendars={state.googleCalendar?.calendars ?? []} onClose={() => setGoogleEvent(null)} />
 
       {sessions.length === 0 ? (
         <Empty title="今日はまだ記録がない" hint="ショートカットを押せば、そこから記録が始まる。" />
