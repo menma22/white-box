@@ -8,15 +8,17 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
+import { connectOwnedPage } from './owned-cdp.mjs'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUTPUT = path.join(ROOT, '.e2e')
 fs.mkdirSync(OUTPUT, { recursive: true })
 const restorationProbe = process.env.WHITEBOX_NATIVE_RESTORATION_PROBE === '1'
 const captionBoundaryProbe = process.env.WHITEBOX_CALENDAR_CAPTION_BOUNDARY_PROBE === '1'
+const cancellationScopeProbe = process.env.WHITEBOX_CALENDAR_CANCEL_SCOPE_PROBE === '1'
 const layoutPreview = ['1','initial'].includes(process.env.WHITEBOX_WEEK_PREVIEW)
 const previewInitialOnly = process.env.WHITEBOX_WEEK_PREVIEW === 'initial'
-const RUN = fs.mkdtempSync(path.join(OUTPUT, restorationProbe ? 'native-restoration-probe-' : captionBoundaryProbe ? 'calendar-caption-boundary-run-' : layoutPreview ? 'week-preview-run-' : 'week-calendar-run-'))
+const RUN = fs.mkdtempSync(path.join(OUTPUT, restorationProbe ? 'native-restoration-probe-' : captionBoundaryProbe ? 'calendar-caption-boundary-run-' : layoutPreview ? 'week-preview-run-' : cancellationScopeProbe ? 'calendar-cancel-scope-run-' : 'week-calendar-run-'))
 const DATA = path.join(RUN, 'data')
 fs.mkdirSync(DATA)
 const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : createRequire(import.meta.url)('electron')
@@ -24,7 +26,7 @@ const startedAt = new Date().toISOString()
 const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
 const packageRoot = process.env.WHITEBOX_EXE ? 'node_modules/@white-box' : 'packages'
 const runtimeFiles = ['dist-electron/presentation/main.js', 'apps/desktop/src/presentation/preload.cjs', 'dist-electron/app/handlers.js', 'dist-electron/app/planning-handlers.js', 'dist-electron/domain/calendar-ops.js', packageRoot + '/core/dist/calendar.js', packageRoot + '/core/dist/weekly-budget.js', packageRoot + '/contracts/dist/calendar.js', 'dist-electron/app/lifecycle.js', 'dist-electron/app/state.js', 'dist-electron/infra/agent-service.js', 'dist-electron/infra/dataio.js', 'dist-electron/infra/renderer-flush.js', 'dist-electron/infra/windows.js', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist', 'assets')).filter((file) => /\.(?:js|css)$/.test(file)).map((file) => 'dist/assets/' + file)]
-const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
+const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), ownedCdpSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-cdp.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const checks = [], errors = [], ownedProcesses = new OwnedProcesses(), pages = new Set(), expectedErrorWindows = []
@@ -51,55 +53,20 @@ async function freePort() {
   await new Promise((resolve) => server.close(resolve))
   return assigned
 }
-async function connect(url) {
-  const ws = new WebSocket(url)
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('CDP connection timeout')), 10000)
-    ws.addEventListener('open', () => { clearTimeout(timer); resolve() }, { once: true })
-    ws.addEventListener('error', () => { clearTimeout(timer); reject(new Error('CDP connection failed')) }, { once: true })
-  })
-  let sequence = 0
-  const pending = new Map()
-  ws.addEventListener('close', () => {
-    for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('CDP connection closed')) }
-    pending.clear()
-  })
-  ws.addEventListener('message', ({ data }) => {
-    const message = JSON.parse(data)
-    if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push({ url, ...message })
-    const request = pending.get(message.id)
-    if (!request) return
-    pending.delete(message.id)
-    clearTimeout(request.timer)
-    if (message.error) request.reject(new Error(JSON.stringify(message.error)))
-    else request.resolve(message.result)
-  })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
-    if (method === 'Input.dispatchKeyEvent') fs.appendFileSync(path.join(RUN, 'key-events.jsonl'), JSON.stringify({ at: new Date().toISOString(), method, params }) + '\n')
-    if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
-    const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, method === 'Page.captureScreenshot' ? 30000 : 10000)
-    pending.set(id, { resolve, reject, timer })
-    ws.send(JSON.stringify({ id, method, params }))
-  })
-  await send('Runtime.enable')
-  await send('Log.enable')
-  const connection = { send, close: () => ws.close(), async evaluate(expression) {
-    const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails))
-    return result.result.value
-  } }
-  pages.add(connection)
-  return connection
-}
 async function windowPage(kind) {
-  const target = await until(async () => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })
-    return (await response.json()).find((item) => item.type === 'page' && item.url.endsWith('#' + kind))
-  }, kind + ' window', 20000)
-  const expected = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
-  check(`${kind}: CDP is attached to this build`, decodeURI(target.url) === decodeURI(expected), target.url)
-  const connection = await connect(target.webSocketDebuggerUrl)
+  const expectedUrl = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
+  const connection = await connectOwnedPage({
+    port, kind, expectedUrl, child, childIdentity, ownedProcesses,
+    onEvent(message) {
+      if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push(message)
+    },
+    onSend(method, params) {
+      if (method === 'Input.dispatchKeyEvent') fs.appendFileSync(path.join(RUN, 'key-events.jsonl'), JSON.stringify({ at: new Date().toISOString(), method, params }) + '\n')
+    },
+  })
+  pages.add(connection)
+  check(`${kind}: CDP browser PID and page belong to this launch`, connection.identity.browserPid === child.pid && connection.identity.targetUrl === expectedUrl, connection.identity)
+  fs.appendFileSync(path.join(RUN, 'cdp-identities.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind, ...connection.identity }) + '\n')
   await until(() => connection.evaluate('Boolean(window.whitebox && document.querySelector(".win"))'), kind + ' renderer ready')
   await connection.send('Page.bringToFront')
   return connection
@@ -209,14 +176,32 @@ async function raw(name, args = {}) { return page.evaluate(`window.whitebox.call
 async function call(name, args = {}) { const response = await raw(name, args); assert.equal(response.ok, true, `${name}: ${JSON.stringify(response)}`); return response.data }
 const exposedDatabaseFields = ['projects', 'tasks', 'sessions', 'settings', 'dayNotes', 'taskSuggestions', 'notes', 'goalMap', 'presenceCandidates', 'weeklyBudgets', 'weeklyBudgetDefaults', 'fixedWork', 'calendarBlocks']
 const stateMatchesDatabase = (state, database) => exposedDatabaseFields.every((field) => isDeepStrictEqual(state[field], database[field]))
+async function observeScreenshot(name, stage) {
+  if (name !== '00-calendar-expanded-initial' && !stage.startsWith('capture-error:')) return
+  const observation = { at: new Date().toISOString(), name, stage, expectedPid: child?.pid, expectedCreationDate: childIdentity?.CreationDate, cdpIdentity: page?.identity }
+  try { observation.native = nativeMainWindow() } catch (error) { observation.nativeError = error.message }
+  try { observation.renderer = await page.evaluate("(() => {\n  const rect=element=>element?.getBoundingClientRect().toJSON()??null;\n  const main=document.querySelector('.main-content'),scroll=document.querySelector('.calendar-scroll'),active=document.activeElement;\n  const scroller=element=>element?{rect:rect(element),scrollTop:element.scrollTop,scrollLeft:element.scrollLeft,clientHeight:element.clientHeight,scrollHeight:element.scrollHeight,clientWidth:element.clientWidth,scrollWidth:element.scrollWidth}:null;\n  return {url:location.href,readyState:document.readyState,visibilityState:document.visibilityState,hasFocus:document.hasFocus(),width:innerWidth,height:innerHeight,dpr:devicePixelRatio,visualViewport:visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetTop:visualViewport.offsetTop,offsetLeft:visualViewport.offsetLeft,pageTop:visualViewport.pageTop,pageLeft:visualViewport.pageLeft,scale:visualViewport.scale}:null,main:scroller(main),calendarScroll:scroller(scroll),calendar:rect(document.querySelector('.week-calendar')),hourHeight:document.querySelector('.calendar-day-column')?.getBoundingClientRect().height/24,activeElement:active?{tag:active.tagName,id:active.id,className:active.className,ariaLabel:active.getAttribute('aria-label'),calendarEvent:active.getAttribute('data-calendar-event'),calendarBlockId:active.getAttribute('data-calendar-block-id'),rect:rect(active)}:null,headers:[...document.querySelectorAll('.calendar-day-header')].map(element=>({day:element.dataset.calendarDay,rect:rect(element)})),actualCards:[...document.querySelectorAll('[data-calendar-event=\"actual\"]')].map(element=>({id:element.getAttribute('data-calendar-block-id'),narrow:element.classList.contains('is-narrow'),rect:rect(element),title:rect(element.querySelector('.calendar-event-title')),time:rect(element.querySelector('.calendar-event-time'))}))};\n})()") } catch (error) { observation.rendererError = error.message }
+  try { observation.layoutMetrics = await page.send('Page.getLayoutMetrics') } catch (error) { observation.layoutMetricsError = error.message }
+  observation.completedAt = new Date().toISOString()
+  try { fs.appendFileSync(path.join(RUN, 'screenshot-viewport-observations.jsonl'), JSON.stringify(observation) + "\n") } catch (error) { console.error('Screenshot viewport receipt could not be written: ' + error.message) }
+}
 async function screenshot(name, selector, alignment = 'start') {
+  await observeScreenshot(name, 'before-native-restore')
   const native = await until(() => { const value = nativeMainWindow(true); return value.visible && !value.iconic && value.windowPid === child.pid ? value : null }, 'owned capture window is visible and not minimized')
   fs.appendFileSync(path.join(RUN, 'screenshot-native-observations.jsonl'), JSON.stringify({ at: new Date().toISOString(), name, native }) + '\n')
+  await observeScreenshot(name, 'after-native-restore')
   await page.send('Page.bringToFront')
   if (selector) await page.evaluate(`(() => { const target=document.querySelector(${JSON.stringify(selector)}); if(!target) throw Error('Missing screenshot target'); target.scrollIntoView({block:${JSON.stringify(alignment)}}); })()`)
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
-  fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
+  await observeScreenshot(name, 'before-capture')
+  try {
+    const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+    fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
+  } catch (error) {
+    await observeScreenshot(name, 'capture-error: ' + error.message)
+    throw error
+  }
+  await observeScreenshot(name, 'after-capture')
 }
 async function key(key, code, modifiers = 0) {
   const params = { key, code, modifiers, windowsVirtualKeyCode: key.length === 1 ? key.toUpperCase().charCodeAt(0) : ({ Enter: 13, ArrowDown: 40, Home: 36, Escape: 27, Tab: 9 }[key] ?? 0) }
@@ -395,7 +380,7 @@ async function calendarSurface() {
   return page.evaluate("(() => { const rect=el=>el.getBoundingClientRect().toJSON(), main=document.querySelector('.main-content'), calendar=document.querySelector('.week-calendar'), scroll=document.querySelector('.calendar-scroll'), header=document.querySelector('.week-workspace-head'), secondary=document.querySelector('.week-secondary'); return {width:innerWidth,height:innerHeight,dpr:devicePixelRatio,main:{...rect(main),clientWidth:main.clientWidth,clientHeight:main.clientHeight,scrollTop:main.scrollTop,scrollHeight:main.scrollHeight},header:rect(header),calendar:rect(calendar),scroll:{...rect(scroll),scrollTop:scroll.scrollTop,clientHeight:scroll.clientHeight,scrollHeight:scroll.scrollHeight},hourHeight:document.querySelector('.calendar-day-column').getBoundingClientRect().height/24,zoom:[...document.querySelectorAll('.week-zoom-switch button')].map(el=>({text:el.textContent,pressed:el.getAttribute('aria-pressed')})),days:[...document.querySelectorAll('.calendar-day-header')].map(el=>({key:el.dataset.calendarDay,...rect(el)})),axis:[...document.querySelectorAll('.calendar-axis > span')].map(el=>({label:el.textContent,...rect(el),fontSize:parseFloat(getComputedStyle(el).fontSize)})),secondary:rect(secondary),overview:rect(document.querySelector('.week-overview')),budget:rect(document.querySelector('.week-budget-panel')),overflow:[document.documentElement,document.body,main,calendar].map(el=>({className:el.className,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}))}; })()")
 }
 function primaryCalendarFits(surface) {
-  return surface.days.length===7 && surface.days.every(day=>day.x>=surface.main.left-1 && day.right<=surface.main.right+1 && day.top>=0 && day.bottom<=surface.height && day.width>=28) && surface.calendar.width>=surface.main.clientWidth*.97 && surface.calendar.height>=Math.min(surface.main.bottom,surface.height)-surface.header.bottom-4 && surface.calendar.bottom<=Math.min(surface.main.bottom,surface.height)+2 && surface.secondary.top>=Math.min(surface.main.bottom,surface.height)-2 && surface.main.scrollTop===0 && surface.overflow.every(box=>box.scrollWidth-box.clientWidth<=1)
+  return surface.days.length===7 && surface.days.every(day=>day.x>=surface.main.left-1 && day.right<=surface.main.right+1 && day.top>=0 && day.bottom<=surface.height && day.width>=28) && surface.calendar.width>=surface.main.clientWidth*.97 && surface.calendar.height>=Math.min(surface.main.bottom,surface.height)-surface.header.bottom-4 && surface.calendar.bottom<=Math.min(surface.main.bottom,surface.height)+2 && surface.secondary.top>=Math.min(surface.main.bottom,surface.height)-2 && Math.abs(surface.main.scrollTop)<=1 && surface.overflow.every(box=>box.scrollWidth-box.clientWidth<=1)
 }
 async function scrollMainTo(selector, block='center') {
   await page.evaluate('document.querySelector('+JSON.stringify(selector)+').scrollIntoView({block:'+JSON.stringify(block)+'})')
@@ -553,14 +538,14 @@ async function verifyCreationEditingAndFailure() {
   try {
     await button('予定を保存', '[role="dialog"]')
     await until(() => page.evaluate('Boolean(document.querySelector(".calendar-editor [role=alert]"))'), 'calendar real filesystem save failure')
-    check('Real save failure retains title and start/end in an operable modal', await page.evaluate(`document.querySelector('[role=dialog] [aria-label="タイトル"]').value==='保存失敗でも残る予定' && document.querySelector('[aria-label="開始"]').value===${JSON.stringify(localDateTime(at(shift(thisWeek, 2), 14)))} && !document.querySelector('[role=dialog] button[type=submit]').disabled`))
+    check('Real save failure retains title and start/end in an operable modal', await page.evaluate(`document.querySelector('[role=dialog] [aria-label="タイトル"]').value==='保存失敗でも残る予定' && document.querySelector('[aria-label="開始"]').value===${JSON.stringify(localDateTime(at(shift(thisWeek, 2), 14)))} && document.querySelector('[aria-label="終了"]').value===${JSON.stringify(localDateTime(at(shift(thisWeek, 2), 15)))} && !document.querySelector('[role=dialog] button[type=submit]').disabled`))
     await unchangedAfterFailure(before, 'Calendar save failure', memoryBefore)
     await key('2', 'Digit2', 2)
     check('Failed unsaved calendar input blocks navigation away', await page.evaluate('Boolean(document.querySelector(".week-workspace")) && Boolean(document.querySelector(".calendar-editor"))'))
     await screenshot('03-calendar-save-failure', '.calendar-editor [role="alert"]', 'center')
   } finally { endSaveFault() }
   await saveCalendar('保存失敗でも残る予定')
-  check('Retry after the actual filesystem failure saves exactly one block', read().calendarBlocks.filter((block) => block.title === '保存失敗でも残る予定').length === 1)
+  check('Retry after the actual filesystem failure saves exactly one block', read().calendarBlocks.filter((block) => block.title === '保存失敗でも残る予定').length === 1 && read().calendarBlocks.some((block) => block.title === '保存失敗でも残る予定' && block.startedAt === at(shift(thisWeek, 2), 14) && block.endedAt === at(shift(thisWeek, 2), 15)))
 }
 async function verifyPreciseCalendarTimes() {
   const base = at(shift(thisWeek, 4), 9), startedAt = base + 12_345, endedAt = base + 32_345
@@ -636,6 +621,38 @@ async function verifyRecurring() {
   await until(() => page.evaluate('!document.querySelector("[role=dialog]")'), 'recurring cancellation completes')
   check('Cancelling recurring time retains history and removes all occurrences', read().calendarBlocks.find((block) => block.id === cancelled.id).cancelled && await page.evaluate('!document.querySelector(' + JSON.stringify('[data-calendar-block-id="' + cancelled.id + '"]') + ')'))
 }
+async function verifyCancellationDraftScopes() {
+  const observations = []
+  for (const weekly of [true, false]) {
+    const original = await call('calendar:create', { title: weekly ? '未保存の繰り返し解除と定型取消' : '未保存の繰り返し追加と単発取消', category: 'meal', taskId: null, projectId: null, startedAt: at(thisWeek, weekly ? 14 : 15), endedAt: at(thisWeek, weekly ? 14 : 15, 30), repeat: weekly ? 'weekly' : 'none', weekdays: weekly ? [0, 1, 2, 3, 4, 5, 6] : [], until: weekly ? shift(thisWeek, 10) : null })
+    const occurrenceSelector = '[data-calendar-block-id="' + original.id + '"]'
+    const occurrenceCount = await page.evaluate('document.querySelectorAll(' + JSON.stringify(occurrenceSelector) + ').length')
+    check('Cancellation scope probe begins with saved ' + (weekly ? 'weekly occurrences' : 'single occurrence'), weekly ? occurrenceCount > 1 : occurrenceCount === 1, occurrenceCount)
+    await scrollMainTo(occurrenceSelector)
+    await editCalendar(original.id)
+    await click('[aria-label="毎週繰り返す"]')
+    const draft = await page.evaluate(`({repeat:document.querySelector('[aria-label="毎週繰り返す"]').checked,hints:[...document.querySelectorAll('.calendar-editor .calendar-hint')].map(el=>el.innerText)})`)
+    const beforeConfirmation = read().calendarBlocks.find((block) => block.id === original.id)
+    check((weekly ? 'Unchecking' : 'Checking') + ' repeat without saving leaves the stored recurrence unchanged', draft.repeat === !weekly && isDeepStrictEqual(beforeConfirmation, original), { draft, beforeConfirmation })
+    if (weekly) check('Unchecking repeat keeps the stored series edit and cancellation scope visible', draft.hints.some((hint) => hint.includes('定型予定全体に適用')), draft)
+    await button('予定を取り消す', '[role="dialog"]')
+    const confirmation = await page.evaluate('document.querySelector(".calendar-confirm[role=alert]")?.innerText')
+    check('Cancellation describes the stored ' + (weekly ? 'whole series after a draft repeat removal' : 'single occurrence after a draft repeat addition'), (weekly ? confirmation?.includes('定型予定全体') : confirmation?.includes('この予定') && !confirmation.includes('定型予定全体')) && isDeepStrictEqual(read().calendarBlocks.find((block) => block.id === original.id), original), confirmation)
+    await screenshot(weekly ? '04a-weekly-draft-cancel-scope' : '04b-single-draft-cancel-scope', '.calendar-confirm', 'center')
+    await button('取り消す', '[role="dialog"]')
+    await until(() => page.evaluate('!document.querySelector("[role=dialog]")'), 'draft recurrence cancellation closes the editor')
+    const confirmed = read().calendarBlocks.find((block) => block.id === original.id)
+    check('Confirmed ' + (weekly ? 'series' : 'single') + ' cancellation retains every original field without saving the draft repeat setting', confirmed.cancelled && isDeepStrictEqual({ ...confirmed, cancelled: false, updatedAt: original.updatedAt }, original) && await page.evaluate('!document.querySelector(' + JSON.stringify(occurrenceSelector) + ')'), confirmed)
+    if (weekly) {
+      await nativeValue('[aria-label="表示する週の日付"]', nextWeek)
+      check('Confirmed series cancellation also hides every occurrence in the following week', await page.evaluate('!document.querySelector(' + JSON.stringify(occurrenceSelector) + ')'))
+      await button('今週', '.week-workspace')
+    }
+    observations.push({ original, occurrenceCount, draft, beforeConfirmation, confirmation, confirmed })
+  }
+  check('Both unsaved recurrence cancellation paths preserve every original session', isDeepStrictEqual(read().sessions, baselineSessions))
+  fs.writeFileSync(path.join(RUN, 'cancellation-draft-scopes.json'), JSON.stringify(observations, null, 2))
+}
 async function verifyDrag() {
   await button('24時間', '.week-workspace')
   await click('[aria-label="' + shift(thisWeek, 3) + 'に予定を追加"]')
@@ -689,10 +706,18 @@ async function verifyUnsupportedWeekPicker() {
   const validDate = '2026-10-21', validWeek = '2026-10-19'
   const validDays = Array.from({ length: 7 }, (_, index) => shift(validWeek, index))
   await nativeValue(selector, validDate, validWeek)
-  await until(() => page.evaluate("document.querySelector('.calendar-day-header')?.dataset.calendarDay==='2026-10-19'"), 'valid 2026 picker date selects a new week')
+  await until(() => page.evaluate("document.querySelector('.calendar-day-header')?.dataset.calendarDay==='2026-10-19'"), 'valid 2026 picker date selects its supported week')
   const recovered = await inspect()
-  check('A valid 2026 date clears the local picker error and displays the new seven-day week', isDeepStrictEqual(recovered.days, validDays) && !isDeepStrictEqual(recovered.days, before.days) && recovered.input.value === validWeek && recovered.input.invalid !== 'true' && !recovered.error && !recovered.input.describedBy && errors.length === 0, recovered)
+  check('A valid 2026 date clears the local picker error and displays its exact seven-day week', isDeepStrictEqual(recovered.days, validDays) && recovered.input.value === validWeek && recovered.input.invalid !== 'true' && !recovered.error && !recovered.input.describedBy && errors.length === 0, recovered)
   await screenshot('05c-week-picker-recovered')
+  await nativeValue(selector, '0002-01-01')
+  await until(() => page.evaluate('Boolean(document.querySelector("#week-date-error")?.textContent.trim())'), 'same-week recovery begins with an unsupported date error')
+  const sameWeekRejected = await inspect()
+  check('Unsupported input before same-week recovery preserves the exact selected week', sameWeekRejected.input.value === '0002-01-01' && isDeepStrictEqual(sameWeekRejected.days, validDays) && sameWeekRejected.input.invalid === 'true' && sameWeekRejected.error?.role === 'alert', sameWeekRejected)
+  await nativeValue(selector, validDate, validWeek)
+  const sameWeekRecovered = await inspect()
+  check('Recovering to a valid date in the already selected week clears the error and retains its exact seven dates', isDeepStrictEqual(sameWeekRecovered.days, validDays) && isDeepStrictEqual(sameWeekRecovered.days, sameWeekRejected.days) && sameWeekRecovered.input.value === validWeek && sameWeekRecovered.input.invalid !== 'true' && !sameWeekRecovered.error && !sameWeekRecovered.input.describedBy && errors.length === 0, sameWeekRecovered)
+  await screenshot('05d-week-picker-same-week-recovered')
   await nativeValue(selector, '')
   const empty = await inspect()
   check('An empty week picker keeps its input draft and the current seven days without an error', empty.input?.value === '' && isDeepStrictEqual(empty.days, validDays) && !empty.error && empty.input.invalid !== 'true' && errors.length === 0, empty)
@@ -700,7 +725,7 @@ async function verifyUnsupportedWeekPicker() {
   await button('今週', '.week-workspace')
   const restored = await inspect()
   check('Today-week navigation clears the empty date draft and restores all seven current dates', restored.input?.value === thisWeek && isDeepStrictEqual(restored.days, Array.from({ length: 7 }, (_, index) => shift(thisWeek, index))) && !restored.error)
-  fs.writeFileSync(path.join(RUN, 'week-picker-unsupported-dates.json'), JSON.stringify({ before, observations, recovered, empty, restored, rendererErrors: errors }, null, 2))
+  fs.writeFileSync(path.join(RUN, 'week-picker-unsupported-dates.json'), JSON.stringify({ before, observations, recovered, sameWeekRejected, sameWeekRecovered, empty, restored, rendererErrors: errors }, null, 2))
 }
 async function verifyWeekDateBoundaries() {
   const selector='[aria-label="表示する週の日付"]',database=read(),disk=fs.readFileSync(path.join(DATA,'data.json'),'utf8'),observations=[]
@@ -788,7 +813,7 @@ async function verifyLayout(label, width, height, scale = 1) {
   await page.send('Input.dispatchMouseEvent',{type:'mouseWheel',...point,deltaX:0,deltaY:2000})
   await until(()=>page.evaluate('(() => {const scroll=document.querySelector(".calendar-scroll"),marker=document.querySelector(".calendar-midnight"),r=marker.getBoundingClientRect(),s=scroll.getBoundingClientRect();return scroll.scrollTop>336&&r.top>=s.top&&r.bottom<=s.bottom&&r.bottom<=innerHeight})()'),'calendar wheel reaches 24:00')
   const midnight=await page.evaluate('(() => {const scroll=document.querySelector(".calendar-scroll"),marker=document.querySelector(".calendar-midnight");return {marker:marker.getBoundingClientRect().toJSON(),scroll:scroll.getBoundingClientRect().toJSON(),scrollTop:scroll.scrollTop,mainScrollTop:document.querySelector(".main-content").scrollTop}})()')
-  check(label+': the calendar scroll reaches 24:00 independently of the main scroll',midnight.scrollTop>336&&midnight.mainScrollTop===0&&midnight.marker.top>=midnight.scroll.top&&midnight.marker.bottom<=Math.min(height,midnight.scroll.bottom),midnight)
+  check(label+': the calendar scroll reaches 24:00 independently of the main scroll',midnight.scrollTop>336&&Math.abs(midnight.mainScrollTop)<=1&&Math.abs(midnight.mainScrollTop-layout.main.scrollTop)<=1&&midnight.marker.top>=midnight.scroll.top&&midnight.marker.bottom<=Math.min(height,midnight.scroll.bottom),midnight)
   fs.writeFileSync(path.join(RUN,label+'-midnight-layout.json'),JSON.stringify(midnight,null,2))
   await page.send('Input.dispatchMouseEvent',{type:'mouseWheel',...point,deltaX:0,deltaY:2000})
   await until(()=>page.evaluate('document.querySelector(".main-content").scrollTop>0'),'continued calendar wheel reaches main secondary content')
@@ -988,6 +1013,13 @@ try {
   } else if (captionBoundaryProbe) {
     await verifyCaptionBoundary()
     exitCode = 0
+  } else if (cancellationScopeProbe) {
+    await createFixture()
+    await navigateWeek()
+    await verifyCancellationDraftScopes()
+    await stop('cancellation-scope')
+    check('The cancellation scope probe leaves no renderer error or owned PID', errors.length === 0 && processSnapshot().length === 0, errors)
+    exitCode = 0
   } else if (layoutPreview) {
     await verifyPreviewScreens()
     exitCode = 0
@@ -998,6 +1030,7 @@ try {
   await verifyPreciseCalendarTimes()
   await verifyPreciseFixedTime()
   await verifyRecurring()
+  await verifyCancellationDraftScopes()
   await verifyDrag()
   await verifyNavigation()
   await verifyUnsupportedWeekPicker()

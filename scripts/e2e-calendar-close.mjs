@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
+import { connectOwnedPage } from './owned-cdp.mjs'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUTPUT = path.join(ROOT, '.e2e')
@@ -20,7 +21,7 @@ const startedAt = new Date().toISOString()
 const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
 const packageRoot = process.env.WHITEBOX_EXE ? 'node_modules/@white-box' : 'packages'
 const runtimeFiles = ['dist-electron/presentation/main.js', 'apps/desktop/src/presentation/preload.cjs', 'dist-electron/app/handlers.js', 'dist-electron/app/planning-handlers.js', 'dist-electron/domain/calendar-ops.js', packageRoot + '/core/dist/calendar.js', packageRoot + '/core/dist/weekly-budget.js', packageRoot + '/contracts/dist/calendar.js', 'dist-electron/app/lifecycle.js', 'dist-electron/app/state.js', 'dist-electron/infra/agent-service.js', 'dist-electron/infra/dataio.js', 'dist-electron/infra/renderer-flush.js', 'dist-electron/infra/windows.js', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist', 'assets')).filter((file) => /\.(?:js|css)$/.test(file)).map((file) => 'dist/assets/' + file)]
-const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
+const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), ownedCdpSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-cdp.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const checks = [], errors = [], ownedProcesses = new OwnedProcesses(), pages = new Set(), expectedErrorWindows = []
@@ -47,55 +48,20 @@ async function freePort() {
   await new Promise((resolve) => server.close(resolve))
   return assigned
 }
-async function connect(url) {
-  const ws = new WebSocket(url)
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('CDP connection timeout')), 10000)
-    ws.addEventListener('open', () => { clearTimeout(timer); resolve() }, { once: true })
-    ws.addEventListener('error', () => { clearTimeout(timer); reject(new Error('CDP connection failed')) }, { once: true })
-  })
-  let sequence = 0
-  const pending = new Map()
-  ws.addEventListener('close', () => {
-    for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('CDP connection closed')) }
-    pending.clear()
-  })
-  ws.addEventListener('message', ({ data }) => {
-    const message = JSON.parse(data)
-    if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push({ url, ...message })
-    const request = pending.get(message.id)
-    if (!request) return
-    pending.delete(message.id)
-    clearTimeout(request.timer)
-    if (message.error) request.reject(new Error(JSON.stringify(message.error)))
-    else request.resolve(message.result)
-  })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
-    if (method === 'Input.dispatchKeyEvent') fs.appendFileSync(path.join(RUN, 'key-events.jsonl'), JSON.stringify({ at: new Date().toISOString(), method, params }) + '\n')
-    if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
-    const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, method === 'Page.captureScreenshot' ? 30000 : 10000)
-    pending.set(id, { resolve, reject, timer })
-    ws.send(JSON.stringify({ id, method, params }))
-  })
-  await send('Runtime.enable')
-  await send('Log.enable')
-  const connection = { send, close: () => ws.close(), async evaluate(expression) {
-    const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails))
-    return result.result.value
-  } }
-  pages.add(connection)
-  return connection
-}
 async function windowPage(kind) {
-  const target = await until(async () => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })
-    return (await response.json()).find((item) => item.type === 'page' && item.url.endsWith('#' + kind))
-  }, kind + ' window', 20000)
-  const expected = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
-  check(`${kind}: CDP is attached to this build`, decodeURI(target.url) === decodeURI(expected), target.url)
-  const connection = await connect(target.webSocketDebuggerUrl)
+  const expectedUrl = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
+  const connection = await connectOwnedPage({
+    port, kind, expectedUrl, child, childIdentity, ownedProcesses,
+    onEvent(message) {
+      if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push(message)
+    },
+    onSend(method, params) {
+      if (method === 'Input.dispatchKeyEvent') fs.appendFileSync(path.join(RUN, 'key-events.jsonl'), JSON.stringify({ at: new Date().toISOString(), method, params }) + '\n')
+    },
+  })
+  pages.add(connection)
+  check(`${kind}: CDP browser PID and page belong to this launch`, connection.identity.browserPid === child.pid && connection.identity.targetUrl === expectedUrl, connection.identity)
+  fs.appendFileSync(path.join(RUN, 'cdp-identities.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind, ...connection.identity }) + '\n')
   await until(() => connection.evaluate('Boolean(window.whitebox && document.querySelector(".win"))'), kind + ' renderer ready')
   await connection.send('Page.bringToFront')
   return connection

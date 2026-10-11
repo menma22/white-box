@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
+import { connectOwnedPage } from './owned-cdp.mjs'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUTPUT = path.join(ROOT, '.e2e')
@@ -20,7 +21,7 @@ const startedAt = new Date().toISOString()
 const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
 const packageRoot = process.env.WHITEBOX_EXE ? 'node_modules/@white-box' : 'packages'
 const runtimeFiles = ['dist-electron/presentation/main.js', 'dist-electron/presentation/ipc.js', 'dist-electron/domain/session-ops.js', 'apps/desktop/src/presentation/preload.cjs', 'dist-electron/app/handlers.js', 'dist-electron/app/planning-handlers.js', 'dist-electron/domain/calendar-ops.js', packageRoot + '/core/dist/calendar.js', packageRoot + '/core/dist/weekly-budget.js', packageRoot + '/contracts/dist/calendar.js', 'dist-electron/app/lifecycle.js', 'dist-electron/app/state.js', 'dist-electron/infra/agent-service.js', 'dist-electron/infra/dataio.js', 'dist-electron/infra/renderer-flush.js', 'dist-electron/infra/windows.js', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist', 'assets')).filter((file) => /\.(?:js|css)$/.test(file)).map((file) => 'dist/assets/' + file)]
-const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
+const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'), ownedProcessesSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-processes.mjs'))).digest('hex'), ownedCdpSha256: createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts', 'owned-cdp.mjs'))).digest('hex'), executable: electron, buildRoot, executableSha256: createHash('sha256').update(fs.readFileSync(electron)).digest('hex'), files: runtimeFiles.map((file) => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(buildRoot, file))).digest('hex') })) }
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const checks = [], errors = [], ownedProcesses = new OwnedProcesses(), pages = new Set(), expectedErrorWindows = []
@@ -92,13 +93,19 @@ async function connect(url, mainProcess = false) {
   return connection
 }
 async function windowPage(kind) {
-  const target = await until(async () => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })
-    return (await response.json()).find((item) => item.type === 'page' && item.url.endsWith('#' + kind))
-  }, kind + ' window', 20000)
-  const expected = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
-  check(`${kind}: CDP is attached to this build`, decodeURI(target.url) === decodeURI(expected), target.url)
-  const connection = await connect(target.webSocketDebuggerUrl)
+  const expectedUrl = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#' + kind
+  const connection = await connectOwnedPage({
+    port, kind, expectedUrl, child, childIdentity, ownedProcesses,
+    onEvent(message) {
+      if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push(message)
+    },
+    onSend(method, params) {
+      if (method === 'Input.dispatchKeyEvent') fs.appendFileSync(path.join(RUN, 'key-events.jsonl'), JSON.stringify({ at: new Date().toISOString(), method, params }) + '\n')
+    },
+  })
+  pages.add(connection)
+  check(`${kind}: CDP browser PID and page belong to this launch`, connection.identity.browserPid === child.pid && connection.identity.targetUrl === expectedUrl, connection.identity)
+  fs.appendFileSync(path.join(RUN, 'cdp-identities.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind, ...connection.identity }) + '\n')
   await until(() => connection.evaluate('Boolean(window.whitebox && document.querySelector(".win"))'), kind + ' renderer ready')
   await connection.send('Page.bringToFront')
   return connection
@@ -112,10 +119,12 @@ function nativeMainWindow() {
   const identity = readWindowsProcesses().find((item) => item.ProcessId === child.pid)
   assert.ok(identity && sameProcess(childIdentity, identity), 'Native visibility is measured on the owned Electron')
   const command = `[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false);
-    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class QaWindow { [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid); }';
+    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public struct QaRect { public int Left; public int Top; public int Right; public int Bottom; } public static class QaWindow { [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h); [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid); [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out QaRect rect); [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out QaRect rect); }';
     $owned=Get-Process -Id ${child.pid} -ErrorAction Stop; $owned.Refresh(); $handle=$owned.MainWindowHandle; [uint32]$windowOwner=0;
     [void][QaWindow]::GetWindowThreadProcessId($handle,[ref]$windowOwner);
-    [pscustomobject]@{pid=$owned.Id;windowPid=$windowOwner;handle=$handle.ToInt64();title=$owned.MainWindowTitle;visible=[QaWindow]::IsWindowVisible($handle)} | ConvertTo-Json -Compress`
+    $windowRect=[QaRect]::new(); $clientRect=[QaRect]::new();
+    $windowRectObserved=[QaWindow]::GetWindowRect($handle,[ref]$windowRect); $clientRectObserved=[QaWindow]::GetClientRect($handle,[ref]$clientRect);
+    [pscustomobject]@{pid=$owned.Id;windowPid=$windowOwner;handle=$handle.ToInt64();title=$owned.MainWindowTitle;visible=[QaWindow]::IsWindowVisible($handle);iconic=[QaWindow]::IsIconic($handle);windowRectObserved=$windowRectObserved;clientRectObserved=$clientRectObserved;windowRect=[pscustomobject]@{left=$windowRect.Left;top=$windowRect.Top;right=$windowRect.Right;bottom=$windowRect.Bottom;width=$windowRect.Right-$windowRect.Left;height=$windowRect.Bottom-$windowRect.Top};clientRect=[pscustomobject]@{left=$clientRect.Left;top=$clientRect.Top;right=$clientRect.Right;bottom=$clientRect.Bottom;width=$clientRect.Right-$clientRect.Left;height=$clientRect.Bottom-$clientRect.Top}} | ConvertTo-Json -Compress -Depth 4`
   const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', command], { encoding: 'utf8', windowsHide: true, timeout: 5000 })
   assert.equal(result.status, 0, `Native visibility probe: ${result.error?.message ?? result.stderr}`)
   return JSON.parse(result.stdout)
@@ -176,12 +185,29 @@ async function raw(name, args = {}) { return page.evaluate(`window.whitebox.call
 async function call(name, args = {}) { const response = await raw(name, args); assert.equal(response.ok, true, `${name}: ${JSON.stringify(response)}`); return response.data }
 const exposedDatabaseFields = ['projects', 'tasks', 'sessions', 'settings', 'dayNotes', 'taskSuggestions', 'notes', 'goalMap', 'presenceCandidates', 'weeklyBudgets', 'weeklyBudgetDefaults', 'fixedWork', 'calendarBlocks']
 const stateMatchesDatabase = (state, database) => exposedDatabaseFields.every((field) => isDeepStrictEqual(state[field], database[field]))
+async function observeScreenshot(name, stage) {
+  const observation = { at: new Date().toISOString(), name, stage, expectedPid: child?.pid, expectedCreationDate: childIdentity?.CreationDate, cdpIdentity: page?.identity }
+  try { observation.native = nativeMainWindow() } catch (error) { observation.nativeError = error.message }
+  try { observation.renderer = await page.evaluate('({url:location.href,readyState:document.readyState,visibilityState:document.visibilityState,hasFocus:document.hasFocus(),width:innerWidth,height:innerHeight,dpr:devicePixelRatio,sessionEditors:document.querySelectorAll("[aria-labelledby=session-editor-title]").length})') } catch (error) { observation.rendererError = error.message }
+  try { observation.layoutMetrics = await page.send('Page.getLayoutMetrics') } catch (error) { observation.layoutMetricsError = error.message }
+  observation.completedAt = new Date().toISOString()
+  try { fs.appendFileSync(path.join(RUN, 'screenshot-native-observations.jsonl'), JSON.stringify(observation) + "\n") } catch (error) { console.error('Screenshot observation receipt could not be written: ' + error.message) }
+}
 async function screenshot(name, selector, alignment = 'start') {
+  await observeScreenshot(name, 'before-bring-to-front')
   await page.send('Page.bringToFront')
   if (selector) await page.evaluate(`(() => { const target=document.querySelector(${JSON.stringify(selector)}); if(!target) throw Error('Missing screenshot target'); target.scrollIntoView({block:${JSON.stringify(alignment)}}); })()`)
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  await observeScreenshot(name, 'before-capture')
+  let shot
+  try {
+    shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  } catch (error) {
+    await observeScreenshot(name, 'capture-error: ' + error.message)
+    throw error
+  }
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
+  await observeScreenshot(name, 'after-capture')
 }
 async function key(key, code, modifiers = 0) {
   const params = { key, code, modifiers, windowsVirtualKeyCode: key.length === 1 ? key.toUpperCase().charCodeAt(0) : ({ Enter: 13, ArrowDown: 40, Home: 36, Escape: 27, Tab: 9 }[key] ?? 0) }
