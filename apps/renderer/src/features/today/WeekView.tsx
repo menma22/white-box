@@ -5,7 +5,7 @@ import { activitySlices, activitySummary, dayRange, shiftDay, weekKey } from '@w
 import { dayKey, formatDuration, pausedMsWithin } from '@white-box/core/engine'
 import { calendarOccurrences } from '@white-box/core/calendar'
 import { weekBounds } from '@white-box/core/weekly-budget'
-import { Modal } from '@/components/ui'
+import { Modal, Segmented } from '@/components/ui'
 import { ActivityBreakdown } from './ActivityBreakdown'
 import { ActivityTrend } from './ActivityTrend'
 import { SessionRow } from '@/features/sessions/SessionRow'
@@ -106,7 +106,10 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
     <section className="week-calendar-stage">
     <header className="week-workspace-head">
       <div className="week-heading"><div><h1>{dateLabel}</h1><span className="week-range num">{Number(start.slice(5, 7))}/{Number(start.slice(8))} — {Number(end.slice(5, 7))}/{Number(end.slice(8))}</span></div></div>
-      <div className="week-controls"><button type="button" className="btn btn-ghost btn-sm" onClick={() => void moveWeek(null)}>今週</button><div className="week-arrows"><button type="button" aria-label="前の週" onClick={() => void moveWeek(shiftDay(start, -7))}>‹</button><button type="button" aria-label="次の週" onClick={() => void moveWeek(shiftDay(start, 7))}>›</button></div><input type="date" aria-label="表示する週の日付" min="1000-01-13" max="9999-12-26" value={dateDraft ?? start} aria-invalid={Boolean(dateError) || undefined} aria-describedby={dateError ? 'week-date-error' : undefined} onChange={(event) => chooseDate(event.target.value)} /><div className="week-layer-switch" role="group" aria-label="カレンダーに表示する内容">{([{ value: 'both', label: '予定・実績' }, { value: 'planned', label: '予定' }, { value: 'actual', label: '実績' }] as const).map((item) => <button key={item.value} type="button" aria-pressed={layer === item.value} onClick={() => setLayer(item.value)}>{item.label}</button>)}</div><div className="week-zoom-switch" role="group" aria-label="時間軸の大きさ"><button type="button" aria-pressed={!zoom} onClick={() => setZoom(false)}>24時間</button><button type="button" aria-pressed={zoom} onClick={() => setZoom(true)}>拡大</button></div><button type="button" className="btn btn-solid btn-md" aria-label="予定を追加" onClick={newPlan}><span aria-hidden>＋</span> 予定を追加</button></div>
+      <div className="week-controls"><button type="button" className="btn btn-ghost btn-sm" onClick={() => void moveWeek(null)}>今週</button><div className="week-arrows"><button type="button" aria-label="前の週" onClick={() => void moveWeek(shiftDay(start, -7))}>‹</button><button type="button" aria-label="次の週" onClick={() => void moveWeek(shiftDay(start, 7))}>›</button></div><input type="date" aria-label="表示する週の日付" min="1000-01-13" max="9999-12-26" value={dateDraft ?? start} aria-invalid={Boolean(dateError) || undefined} aria-describedby={dateError ? 'week-date-error' : undefined} onChange={(event) => chooseDate(event.target.value)} />
+        <Segmented<'both' | 'planned' | 'actual'> unstyled className="week-layer-switch" ariaLabel="カレンダーに表示する内容" value={layer} onChange={setLayer} options={[{ value: 'both', label: '予定・実績' }, { value: 'planned', label: '予定' }, { value: 'actual', label: '実績' }]} />
+        <Segmented<'day' | 'expanded'> unstyled className="week-zoom-switch" ariaLabel="時間軸の大きさ" value={zoom ? 'expanded' : 'day'} onChange={(value) => setZoom(value === 'expanded')} options={[{ value: 'day', label: '24時間' }, { value: 'expanded', label: '拡大' }]} />
+        <button type="button" className="btn btn-solid btn-md" aria-label="予定を追加" onClick={newPlan}><span aria-hidden>＋</span> 予定を追加</button></div>
     </header>
     {dateError && <p id="week-date-error" className="task-command-error" role="alert">{dateError}</p>}
       <div className="week-calendar-area">
