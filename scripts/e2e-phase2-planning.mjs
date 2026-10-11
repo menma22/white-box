@@ -138,15 +138,23 @@ async function stop(label) {
   processSnapshot()
   let quitError = null
   try { await page.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
-  for (const connection of pages) connection.close()
-  pages.clear()
-  await until(() => current.exitCode !== null || current.signalCode !== null, 'natural process exit', 15000)
-  const remaining = await until(() => { const alive = processSnapshot(); return alive.length === 0 ? [] : false }, 'owned descendants exit', 10000)
-  const observation = { pid: current.pid, creationDate: childIdentity.CreationDate, quitError, exitCode: current.exitCode, signalCode: current.signalCode, forcedCleanup: false, remaining, reused: processObservation.reused }
-  fs.writeFileSync(path.join(RUN, `${label}-shutdown.json`), JSON.stringify(observation, null, 2))
-  check(`${label}: natural quit exits with zero and leaves no owned PID`, current.exitCode === 0 && current.signalCode === null && remaining.length === 0, observation)
-  child = undefined
-  page = undefined
+  try {
+    await until(() => current.exitCode !== null || current.signalCode !== null, 'natural process exit', 15000)
+    const remaining = await until(() => { const alive = processSnapshot(); return alive.length === 0 ? [] : false }, 'owned descendants exit', 10000)
+    const observation = { pid: current.pid, creationDate: childIdentity.CreationDate, quitError, exitCode: current.exitCode, signalCode: current.signalCode, forcedCleanup: false, remaining, reused: processObservation.reused }
+    fs.writeFileSync(path.join(RUN, `${label}-shutdown.json`), JSON.stringify(observation, null, 2))
+    check(`${label}: natural quit exits with zero and leaves no owned PID`, current.exitCode === 0 && current.signalCode === null && remaining.length === 0, observation)
+    child = undefined
+    page = undefined
+  } catch (error) {
+    const observation = { pid: current.pid, quitError, exitCode: current.exitCode, signalCode: current.signalCode, remaining: processSnapshot(), error: error.message, renderer: null }
+    try { observation.renderer = await page.evaluate('(async () => ({ body:document.body.innerText, state:await window.whitebox.call("state:get") }))()') } catch (cause) { observation.renderer = { observationError: cause.message } }
+    fs.writeFileSync(path.join(RUN, `${label}-shutdown-failure.json`), JSON.stringify(observation, null, 2))
+    throw error
+  } finally {
+    for (const connection of pages) connection.close()
+    pages.clear()
+  }
 }
 const read = () => JSON.parse(fs.readFileSync(path.join(DATA, 'data.json'), 'utf8'))
 async function raw(name, args = {}) { return page.evaluate(`window.whitebox.call(${JSON.stringify(name)},${JSON.stringify(args)})`) }
@@ -174,7 +182,7 @@ async function click(selector) {
   await wait(100)
 }
 async function button(text, scope = 'body') {
-  const selector = await page.evaluate(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(scope + ' button')})]; const el=all.find(el=>el.textContent.trim()===${JSON.stringify(text)}); if(!el) return null; el.setAttribute('data-phase2-e2e-click','true'); return '[data-phase2-e2e-click="true"]' })()`)
+  const selector = await page.evaluate(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(scope + ' button')})]; const el=all.find(el=>el.textContent.trim()===${JSON.stringify(text)} || el.getAttribute('aria-label')===${JSON.stringify(text)}); if(!el) return null; el.setAttribute('data-phase2-e2e-click','true'); return '[data-phase2-e2e-click="true"]' })()`)
   assert.ok(selector, `button ${text} in ${scope}`)
   await click(selector)
   try { await page.evaluate(`document.querySelector(${JSON.stringify(selector)})?.removeAttribute('data-phase2-e2e-click')`) } catch (error) { if (!/closed|context|target/i.test(error.message)) throw error }
@@ -251,9 +259,21 @@ const seed = { version: 1, projects: projectNames.map((name, index) => ({ id: 'p
   tasks: [task('task-a', 'project-0', { notes: '既存の自由メモは保持する。', priority: 'low' }), task('task-b', 'project-1', { priority: 'high' })], sessions: [], notes: [linkedNote], dayNotes: { [calendar(now)]: '既存の日誌を保持する。' },
   settings: { onboardedAt: now, lastWelcomeDate: calendar(now), dayStartHour: 0, soundOnExpire: false, showSessionCard: false, shortcuts: { startPause: '', currentWork: '', dashboard: '' } } }
 fs.writeFileSync(path.join(DATA, 'data.json'), JSON.stringify(seed, null, 2))
-const budgetScope = '.weekly-budget'
+const budgetScope = '[role="dialog"] [data-week-budget]'
 const sleepInput = '[aria-label="睡眠（週の合計時間）"]'
-async function budgetEdit() { await disclose(budgetScope); await button(await page.evaluate(`document.querySelector('.weekly-budget').innerText.includes('時間配分を編集') ? '時間配分を編集' : '時間配分を決める'`), budgetScope) }
+async function budgetEdit() {
+  if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(budgetScope)}))`)) await click('[aria-label="時間予算を編集"]')
+  await until(() => page.evaluate(`Boolean(document.querySelector(${JSON.stringify(budgetScope + ' form')}))`), 'Budget editing form')
+}
+async function closeBudget() {
+  if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(budgetScope)}))`)) return
+  await click('[aria-label="時間予算を閉じる"]')
+  await until(() => page.evaluate(`!document.querySelector(${JSON.stringify(budgetScope)})`), 'Budget dialog closes with draft retained')
+}
+async function moveWeek(label) {
+  await closeBudget()
+  await button(label, '.week-controls')
+}
 const contextScope = '[data-task-context-id="task-a"]'
 const contextLabels = { notes: 'メモ', problems: '問題', decisions: '決定', nextContext: '次にすること・再開の手がかり' }
 async function contextEdit(field, text, scope = contextScope) {
@@ -302,24 +322,24 @@ async function createFixed(startedAt, endedAt, reason, verifyFailure = false) {
 
 async function verifyBudget() {
   await tab(8, '.week')
-  check('Week shows real activity before the closed, unset budget', await page.evaluate(`(() => { const metrics=document.querySelector('.week .today-strip'), budget=document.querySelector('.weekly-budget'); return !budget.open && budget.innerText.includes('未設定') && Boolean(metrics.compareDocumentPosition(budget)&Node.DOCUMENT_POSITION_FOLLOWING) && metrics.getBoundingClientRect().bottom<innerHeight })()`))
+  check('Week shows real activity before the unset budget sidebar with editing closed', await page.evaluate(`(() => { const metrics=document.querySelector('.week-overview'), budget=document.querySelector('.week-budget-panel'); return !document.querySelector('[role=dialog] [data-week-budget]') && budget.innerText.includes('この週に、何時間ずつ使う？') && Boolean(metrics.compareDocumentPosition(budget)&Node.DOCUMENT_POSITION_FOLLOWING) && metrics.getBoundingClientRect().bottom<innerHeight })()`))
   await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
   await screenshot('01-week-metrics-first-minimum')
-  check('940x620 Week retains visible activity and no horizontal overflow', await page.evaluate(`document.querySelector('.week .today-strip').getBoundingClientRect().bottom<620 && document.documentElement.scrollWidth<=innerWidth`))
+  check('940x620 Week retains visible activity and no horizontal overflow', await page.evaluate(`document.querySelector('.week-overview').getBoundingClientRect().bottom<620 && document.documentElement.scrollWidth<=innerWidth`))
   await page.send('Emulation.clearDeviceMetricsOverride')
   await budgetEdit()
   check('Unset living hours remain blank without invented values or calculations', await page.evaluate(`Array.from(document.querySelectorAll('.weekly-budget-inputs input')).every(el=>el.value==='') && !document.querySelector('.weekly-budget-equation')`))
   await button('時間配分を保存', budgetScope)
   check('Missing hours prevent a save', !read().weeklyBudgets && await page.evaluate(`!document.querySelector('.weekly-budget form').checkValidity()`))
   await fill(sleepInput, '56')
+  await closeBudget()
   await tab(2, '.board')
   await tab(8, '.week')
   await budgetEdit()
   check('Partial budget draft survives a tab change', await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='56'`))
-  await button('次の週', '.week-navigation')
-  await button('前の週', '.week-navigation')
-  await disclose(budgetScope)
-  if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(sleepInput)}))`)) await budgetEdit()
+  await moveWeek('次の週')
+  await moveWeek('前の週')
+  await budgetEdit()
   check('Partial budget draft survives a week change', await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='56'`))
   await fill('[aria-label="食事（週の合計時間）"]', '14')
   await fill('[aria-label="その他の固定時間（週の合計時間）"]', '7')
@@ -337,30 +357,32 @@ async function verifyBudget() {
   try {
     await button('時間配分を保存', budgetScope)
     await until(() => page.evaluate('Boolean(document.querySelector(".weekly-budget [role=alert]"))'), 'budget actual save failure')
+    await click('[aria-label="時間予算を閉じる"]')
     await key('2', 'Digit2', 2)
-    check('Budget failed save retains all input and blocks leaving the Week tab', await page.evaluate(`Boolean(document.querySelector('.week')) && document.querySelector(${JSON.stringify(sleepInput)}).value==='56' && document.querySelectorAll('.weekly-allocation').length===4 && document.querySelector('.weekly-budget form input[type=checkbox]').checked`))
+    check('Budget failed save retains all input and blocks closing the dialog or leaving the Week tab', await page.evaluate(`Boolean(document.querySelector('.week')) && document.querySelector(${JSON.stringify(sleepInput)}).value==='56' && document.querySelectorAll('.weekly-allocation').length===4 && document.querySelector('.weekly-budget form input[type=checkbox]').checked`))
     await unchangedAfterFailure(before, 'Weekly Budget failure', memoryBefore)
     await screenshot('02-budget-save-failure', '.weekly-budget [role="alert"]', 'center')
     await screenshot('02a-budget-retained-upper-inputs', '.weekly-budget-inputs')
   } finally { endSaveFault() }
   await button('時間配分を保存', budgetScope)
   await until(() => read().weeklyBudgets?.length === 1, 'budget retry')
-  await until(() => page.evaluate('!document.querySelector(".weekly-budget form")'), 'saved budget summary')
+  await until(() => page.evaluate('!document.querySelector("[role=dialog] [data-week-budget]")'), 'saved budget closes editing dialog')
   const plan = { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 420, allocations: [
     { projectId: 'project-0', mode: 'minimum', minutes: 6000 }, { projectId: 'project-1', mode: 'maximum', minutes: 720 },
     { projectId: 'project-2', mode: 'range', minimumMinutes: 1200, maximumMinutes: 1800 }, { projectId: 'project-3', mode: 'unlimited' },
   ] }
   check('All four allocation modes and personal defaults persist exactly', isDeepStrictEqual(read().weeklyBudgetDefaults, plan) && Object.keys(plan).every((field) => isDeepStrictEqual(read().weeklyBudgets[0][field], plan[field])))
-  check('Budget displays 91h available and the minimum allocation shortage', await page.evaluate(`document.querySelector('.weekly-budget-equation').innerText.includes('91h') && document.querySelector('.weekly-budget .phase2-constraint').innerText.includes('29h')`))
-  await screenshot('03-budget-four-modes', '.weekly-budget')
-  await button('次の週', '.week-navigation')
-  await disclose(budgetScope)
+  check('Budget displays 91h available and the minimum allocation shortage', await page.evaluate(`document.querySelector('.week-capacity .num').textContent==='91h' && document.querySelector('.week-unallocated.is-over').innerText.includes('29h')`))
+  await screenshot('03-budget-four-modes', '.week-budget-panel')
+  await moveWeek('次の週')
+  await budgetEdit()
   await button('既定の配分を使う', budgetScope)
   check('Reuse opens the saved personal defaults without silently saving the next week', read().weeklyBudgets.length === 1 && await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='56' && document.querySelectorAll('.weekly-allocation').length===4`))
   await button('時間配分を保存', budgetScope)
   await until(() => read().weeklyBudgets?.length === 2, 'reused next week saved')
+  await until(() => page.evaluate('!document.querySelector("[role=dialog] [data-week-budget]")'), 'reused budget closes editing dialog')
   check('Next week reuses every allocation and living input', Object.keys(plan).every((field) => isDeepStrictEqual(read().weeklyBudgets.find((budget) => budget.weekStart === nextWeek)[field], plan[field])))
-  await button('今週', '.week-navigation')
+  await moveWeek('今週')
 }
 
 async function verifyProjectAndFixedWork() {
@@ -407,15 +429,14 @@ async function verifyProjectAndFixedWork() {
   await button('固定予定を保存', '[role="dialog"]')
   await until(() => read().fixedWork.find((work) => work.id === first.id).endedAt === boundary + 150 * 60000, 'fixed work update')
   await tab(8, '.week')
-  await disclose(budgetScope)
-  check('This week clips the boundary schedule to 30 minutes', await page.evaluate(`document.querySelector('.weekly-budget-equation').innerText.includes('外部固定作業 30m')`))
-  await button('次の週', '.week-navigation')
-  await disclose(budgetScope)
-  check('Next week counts overlapping external schedules once: 150 minutes', await page.evaluate(`document.querySelector('.weekly-budget-equation').innerText.includes('外部固定作業 2h 30m') && document.querySelector('.weekly-budget-equation strong').textContent==='88h 30m'`))
-  await disclose('.week > .fixed-work-overview > details')
-  check('Week exposes both real external schedules', await page.evaluate(`document.querySelectorAll('.week [data-fixed-work-id]').length===2`))
-  await screenshot('05-week-boundary-overlap', '.weekly-budget')
-  await screenshot('05b-week-overlapping-fixed-work', '.week > .fixed-work-overview')
+  await disclose('.week-life-details')
+  check('This week clips the boundary schedule to 30 minutes', await page.evaluate(`document.querySelector('.week-life-time > div:last-child dd').textContent==='30m'`))
+  await moveWeek('次の週')
+  await disclose('.week-life-details')
+  check('Next week counts overlapping external schedules once: 150 minutes', await page.evaluate(`document.querySelector('.week-life-time > div:last-child dd').textContent==='2h 30m' && document.querySelector('.week-capacity .num').textContent==='88h 30m'`))
+  check('Week exposes both real external schedules on the calendar', await page.evaluate(`(() => { const ids=[...document.querySelectorAll('[data-calendar-event=fixed]')].map(el=>el.dataset.calendarBlockId); return ids.length===2 && ids.includes(${JSON.stringify(first.id)}) && ids.includes(${JSON.stringify(second.id)}); })()`))
+  await screenshot('05-week-boundary-overlap', '.week-budget-panel')
+  await screenshot('05b-week-overlapping-fixed-work', '.week-calendar')
   await board()
   await disclose('.board > .fixed-work-overview > details')
   await button('予定を取り消す', `[data-fixed-work-id="${second.id}"]`)
@@ -624,13 +645,13 @@ try {
   await budgetEdit()
   await fill(sleepInput, '55')
   check('A new weekly draft remains distinct from the saved budget before quitting', read().weeklyBudgets.find((budget) => budget.weekStart === thisWeek).sleepMinutes === 3360 && await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='55'`))
-  await button('次の週', '.week-navigation')
-  await button('次の週', '.week-navigation')
-  await disclose(budgetScope)
-  if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(sleepInput)}))`)) await budgetEdit()
+  await moveWeek('次の週')
+  await moveWeek('次の週')
+  await budgetEdit()
   await fill(sleepInput, '9')
   check('An incomplete new week draft does not invent the remaining living hours or commit a budget', !read().weeklyBudgets.some((budget) => budget.weekStart === laterWeek) && await page.evaluate(`document.querySelector('[aria-label="食事（週の合計時間）"]').value==='' && document.querySelector('[aria-label="その他の固定時間（週の合計時間）"]').value===''`))
   await screenshot('14-budget-unsaved-before-quit', '.weekly-budget')
+  await closeBudget()
   await board()
   await detail('task-a')
   await openContextRecord('notes')
@@ -660,14 +681,13 @@ try {
   check('Restarted linked Note editor retains the entire recovered draft', await page.evaluate(`document.querySelector('[aria-label="ノートの本文"]').value==='失敗した関連ノートの全文を、再試行まで保持する。'`))
   await screenshot('12-restarted-task-context', '.note-editor')
   await tab(8, '.week')
-  await disclose(budgetScope)
-  check('Restarted Week keeps personal budgets and default reuse available', await page.evaluate(`Boolean(document.querySelector('.weekly-budget-equation')) && [...document.querySelectorAll('.weekly-budget button')].some(button=>button.textContent==='既定の配分を使う')`))
+  check('Restarted Week keeps the saved personal budget sidebar available', await page.evaluate(`Boolean(document.querySelector('.week-capacity')) && document.querySelectorAll('.week-project-allocation').length===4`))
   await budgetEdit()
+  check('Restarted budget editing keeps personal default reuse available', await page.evaluate(`[...document.querySelectorAll('[role=dialog] [data-week-budget] form button')].some(button=>button.textContent==='既定の配分を使う')`))
   check('Natural quit and restart retain the unsaved weekly draft without changing the saved budget', await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='55' && document.querySelectorAll('.weekly-allocation').length===4`) && read().weeklyBudgets.find((budget) => budget.weekStart === thisWeek).sleepMinutes === 3360)
-  await button('次の週', '.week-navigation')
-  await button('次の週', '.week-navigation')
-  await disclose(budgetScope)
-  if (!await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(sleepInput)}))`)) await budgetEdit()
+  await moveWeek('次の週')
+  await moveWeek('次の週')
+  await budgetEdit()
   check('Restart also restores a partially entered new week with the missing hours still blank', await page.evaluate(`document.querySelector(${JSON.stringify(sleepInput)}).value==='9' && document.querySelector('[aria-label="食事（週の合計時間）"]').value==='' && document.querySelector('[aria-label="その他の固定時間（週の合計時間）"]').value===''`) && !read().weeklyBudgets.some((budget) => budget.weekStart === laterWeek))
   await screenshot('13-restarted-week-budget', '.weekly-budget')
   await stop('restart')

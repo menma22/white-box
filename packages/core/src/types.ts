@@ -244,6 +244,7 @@ export interface Database {
   weeklyBudgets?: WeeklyTimeBudget[]
   weeklyBudgetDefaults?: WeeklyBudgetPlan
   fixedWork?: FixedWork[]
+  calendarBlocks?: CalendarBlock[]
 }
 
 export type ProjectAllocation =
@@ -260,6 +261,25 @@ export interface WeeklyBudgetPlan {
 
 export interface WeeklyTimeBudget extends WeeklyBudgetPlan {
   weekStart: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface CalendarBlockInput {
+  title: string
+  category: 'work' | 'sleep' | 'meal' | 'fixed'
+  taskId: ID | null
+  projectId: ID | null
+  startedAt: number
+  endedAt: number
+  repeat: 'none' | 'weekly'
+  weekdays: number[]
+  until: string | null
+}
+
+export interface CalendarBlock extends CalendarBlockInput {
+  id: ID
+  cancelled: boolean
   createdAt: number
   updatedAt: number
 }
@@ -305,6 +325,7 @@ export interface AppState {
   weeklyBudgets?: WeeklyTimeBudget[]
   weeklyBudgetDefaults?: WeeklyBudgetPlan
   fixedWork?: FixedWork[]
+  calendarBlocks?: CalendarBlock[]
 }
 
 export type WindowKind = 'main' | 'start' | 'hud' | 'expire' | 'review' | 'current'

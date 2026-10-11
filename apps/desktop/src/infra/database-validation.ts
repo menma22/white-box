@@ -6,7 +6,7 @@ export const DATABASE_VERSION = 1
 const DATABASE_KEYS: Record<keyof Database, true> = {
   version: true, projects: true, tasks: true, sessions: true, settings: true, dayNotes: true,
   goalMap: true, goalMapImports: true, agentRequests: true, taskSuggestions: true, notes: true,
-  presenceCandidates: true, weeklyBudgets: true, weeklyBudgetDefaults: true, fixedWork: true,
+  presenceCandidates: true, weeklyBudgets: true, weeklyBudgetDefaults: true, fixedWork: true, calendarBlocks: true,
 }
 
 export function validateStoredDatabase(value: unknown): asserts value is Partial<Database> {

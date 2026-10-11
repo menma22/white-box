@@ -134,7 +134,7 @@ async function stop() {
       throw error
     }
   }
-  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null || !pidAlive()
+  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null
   const waitForExit = async (timeout) => {
     const deadline = Date.now() + timeout
     while (!exited()) {
@@ -147,8 +147,10 @@ async function stop() {
     if (exited()) return
     quitRequested = Boolean(page)
     try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
-    page?.close()
     if (await waitForExit(15000)) return
+    const failure = { pid: owned.pid, quitError, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: pidAlive(), renderer: null }
+    try { failure.renderer = await page?.evaluate('(async () => ({ body:document.body.innerText, state:await window.whitebox.call("state:get") }))()') } catch (error) { failure.renderer = { observationError: error.message } }
+    fs.writeFileSync(path.join(RUN, `shutdown-timeout-${owned.pid}.json`), JSON.stringify(failure, null, 2))
     forcedKill = true
     console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
     killAccepted = owned.kill('SIGKILL')
@@ -164,6 +166,7 @@ async function stop() {
     fs.writeFileSync(path.join(RUN, `shutdown-${owned.pid ?? 'unspawned'}.json`), JSON.stringify(observation, null, 2))
     console.log(`Cleanup: ${JSON.stringify(observation)}`)
     if (exited()) { child = undefined; page = undefined }
+    if (quitRequested && !forcedKill) check('Natural quit exits with zero, no signal and no live root PID', owned.exitCode === 0 && owned.signalCode === null && !alive, observation)
   }
 }
 
@@ -189,7 +192,7 @@ async function click(selector) {
 }
 
 async function button(text, scope = 'body') {
-  const selector = await page.evaluate(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(scope + ' button')})]; const index=all.findIndex(el=>(el.querySelector('.rail-tab-label')?.textContent ?? el.textContent).trim()===${JSON.stringify(text)}); return index<0 ? null : index; })()`)
+  const selector = await page.evaluate(`(() => { const all=[...document.querySelectorAll(${JSON.stringify(scope + ' button')})]; const index=all.findIndex(el=>(el.querySelector('.rail-tab-label')?.textContent ?? el.textContent).trim()===${JSON.stringify(text)} || el.getAttribute('aria-label')===${JSON.stringify(text)}); return index<0 ? null : index; })()`)
   assert.notEqual(selector, null, `button ${text}`)
   await page.evaluate(`document.querySelectorAll(${JSON.stringify(scope + ' button')})[${selector}].setAttribute('data-activity-e2e-click','true')`)
   await click('[data-activity-e2e-click="true"]')
@@ -221,9 +224,9 @@ async function navigate(label, selector) {
 }
 async function amounts(scope) {
   return page.evaluate(`(() => {
-    const root=document.querySelector(${JSON.stringify(scope)});
-    const rows=(selector)=>[...root.querySelectorAll(selector)].map(el=>({name:el.querySelector('span').textContent.trim(),time:el.querySelector('.num').textContent.trim()}));
-    return {total:root.querySelector('.view-head .bigdur').textContent,
+    const root=document.querySelector(${JSON.stringify(scope)}), details=root.querySelector('.week-record-details') ?? root;
+    const rows=(selector)=>[...details.querySelectorAll(selector)].map(el=>({name:el.querySelector('span').textContent.trim(),time:el.querySelector('.num').textContent.trim()}));
+    return {total:root.querySelector(':scope > summary > .num, .week-overview > div:first-child strong, .view-head .bigdur').textContent,
       projects:rows(':scope > .activity-breakdown [aria-label="プロジェクト別時間"] .activity-entry'),
       tasks:rows(':scope > .activity-breakdown [aria-label="進めたタスク"] .activity-entry')};
   })()`)
@@ -247,10 +250,10 @@ async function verifyMinimum(scope, name) {
   await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
   await page.evaluate("document.querySelector('.main-content').scrollTop=0")
   const layout = await page.evaluate(`(() => {
-    const root=document.querySelector(${JSON.stringify(scope)}), content=document.querySelector('.main-content');
+    const root=document.querySelector(${JSON.stringify(scope)}), content=document.querySelector('.main-content'), details=root.querySelector('.week-record-details') ?? root;
     return {width:innerWidth,height:innerHeight,documentOverflow:document.documentElement.scrollWidth-innerWidth,
       contentOverflow:content.scrollWidth-content.clientWidth,viewOverflow:root.scrollWidth-root.clientWidth,
-      panels:[...root.querySelectorAll(':scope > .activity-breakdown .activity-panel, :scope > .activity-trend')].map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}))};
+      panels:[...details.querySelectorAll(':scope > .activity-breakdown .activity-panel, :scope > .activity-trend')].map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}))};
   })()`)
   check(`${name}: 940x620 keeps readable panels without horizontal overflow`, layout.width === 940 && layout.height === 620 && layout.documentOverflow <= 1 && layout.contentOverflow <= 1 && layout.viewOverflow <= 1 && layout.panels.length === 3 && layout.panels.every((panel) => panel.width >= 200 && panel.height > 35), layout)
   await screenshot(name)
@@ -267,8 +270,9 @@ async function createFixture() {
   await call('settings:update', { patch: { onboardedAt: Date.now(), lastWelcomeDate: today, dayStartHour: 4, showSessionCard: false, soundOnExpire: false, autoPauseOnSuspend: false, launchAtLogin: false, shortcuts: { startPause: '', currentWork: '', dashboard: '' } } })
   await page.send('Page.reload')
   await until(() => page.evaluate('Boolean(document.querySelector(".today")) && !document.querySelector(".onboarding") && !document.querySelector(".welcome")'), 'isolated onboarding dismissed')
-  const weekday = new Date(`${today}T12:00:00`).getDay()
-  previousMonday = shift(today, -((weekday + 6) % 7) - 7)
+  const calendarToday = dateKey(new Date())
+  const weekday = new Date(`${calendarToday}T12:00:00`).getDay()
+  previousMonday = shift(calendarToday, -((weekday + 6) % 7) - 7)
   const projectA = await call('project:create', { name: 'Activity Alpha' })
   const projectB = await call('project:create', { name: 'Activity Beta' })
   goal = await call('goal:create', { goal: '成果は人が判定する' })
@@ -276,6 +280,7 @@ async function createFixture() {
   beta = await call('task:create', { title: 'Beta の実作業', projectId: projectB.id, status: 'todo', goalNodeId: goal.id })
   const removed = await call('task:create', { title: '削除前の記録', status: 'todo' })
   const boundary = await recorded(alpha.id, at(previousMonday, 3, 30), at(previousMonday, 4, 30), '月曜4時の前後に30分ずつ')
+  const calendarBoundary = await recorded(alpha.id, at(shift(previousMonday, -1), 23, 30), at(previousMonday, 0, 30), '月曜0時の前後に30分ずつ')
   const primary = await recorded(alpha.id, at(previousMonday, 8), at(previousMonday, 9), '先行記録60分')
   const overlapping = await recorded(beta.id, at(previousMonday, 8, 30), at(previousMonday, 9, 30), '重複30分と追加30分')
   const edited = await recorded(alpha.id, at(shift(previousMonday, 1), 10), at(shift(previousMonday, 1), 10, 30), '終了時刻の編集')
@@ -284,39 +289,49 @@ async function createFixture() {
   await call('task:delete', { id: removed.id })
   await call('task:update', { id: alpha.id, patch: { status: 'todo', progress: 70 } })
   await call('task:update', { id: beta.id, patch: { status: 'done', progress: 100, doneAt: at(shift(previousMonday, 1), 12) } })
-  historical = { boundary, primary, overlapping, edited, deleted }
+  historical = { boundary, calendarBoundary, primary, overlapping, edited, deleted }
   const persisted = read()
-  check('Fixtures use IPC edits and preserve deleted-task session references', persisted.sessions.length === 5 && persisted.sessions.every((session) => session.editedAt !== null) && persisted.sessions.find((session) => session.id === deleted).segments[0].taskId === removed.id && !persisted.tasks.some((task) => task.id === removed.id))
+  check('Fixtures use IPC edits and preserve deleted-task session references', persisted.sessions.length === 6 && persisted.sessions.every((session) => session.editedAt !== null) && persisted.sessions.find((session) => session.id === deleted).segments[0].taskId === removed.id && !persisted.tasks.some((task) => task.id === removed.id))
   check('Editing times and completing tasks do not assess the linked goal', isDeepStrictEqual(persisted.goalMap.nodes[goal.id], goal))
 }
 
 async function verifyWeek(expectedToday = 0) {
   await navigate('週', '.week')
-  await button('前の週', '.week-navigation')
-  await until(() => page.evaluate(`document.querySelector('.week .view-title').textContent.startsWith(${JSON.stringify(previousMonday)})`), 'previous week selected')
-  verifyAmounts('Previous week', await amounts('.week'), 185, { 'Activity Alpha': 135, 'Activity Beta': 30, 'プロジェクトなし・削除済み': 20 }, { 'Alpha の実作業': 135, 'Beta の実作業': 30, '（削除されたタスク）': 20 })
-  const metrics = await page.evaluate(`[...document.querySelectorAll('.week > .today-strip .metric')].map(el=>({label:el.querySelector('.label').textContent,value:el.querySelector('.metric-value').textContent}))`)
-  check('Weekly metrics count three worked days, five original sessions and one completed task', isDeepStrictEqual(Object.fromEntries(metrics.map((metric) => [metric.label, Number(metric.value)])), { '記録のある日': 3, 'セッション': 5, '完了したタスク': 1 }), metrics)
+  await button('前の週', '.week-controls')
+  await until(() => page.evaluate(`document.querySelector('.week [aria-label="表示する週の日付"]').value===${JSON.stringify(previousMonday)}`), 'previous week selected')
+  await click('.week-record-details > summary')
+  verifyAmounts('Previous calendar week', await amounts('.week'), 245, { 'Activity Alpha': 195, 'Activity Beta': 30, 'プロジェクトなし・削除済み': 20 }, { 'Alpha の実作業': 195, 'Beta の実作業': 30, '（削除されたタスク）': 20 })
+  const metrics = await page.evaluate(`(() => { const detail=document.querySelector('.week-record-details > summary span').textContent; const counts=detail.match(/(\\d+) セッション · (\\d+) タスク完了/); return { workedDays:Number(document.querySelector('.week-overview > div:nth-child(3) strong').firstChild.textContent), sessions:Number(counts[1]), completedTasks:Number(counts[2]) }; })()`)
+  check('Calendar-week metrics count three worked days, six original sessions and one completed task', isDeepStrictEqual(metrics, { workedDays: 3, sessions: 6, completedTasks: 1 }), metrics)
   const days = await page.evaluate(`[...document.querySelectorAll('.week-day > summary')].map(el=>({label:el.querySelector('span').textContent,time:el.querySelector('.num').textContent}))`)
-  check('Week starts Monday and includes all seven daily totals, including zero days', days.length === 7 && days[0].label.includes('月') && isDeepStrictEqual(days.map((day) => durationMinutes(day.time)), [120, 45, 20, 0, 0, 0, 0]), days)
+  check('Week starts Monday and includes all seven daily totals, including zero days', days.length === 7 && days[0].label.includes('月') && isDeepStrictEqual(days.map((day) => durationMinutes(day.time)), [180, 45, 20, 0, 0, 0, 0]), days)
+  const calendarDays = await page.evaluate(`[...document.querySelectorAll('[data-calendar-day]')].map(el=>{ const value=el.querySelector('.calendar-day-total').cloneNode(true); value.querySelector('small').remove(); return { key:el.dataset.calendarDay, time:value.textContent.trim() }; })`)
+  check('The visible calendar uses the same seven calendar-day totals as record details', calendarDays.length === 7 && calendarDays.every((day, index) => day.key === shift(previousMonday, index)) && isDeepStrictEqual(calendarDays.map((day) => durationMinutes(day.time)), [180, 45, 20, 0, 0, 0, 0]), calendarDays)
   for (let index = 0; index < 7; index++) await click(`.week-day:nth-of-type(${index + 1}) > summary`)
+  verifyAmounts('Calendar Monday daily breakdown includes clipped midnight work and deduplicated overlap', await amounts('.week-day:nth-of-type(1)'), 180, { 'Activity Alpha': 150, 'Activity Beta': 30 }, { 'Alpha の実作業': 150, 'Beta の実作業': 30 })
+  await page.evaluate("document.querySelector('.week-day:nth-of-type(1)').scrollIntoView({block:'start'})")
+  await screenshot('01c-monday-daily-breakdown')
   const sessionTimes = await page.evaluate(`[...document.querySelectorAll('.week-day[open] .srow-focus')].map(el=>{const copy=el.cloneNode(true);copy.querySelector('small')?.remove();return copy.textContent.trim()})`)
-  check('In-period session values sum to the same 185 minutes', sessionTimes.length === 5 && sessionTimes.reduce((sum, value) => sum + durationMinutes(value), 0) === 185, sessionTimes)
-  check('Original 60-minute boundary session is distinguished from the 30-minute daily portion', await page.evaluate(`(() => { const row=[...document.querySelectorAll('.week-day[open] .srow')].find(el=>el.textContent.includes('月曜4時の前後に30分ずつ')); return row.querySelector('.srow-scope').textContent.includes('全体 1h') && row.querySelector('.srow-focus').firstChild.textContent.trim()==='30m' && document.querySelector('.week').textContent.includes('タスク完了は目標の成果達成とは別'); })()`))
+  check('In-period session values sum to the same 245 calendar-week minutes', sessionTimes.length === 6 && sessionTimes.reduce((sum, value) => sum + durationMinutes(value), 0) === 245, sessionTimes)
+  check('Original 60-minute midnight boundary session is distinguished from the 30-minute daily portion', await page.evaluate(`(() => { const row=[...document.querySelectorAll('.week-day[open] .srow')].find(el=>el.textContent.includes('月曜0時の前後に30分ずつ')); return row.querySelector('.srow-scope').textContent.includes('全体 1h') && row.querySelector('.srow-focus').firstChild.textContent.trim()==='30m' && document.querySelector('.week').textContent.includes('タスク完了は目標の成果達成とは別'); })()`))
+  check('Calendar Monday contains the entire session that crosses the configured 4AM day boundary', await page.evaluate(`(() => { const row=[...document.querySelectorAll('.week-day[open] .srow')].find(el=>el.textContent.includes('月曜4時の前後に30分ずつ')); return row.querySelector('.srow-focus').firstChild.textContent.trim()==='1h'; })()`))
   for (let index = 0; index < 7; index++) await click(`.week-day:nth-of-type(${index + 1}) > summary`)
   await page.evaluate("document.querySelector('.main-content').scrollTop=0")
   await screenshot('01-previous-week')
-  await page.evaluate("document.querySelector('.week > .activity-breakdown').scrollIntoView({block:'center'})")
+  await page.evaluate("document.querySelector('.week-record-details > .activity-breakdown').scrollIntoView({block:'center'})")
   await screenshot('01b-week-breakdown')
   await verifyMinimum('.week', '02-minimum-week')
-  await button('前の週', '.week-navigation')
+  const weekTrend = await page.evaluate(`[...document.querySelectorAll('.week .trend-values li')].map(el=>({key:el.querySelector('span').textContent,time:el.querySelector('.num').textContent}))`)
+  const calendarExpected = { [previousMonday]: 180, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [shift(previousMonday, -1)]: 30 }
+  check('Week trend uses calendar midnight while Today keeps the configured 4AM day boundary', weekTrend.length === 14 && weekTrend.every((day, index) => day.key === shift(previousMonday, index - 7) && durationMinutes(day.time) === (calendarExpected[day.key] ?? 0)), weekTrend)
+  await button('前の週', '.week-controls')
   const preceding = await amounts('.week')
   verifyAmounts('Preceding week', preceding, 30, { 'Activity Alpha': 30 }, { 'Alpha の実作業': 30 })
   const precedingDays = await page.evaluate(`[...document.querySelectorAll('.week-day > summary .num')].map(el=>el.textContent)`)
-  check('The other 30 boundary minutes belong to Sunday of the preceding week', isDeepStrictEqual(precedingDays.map(durationMinutes), [0, 0, 0, 0, 0, 0, 30]))
-  await button('次の週', '.week-navigation')
-  check('Next week restores the original selection', await page.evaluate(`document.querySelector('.week .view-title').textContent.startsWith(${JSON.stringify(previousMonday)})`))
-  await button('今週', '.week-navigation')
+  check('The other 30 midnight-boundary minutes belong to Sunday of the preceding calendar week', isDeepStrictEqual(precedingDays.map(durationMinutes), [0, 0, 0, 0, 0, 0, 30]))
+  await button('次の週', '.week-controls')
+  check('Next week restores the original selection', await page.evaluate(`document.querySelector('.week [aria-label="表示する週の日付"]').value===${JSON.stringify(previousMonday)}`))
+  await button('今週', '.week-controls')
   await navigate('今日', '.today')
   check('Historical fixtures do not leak into today', durationMinutes((await amounts('.today')).total) === expectedToday)
 }
@@ -349,10 +364,26 @@ async function verifyTodayAndLive() {
   check('Today shows declared progress, observed pause and exclusion separately', await page.evaluate(`document.querySelector('.today .activity-progress').textContent.includes('現在 70%') && document.querySelectorAll('.today .ribbon-pause').length > 0 && document.querySelectorAll('.today .ribbon-excluded').length > 0`))
   const timelineWork = await page.evaluate(`[...document.querySelectorAll('.today .ribbon-work')].map(el=>el.getAttribute('aria-label'))`)
   check('Timeline work descriptions remain accessible', timelineWork.length > 0 && timelineWork.every((label) => label.includes('Alpha の実作業') && label.includes('実作業')), timelineWork)
+  const calendarDay = dateKey(new Date(ended.endedAt))
+  const calendarStart = at(calendarDay, 0), calendarEnd = at(shift(calendarDay, 1), 0)
+  const manualPause = ended.pauses.find((pause) => pause.reason === 'manual')
+  assert.ok(manualPause && manualPause.endedAt !== null, 'The fixture has one completed observed pause')
+  const clippedMinutes = (from, to) => Math.max(0, Math.min(to, calendarEnd) - Math.max(from, calendarStart)) / MINUTE
+  const calendarMinutes = Math.floor(clippedMinutes(start + exclusionMs, manualPause.startedAt) + clippedMinutes(manualPause.endedAt, ended.endedAt))
+  await navigate('週', '.week')
+  await click('.week-record-details > summary')
+  const dayIndex = await page.evaluate(`[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].findIndex(el=>el.dataset.calendarDay===${JSON.stringify(calendarDay)})`)
+  assert.ok(dayIndex >= 0, 'The real pause/exclusion fixture belongs to the current calendar week')
+  const dayScope = `.week-day:nth-of-type(${dayIndex + 1})`
+  await click(dayScope + ' > summary')
+  verifyAmounts('Calendar daily breakdown attributes work after observed pause and declared exclusion', await amounts(dayScope), calendarMinutes, { 'Activity Alpha': calendarMinutes }, { 'Alpha の実作業': calendarMinutes })
+  await page.evaluate(`document.querySelector(${JSON.stringify(dayScope)}).scrollIntoView({block:'start'})`)
+  await screenshot('03b-week-day-pause-exclusion')
+  await navigate('今日', '.today')
   await screenshot('03-today-pause-exclusion')
   await verifyMinimum('.today', '04-minimum-today')
   const trend = await page.evaluate(`[...document.querySelectorAll('.today .trend-values li')].map(el=>({key:el.querySelector('span').textContent,time:el.querySelector('.num').textContent}))`)
-  const expected = { [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [shift(previousMonday, -1)]: 30, [today]: expectedMinutes }
+  const expected = { [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [shift(previousMonday, -1)]: 90, [today]: expectedMinutes }
   check('Fourteen consecutive trend days include independently expected nonzero and zero values', trend.length === 14 && trend.every((day, index) => day.key === shift(today, index - 13) && durationMinutes(day.time) === (expected[day.key] ?? 0)) && trend.some((day) => durationMinutes(day.time) === 0), trend)
   check('Trend draws all fourteen points, including zero days', await page.evaluate('document.querySelectorAll(".today .trend-point").length===14'))
   await call('task:update', { id: beta.id, patch: { status: 'todo' } })
@@ -378,8 +409,8 @@ async function verifyTodayAndLive() {
 async function verifyHistory(expectedToday) {
   await navigate('記録', '.history')
   const allTime = durationMinutes((await amounts('.history')).total)
-  check('History retains the independent all-time total across month paging', allTime === 215 + expectedToday)
-  const expectedDays = { [shift(previousMonday, -1)]: 30, [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [today]: expectedToday }
+  check('History retains the independent all-time total across month paging', allTime === 275 + expectedToday)
+  const expectedDays = { [shift(previousMonday, -1)]: 90, [previousMonday]: 120, [shift(previousMonday, 1)]: 45, [shift(previousMonday, 2)]: 20, [today]: expectedToday }
   for (const month of new Set(Object.keys(expectedDays).map((day) => day.slice(0, 7)))) {
     await page.evaluate(`(() => { const input=document.querySelector('.history-month-navigation input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(month)}); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); })()`)
     await until(() => page.evaluate(`document.querySelector('.history .activity-note').textContent.includes(${JSON.stringify(month)})`), 'History month ' + month)

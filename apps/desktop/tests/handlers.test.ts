@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（58 コマンド）', () => {
+describe('ユースケースの網羅（60 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -26,6 +26,7 @@ describe('ユースケースの網羅（58 コマンド）', () => {
     db.presenceCandidates = [{ id: 'candidate', sessionId: 'finished', startedAt: 0, endedAt: 10_000, status: 'pending', createdAt: 10_000, reviewedAt: null }]
     const ctx = fakeCtx(db)
     db.fixedWork = [{ id: 'fixed1', taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議', cancelled: false, createdAt: 0, updatedAt: 0 }]
+    db.calendarBlocks = [{ id: 'calendar1', title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null, cancelled: false, createdAt: 0, updatedAt: 0 }]
     db.weeklyBudgetDefaults = { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] }
     // 復旧系・レビュー系が「対象あり」の経路を通るよう、実行時状態を仕込む
     const handlers = createHandlers(ctx)
@@ -40,6 +41,8 @@ describe('ユースケースの網羅（58 コマンド）', () => {
       'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
       'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },
       'fixedWork:update': { id: 'fixed1', patch: { cancelled: true } },
+      'calendar:create': { title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null },
+      'calendar:update': { id: 'calendar1', patch: { cancelled: true } },
       'presence:resolve': { id: 'candidate', decision: 'dismiss' },
       'agent:config': {},
       'agent:context': {},

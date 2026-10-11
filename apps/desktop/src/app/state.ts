@@ -69,6 +69,7 @@ export function buildState(db: Database, runtime: RuntimeState, now: number): Ap
     weeklyBudgets: db.weeklyBudgets,
     weeklyBudgetDefaults: db.weeklyBudgetDefaults,
     fixedWork: db.fixedWork,
+    calendarBlocks: db.calendarBlocks,
     goalMap: db.goalMap,
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),

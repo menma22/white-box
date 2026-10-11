@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { PauseInterval, Session, TimeRange } from '@white-box/core/types'
 import { invoke } from '@/lib/bridge'
 import { changedSessionTimes, toLocalInput } from '@/lib/session-edit'
 import { useData } from '@/stores/app'
+import { useDraftParticipant } from '@/lib/useEditorFlush'
 import { candidateTasks, projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
 import { Modal } from '@/components/ui'
 import {
@@ -137,6 +138,18 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
   const [note, setNote] = useState(session.note)
   const [exclusions, setExclusions] = useState<TimeRange[]>(declaredExclusions(session))
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [discard, setDiscard] = useState(false)
+  const running = useRef<Promise<boolean> | null>(null)
+  const initial = useRef({ session, startedAt, endedAt, minutes, taskId, note, exclusions })
+  const dirty = startedAt !== initial.current.startedAt || endedAt !== initial.current.endedAt || minutes !== initial.current.minutes || taskId !== initial.current.taskId || note !== initial.current.note || JSON.stringify(exclusions) !== JSON.stringify(initial.current.exclusions)
+  useDraftParticipant(async () => {
+    if (running.current) return running.current
+    if (!dirty) return true
+    setError((value) => value ?? '変更が保存されていない。記録を保存するか、編集を閉じてから続けられる。')
+    return false
+  })
+  function close() { if (running.current) return; if (dirty) setDiscard(true); else onClose() }
 
   const multi = new Set(session.segments.map((s) => s.taskId)).size > 1
   const ended = session.endedAt
@@ -163,46 +176,47 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
     setExclusions((rs) => rs.map((r, i) => (i === index ? { ...r, ...next } : r)))
   }
 
-  async function save() {
-    try {
-      await invoke('session:update', {
+  function save(): Promise<boolean> {
+    if (running.current) return running.current
+    setSaving(true); setError(null); setDiscard(false)
+    running.current = invoke('session:update', {
         id: session.id,
         patch: {
-          ...changedSessionTimes(session, startedAt, endedAt),
-          plannedMs: minutes * MINUTE,
-          note,
+          ...changedSessionTimes(initial.current.session, startedAt, endedAt),
+          ...(minutes !== initial.current.minutes ? { plannedMs: minutes * MINUTE } : {}),
+          ...(note !== initial.current.note ? { note } : {}),
           // 除外は終了済みのセッションだけのもの。実行中に送ると受け口が拒否する
-          ...(ended !== null ? { exclusions } : {}),
+          ...(ended !== null && JSON.stringify(exclusions) !== JSON.stringify(initial.current.exclusions) ? { exclusions } : {}),
         },
-        ...(taskId && taskId !== session.segments[0]?.taskId ? { segmentTaskId: taskId } : {}),
+        ...(taskId && taskId !== initial.current.taskId ? { segmentTaskId: taskId } : {}),
       })
-      onClose()
-    } catch (e) {
-      setError(String(e).replace(/^(Error:\s*)+/, ''))
-    }
+      .then(() => { onClose(); return true })
+      .catch((cause) => { setError(String(cause).replace(/^(Error:\s*)+/, '')); return false })
+      .finally(() => { running.current = null; setSaving(false) })
+    return running.current
   }
 
   return (
-    <Modal open onClose={onClose} width={560}>
-      <h3>記録を修正する</h3>
+    <Modal open onClose={close} width={560} labelledBy="session-editor-title">
+      <h3 id="session-editor-title">記録を修正する</h3>
       <p className="modal-text">直した記録には「修正」の印が残る。</p>
 
       <div className="editor-grid">
         <label className="field">
           <span className="label">開始</span>
-          <input className="input num" type="datetime-local" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
+          <input className="input num" type="datetime-local" disabled={saving} value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
         </label>
         <label className="field">
           <span className="label">終了</span>
-          <input className="input num" type="datetime-local" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} />
+          <input className="input num" type="datetime-local" disabled={saving} value={endedAt} onChange={(e) => setEndedAt(e.target.value)} />
         </label>
         <label className="field">
           <span className="label">予定の長さ（分）</span>
-          <input className="input num" type="number" min={1} max={720} value={minutes} onChange={(e) => setMinutes(Number(e.target.value) || 1)} />
+          <input className="input num" type="number" min={1} max={720} disabled={saving} value={minutes} onChange={(e) => setMinutes(Number(e.target.value) || 1)} />
         </label>
         <label className="field">
           <span className="label">タスク</span>
-          <select className="input" value={taskId} onChange={(e) => setTaskId(e.target.value)} disabled={multi}>
+          <select className="input" value={taskId} onChange={(e) => setTaskId(e.target.value)} disabled={multi || saving}>
             {candidateTasks(state)
               .concat(state.tasks.filter((t) => t.status === 'done'))
               .map((t) => (
@@ -226,6 +240,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
                 <input
                   className="input num"
                   type="datetime-local"
+                  disabled={saving}
                   value={toLocalInput(range.startedAt)}
                   onChange={(e) => {
                     const t = new Date(e.target.value).getTime()
@@ -236,6 +251,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
                 <input
                   className="input num"
                   type="datetime-local"
+                  disabled={saving}
                   value={toLocalInput(range.endedAt)}
                   onChange={(e) => {
                     const t = new Date(e.target.value).getTime()
@@ -248,6 +264,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
+                  disabled={saving}
                   onClick={() => setExclusions((rs) => rs.filter((_, j) => j !== i))}
                 >
                   取り消す
@@ -258,7 +275,7 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
           <button
             type="button"
             className="btn btn-ghost btn-sm editor-ex-add"
-            disabled={nextExclusionCandidate() === null}
+            disabled={saving || nextExclusionCandidate() === null}
             onClick={() => {
               const next = nextExclusionCandidate()
               if (next) setExclusions((rs) => [...rs, next])
@@ -271,17 +288,18 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
 
       <label className="field editor-note">
         <span className="label">ひとこと</span>
-        <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+        <input className="input" disabled={saving} value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
 
-      {error && <p className="editor-ex-error">{error}</p>}
+      {error && <p className="editor-ex-error" role="alert">{error}</p>}
+      {discard && <div className="calendar-confirm" role="alert"><p>保存前の入力を破棄して閉じる？</p><div className="modal-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setDiscard(false)}>編集を続ける</button><button type="button" className="btn btn-danger btn-sm" disabled={saving} onClick={onClose}>入力を破棄して閉じる</button></div></div>}
 
       <div className="modal-actions">
-        <button type="button" className="btn btn-ghost btn-md" onClick={onClose}>
+        <button type="button" className="btn btn-ghost btn-md" disabled={saving} onClick={close}>
           やめる
         </button>
-        <button type="button" className="btn btn-primary btn-md" onClick={() => void save()}>
-          修正を保存
+        <button type="button" className="btn btn-primary btn-md" disabled={saving} onClick={() => void save()}>
+          {saving ? '保存中…' : '修正を保存'}
         </button>
       </div>
     </Modal>
