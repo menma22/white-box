@@ -55,16 +55,28 @@ export function calendarOccurrences(blocks: CalendarBlock[], period: TimeRange):
     if (block.repeat === 'none') { add(block.startedAt, block.endedAt); continue }
     const duration = block.endedAt - block.startedAt
     const anchor = new Date(block.startedAt)
-    // 前日に始まって期間へ跨る予定も、元の開始・終了時刻のまま返す。
-    const cursor = new Date(Math.max(block.startedAt, period.startedAt - duration))
+    const anchorEnd = new Date(block.endedAt)
+    const endDayOffset = (Date.UTC(anchorEnd.getFullYear(), anchorEnd.getMonth(), anchorEnd.getDate()) - Date.UTC(anchor.getFullYear(), anchor.getMonth(), anchor.getDate())) / DAY_MS
+    // 夏時間では24時間以内の元予定も暦上2日を跨ぐため、期間前から暦で探す。
+    // 期間前に始まって期間へ跨る予定も、開始・終了時刻を期間で切らずに返す。
+    const cursor = new Date(Math.max(block.startedAt, period.startedAt))
     cursor.setHours(0, 0, 0, 0)
+    cursor.setDate(cursor.getDate() - Math.max(2, endDayOffset))
     const lastDay = block.until === null ? Infinity : localDate(block.until).getTime()
     for (; cursor.getTime() < period.endedAt && cursor.getTime() <= lastDay;) {
       if (block.weekdays.includes(cursor.getDay())) {
+        const isAnchorDay = cursor.getFullYear() === anchor.getFullYear() && cursor.getMonth() === anchor.getMonth() && cursor.getDate() === anchor.getDate()
         const occurrence = new Date(cursor)
         occurrence.setHours(anchor.getHours(), anchor.getMinutes(), anchor.getSeconds(), anchor.getMilliseconds())
-        const startedAt = occurrence.getTime()
-        if (startedAt >= block.startedAt) add(startedAt, startedAt + duration)
+        const startedAt = isAnchorDay ? block.startedAt : occurrence.getTime()
+        if (startedAt >= block.startedAt) {
+          const end = new Date(cursor)
+          end.setDate(end.getDate() + endDayOffset)
+          end.setHours(anchorEnd.getHours(), anchorEnd.getMinutes(), anchorEnd.getSeconds(), anchorEnd.getMilliseconds())
+          const endedAt = isAnchorDay ? block.endedAt : end.getTime()
+          // 折り返した時計や欠けた時刻から正区間を作れない場合は、元の経過時間を保つ。
+          add(startedAt, endedAt > startedAt ? endedAt : startedAt + duration)
+        }
       }
       const previous = cursor.getTime()
       cursor.setDate(cursor.getDate() + 1)

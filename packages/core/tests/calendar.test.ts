@@ -47,6 +47,100 @@ describe('calendar occurrence boundaries', () => {
     expect(results).toEqual({ hours: [9, 9], gap: 169 * 60 * minute, durations: [60 * minute, 60 * minute] })
   })
   it.each([
+    { name: 'ordinary anchor into fall-back', anchor: [2026, 9, 24], target: [2026, 9, 31], week: '2026-10-26', hours: 9 },
+    { name: 'fall-back anchor into ordinary week', anchor: [2026, 9, 31], target: [2026, 10, 7], week: '2026-11-02', hours: 8 },
+    { name: 'ordinary anchor into spring-forward', anchor: [2026, 1, 28], target: [2026, 2, 7], week: '2026-03-02', hours: 7 },
+    { name: 'spring-forward anchor into ordinary week', anchor: [2026, 2, 7], target: [2026, 2, 14], week: '2026-03-09', hours: 8 },
+  ])('preserves both local clocks and accounted time: $name', ({ anchor, target, week, hours }) => {
+    const script = `
+      import { calendarOccurrences, calendarProjectUsage } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      import { weeklyBudgetSummary, weekBounds } from ${JSON.stringify(new URL('../dist/weekly-budget.js', import.meta.url).href)};
+      const anchor = ${JSON.stringify(anchor)};
+      const target = ${JSON.stringify(target)};
+      const week = ${JSON.stringify(week)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { category: 'sleep', projectId: null, startedAt: new Date(...anchor, 23).getTime(), endedAt: new Date(anchor[0], anchor[1], anchor[2] + 1, 7).getTime(), repeat: 'weekly', weekdays: [6] });
+      const expected = { startedAt: new Date(...target, 23).getTime(), endedAt: new Date(target[0], target[1], target[2] + 1, 7).getTime() };
+      const period = weekBounds(week);
+      const occurrence = calendarOccurrences([input], period)[0];
+      const budget = { sleepMinutes: 0, mealMinutes: 0, fixedMinutes: 0, allocations: [], weekStart: week, createdAt: 0, updatedAt: 0 };
+      const summary = weeklyBudgetSummary({ weeklyBudgets: [budget], calendarBlocks: [input] }, week);
+      const usage = calendarProjectUsage({ tasks: [], sessions: [], calendarBlocks: [{ ...input, category: 'work', projectId: 'p' }] }, week, period.endedAt).get('p');
+      console.log(JSON.stringify({ matches: occurrence.startedAt === expected.startedAt && occurrence.endedAt === expected.endedAt, endHour: new Date(occurrence.endedAt).getHours(), elapsedMinutes: (occurrence.endedAt - occurrence.startedAt) / 60000, sleepMinutes: summary.sleepMinutes, availableMinutes: summary.availableMinutes, plannedMinutes: usage.plannedMinutes, actualMinutes: usage.actualMinutes }));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results).toEqual({ matches: true, endHour: 7, elapsedMinutes: hours * 60, sleepMinutes: hours * 60, availableMinutes: WEEK_MINUTES - hours * 60, plannedMinutes: hours * 60, actualMinutes: 0 })
+  })
+  it('keeps precise recurring start and end clocks across fall-back', () => {
+    const script = `
+      import { calendarOccurrences } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { startedAt: new Date(2026, 9, 24, 23, 15, 12, 345).getTime(), endedAt: new Date(2026, 9, 25, 7, 10, 34, 567).getTime(), repeat: 'weekly', weekdays: [6] });
+      const results = calendarOccurrences([input], { startedAt: new Date(2026, 9, 31).getTime(), endedAt: new Date(2026, 10, 2).getTime() });
+      console.log(JSON.stringify(results.map(({ startedAt, endedAt }) => [startedAt === new Date(2026, 9, 31, 23, 15, 12, 345).getTime(), endedAt === new Date(2026, 10, 1, 7, 10, 34, 567).getTime()])));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results).toEqual([[true, true]])
+  })
+  it('finds recurring ranges crossing a period after fall-back and honours touching edges and inclusive until', () => {
+    const script = `
+      import { calendarOccurrences, validateCalendarBlock } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { startedAt: new Date(2026, 9, 24, 23, 30).getTime(), endedAt: new Date(2026, 9, 25, 23).getTime(), repeat: 'weekly', weekdays: [6], until: '2026-10-31' });
+      validateCalendarBlock(input);
+      const start = new Date(2026, 9, 31, 23, 30).getTime();
+      const end = new Date(2026, 10, 1, 23).getTime();
+      const crossing = calendarOccurrences([input], { startedAt: new Date(2026, 10, 1, 22, 45).getTime(), endedAt: end + 1 });
+      console.log(JSON.stringify({ ranges: crossing.map(({ startedAt, endedAt }) => [startedAt === start, endedAt === end]), touchingEnd: calendarOccurrences([input], { startedAt: end, endedAt: end + 1 }).length, touchingStart: calendarOccurrences([input], { startedAt: start - 1, endedAt: start }).length, afterUntil: calendarOccurrences([input], { startedAt: new Date(2026, 10, 7).getTime(), endedAt: new Date(2026, 10, 9).getTime() }).length }));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results).toEqual({ ranges: [[true, true]], touchingEnd: 0, touchingStart: 0, afterUntil: 0 })
+  })
+  it('finds recurring ranges whose valid spring-forward anchor spans two calendar days', () => {
+    const script = `
+      import { calendarOccurrences, validateCalendarBlock } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { startedAt: new Date(2026, 2, 7, 23, 30).getTime(), endedAt: new Date(2026, 2, 9, 0, 15).getTime(), repeat: 'weekly', weekdays: [6] });
+      validateCalendarBlock(input);
+      const results = calendarOccurrences([input], { startedAt: new Date(2026, 2, 16).getTime(), endedAt: new Date(2026, 2, 16, 0, 30).getTime() });
+      console.log(JSON.stringify(results.map(({ startedAt, endedAt }) => [startedAt === new Date(2026, 2, 14, 23, 30).getTime(), endedAt === new Date(2026, 2, 16, 0, 15).getTime()])));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results).toEqual([[true, true]])
+  })
+  it.each([
+    { name: 'equal wall clocks in different folds', start: '2026-11-01T01:30:12.345-04:00', end: '2026-11-01T01:30:12.345-05:00', nextEnd: '2026-11-08T02:30:12.345-05:00' },
+    { name: 'reversed wall clocks across the fold', start: '2026-11-01T01:45:12.345-04:00', end: '2026-11-01T01:15:34.567-05:00', nextEnd: '2026-11-08T02:15:34.567-05:00' },
+    { name: 'a start in the later fold', start: '2026-11-01T01:15:12.345-05:00', end: '2026-11-01T01:45:34.567-05:00', nextEnd: '2026-11-08T01:45:34.567-05:00' },
+  ])('preserves fold anchor timestamps and positive future ranges: $name', ({ start, end, nextEnd }) => {
+    const script = `
+      import { calendarOccurrences, validateCalendarBlock } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { startedAt: new Date(${JSON.stringify(start)}).getTime(), endedAt: new Date(${JSON.stringify(end)}).getTime(), repeat: 'weekly', weekdays: [0] });
+      validateCalendarBlock(input);
+      const snapshot = JSON.stringify(input);
+      const results = calendarOccurrences([input], { startedAt: new Date(2026, 10, 1).getTime(), endedAt: new Date(2026, 10, 9).getTime() });
+      const nextStart = new Date(input.startedAt);
+      nextStart.setDate(8);
+      console.log(JSON.stringify({ ranges: results.map(({ startedAt, endedAt }) => [startedAt, endedAt]), expected: [[input.startedAt, input.endedAt], [nextStart.getTime(), new Date(${JSON.stringify(nextEnd)}).getTime()]], positive: results.every(item => item.endedAt > item.startedAt), unchanged: JSON.stringify(input) === snapshot }));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results.ranges).toEqual(results.expected)
+    expect(results.positive).toBe(true)
+    expect(results.unchanged).toBe(true)
+  })
+  it('keeps positive recurring ranges when a spring gap normalizes the start beyond the end clock', () => {
+    const script = `
+      import { calendarOccurrences } from ${JSON.stringify(new URL('../dist/calendar.js', import.meta.url).href)};
+      const input = ${JSON.stringify(block())};
+      Object.assign(input, { startedAt: new Date(2026, 2, 1, 2, 30).getTime(), endedAt: new Date(2026, 2, 1, 3).getTime(), repeat: 'weekly', weekdays: [0] });
+      const results = calendarOccurrences([input], { startedAt: new Date(2026, 2, 8).getTime(), endedAt: new Date(2026, 2, 9).getTime() });
+      console.log(JSON.stringify(results.map(({ startedAt, endedAt }) => [startedAt === new Date(2026, 2, 8, 3, 30).getTime(), endedAt === new Date(2026, 2, 8, 4).getTime(), endedAt > startedAt])));
+    `
+    const results = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }))
+    expect(results).toEqual([[true, true, true]])
+  })
+  it.each([
     { title: ' ' }, { category: 'bad' }, { startedAt: NaN }, { endedAt: at(5, 9) }, { endedAt: at(5, 8) },
     { repeat: 'none', weekdays: [1] }, { repeat: 'none', until: '2026-10-12' },
     { repeat: 'weekly', weekdays: [] }, { repeat: 'weekly', weekdays: [1, 1] }, { repeat: 'weekly', weekdays: [7] },
