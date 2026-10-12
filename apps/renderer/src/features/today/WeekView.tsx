@@ -14,6 +14,7 @@ import type { TaskDetailTarget } from '@/features/board/TaskDetail'
 import { WeeklyBudget, type BudgetDraftCache, type WeeklyBudgetHandle } from './WeeklyBudget'
 import type { BudgetDraftStorage } from './budget-drafts'
 import { FixedWorkEditor } from '@/features/board/FixedWorkEditor'
+import { FixedWorkOverview } from '@/features/board/FixedWorkOverview'
 import { invoke } from '@/lib/bridge'
 import { CalendarEditor } from './CalendarEditor'
 import { WeekCalendar } from './WeekCalendar'
@@ -40,6 +41,8 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
   const [fixedCancel, setFixedCancel] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const ownBudgetDrafts = useRef<BudgetDraftCache>(budgetDraftStorage?.drafts ?? {})
+  const drafts = budgetDrafts ?? ownBudgetDrafts
   const budget = useRef<WeeklyBudgetHandle | null>(null)
   const period = useMemo(() => weekBounds(start), [start])
   const summary = useMemo(() => activitySummary(state.sessions, state.tasks, now, period), [state.sessions, state.tasks, now, period])
@@ -68,7 +71,7 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
   const workPlanned = pausedMsWithin(planned.filter((event) => event.kind !== 'routine').map((event) => ({ startedAt: event.startedAt, endedAt: event.endedAt, reason: null })), period.startedAt, period.endedAt, period.endedAt)
   async function flush() {
     if (budget.current) return budget.current.flush()
-    if (budgetDrafts?.current[start]?.error || budgetDraftStorage && !budgetDraftStorage.persist(budgetDrafts?.current ?? budgetDraftStorage.drafts)) { setBudgetOpen(true); return false }
+    if (drafts.current[start]?.error || budgetDraftStorage && !budgetDraftStorage.persist(drafts.current)) { setBudgetOpen(true); return false }
     return true
   }
   useImperativeHandle(ref, () => ({ flush }))
@@ -122,6 +125,7 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
     <div className="week-overview"><div><span>週の実作業</span><strong className="num">{formatDuration(summary.focusMs, 'compact')}</strong></div><div><span>作業の予定</span><strong className="num">{formatDuration(workPlanned, 'compact')}</strong></div><div><span>記録のある日</span><strong className="num">{days.filter((day) => day.summary.focusMs > 0).length}<small> / 7</small></strong></div><p>予定を立てて、実際の時間と見比べる。</p></div>
       <WeekBudgetPanel state={state} start={start} now={now} onEdit={() => setBudgetOpen(true)} />
     {start === currentWeek && <TaskWarnings state={state} now={now} onOpenTask={onOpenTask} compact />}
+    <FixedWorkOverview period={period} onOpenTask={onOpenTask} allowCreate={false} />
     <details className="week-record-details"><summary>週の記録を詳しく見る <span>{summary.sessions.length} セッション · {summary.completedTasks.length} タスク完了</span></summary>
       <p className="calendar-hint">タスク完了は目標の成果達成とは別。実作業の時間と成果は、それぞれの記録で確認する。</p>
       <ActivityBreakdown state={state} summary={summary} />
@@ -132,7 +136,7 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
     <p className="week-boundary-note">週は月曜 0:00〜日曜 24:00。予定は実績に含まれない。実作業は停止・除外・重複を差し引いた記録。</p>
     </section>
     {editor && <CalendarEditor block={block} startedAt={editor.startedAt} endedAt={editor.endedAt} onClose={() => setEditor(null)} />}
-    <Modal open={budgetOpen} onClose={() => void closeBudget()} width={800} labelledBy="week-budget-title"><div className="week-budget-dialog"><header className="calendar-editor-head"><div><span className="label">TIME BUDGET</span><h2 id="week-budget-title">この週の時間予算</h2></div><button type="button" className="calendar-close" aria-label="時間予算を閉じる" onClick={() => void closeBudget()}>×</button></header><WeeklyBudget ref={budget} state={state} weekStart={start} draftCache={budgetDrafts} draftStorage={budgetDraftStorage} expanded initialEditing onSaved={() => setBudgetOpen(false)} /></div></Modal>
+    <Modal open={budgetOpen} onClose={() => void closeBudget()} width={800} labelledBy="week-budget-title"><div className="week-budget-dialog"><header className="calendar-editor-head"><div><span className="label">TIME BUDGET</span><h2 id="week-budget-title">この週の時間予算</h2></div><button type="button" className="calendar-close" aria-label="時間予算を閉じる" onClick={() => void closeBudget()}>×</button></header><WeeklyBudget ref={budget} state={state} weekStart={start} draftCache={drafts} draftStorage={budgetDraftStorage} expanded initialEditing onSaved={() => setBudgetOpen(false)} /></div></Modal>
     <Modal open={Boolean(selectedEvent) && !fixedEditor} onClose={() => { if (!saving && document.querySelectorAll('[role="dialog"]').length <= 1) setSelectedEvent(null) }} width={680} labelledBy="week-event-title">
       <div className="week-event-detail"><span className="label">{selectedEvent?.kind === 'actual' ? '実績の記録' : '外部固定予定'}</span><h2 id="week-event-title">{selectedEvent?.title}</h2>{selectedEvent && <p className="calendar-hint">{new Date(selectedEvent.startedAt).toLocaleString('ja-JP')} — {new Date(selectedEvent.endedAt).toLocaleString('ja-JP')}</p>}
         {session && <SessionRow session={session} now={now} inPeriod={{ ms: summary.sessionMs.get(session.id) ?? 0, label: 'この週' }} />}
