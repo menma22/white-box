@@ -300,7 +300,7 @@ function beginSaveFault(label) {
 function endSaveFault() { if(faultOwned){endExpectedErrors(faultLog);faultLog=undefined;assert.equal(fs.readdirSync(faultPath).length,0);fs.renameSync(faultPath,path.join(RUN,'completed-save-fault-'+Date.now()));faultOwned=false} }
 function applicationErrors() {
   const expected=[],unexpected=[]
-  for(const file of fs.readdirSync(RUN).filter(file=>file.endsWith('-app.log'))){let offset=0;for(const rawLine of fs.readFileSync(path.join(RUN,file),'utf8').split(/(?<=\n)/)){const line=rawLine.trimEnd(),at=offset;offset+=Buffer.byteLength(rawLine);if(!/uncaught|unhandled\s*(?:promise|rejection)|\[white-box\].*(?:失敗|できません|読めなかった|窓を閉じません)/i.test(line))continue;const record={file,offset:at,line};const command=line.match(/\[white-box\] コマンド失敗:\s+(\S+)/)?.[1]??(line.startsWith('[white-box] 入力の保存を待つため窓を閉じません:')?'window:close':null);const window=expectedErrorWindows.find(item=>item.file===file&&item.start<=at&&item.end>at&&item.commands.includes(command));const veto=line.startsWith('[white-box] 入力の保存を待つため窓を閉じません:')&&line.includes('入力を保存できなかったため、操作を取り消しました。');const filesystem=/EISDIR|EACCES|EPERM/.test(line)&&line.includes(faultPath);if(window&&!/uncaught|unhandled/i.test(line)&&(window.kind==='filesystem'&&(filesystem||veto)||window.kind==='native-veto'&&veto))expected.push({...record,reason:window.label});else unexpected.push(record)}}
+  for(const file of fs.readdirSync(RUN).filter(file=>file.endsWith('-app.log'))){let offset=0;for(const rawLine of fs.readFileSync(path.join(RUN,file),'utf8').split(/(?<=\n)/)){const line=rawLine.trimEnd(),at=offset;offset+=Buffer.byteLength(rawLine);if(!/uncaught|unhandled\s*(?:promise|rejection)|\[white-box\].*(?:失敗|できません|読めなかった|窓を閉じません)/i.test(line))continue;const record={file,offset:at,line};const command=line.match(/\[white-box\] コマンド失敗:\s+(\S+)/)?.[1]??(line.startsWith('[white-box] 入力の保存を待つため窓を閉じません:')?'window:close':null);const window=expectedErrorWindows.find(item=>item.file===file&&item.start<=at&&item.end>at&&item.commands.includes(command));const veto=line.startsWith('[white-box] 入力の保存を待つため窓を閉じません:')&&line.includes('入力を保存できなかったため、操作を取り消しました。');const filesystem=/EISDIR|EACCES|EPERM/.test(line)&&line.includes(faultPath);const domain=command==='session:update'&&line.includes('除外はセッションの開始から終了までの中で指定する');if(window&&!/uncaught|unhandled/i.test(line)&&(window.kind==='filesystem'&&(filesystem||veto)||window.kind==='native-veto'&&veto||window.kind==='domain-validation'&&domain))expected.push({...record,reason:window.label});else unexpected.push(record)}}
   return {expected,unexpected}
 }
 async function recorded(taskId,start,end,note,plannedMs=0,exclusions=[]) {
@@ -318,12 +318,12 @@ async function fixture() {
   const project=await call('project:create',{name:'記録編集の隔離検証'})
   const task=await call('task:create',{title:'保持する元の記録',projectId:project.id,status:'todo'})
   await recorded(task.id,at(thisWeek,8),at(thisWeek,8,30),'変更しないbaseline実績')
-  diagnosticTask=await call('task:create',{title:'診断用の20秒記録',projectId:project.id,status:'todo'})
-  const start=at(thisWeek,9)+12_345,end=start+20_000
+  diagnosticTask=await call('task:create',{title:'診断用の秒単位記録',projectId:project.id,status:'todo'})
+  const start=at(thisWeek,9)+55_345,end=start+80_000
   diagnostic=await recorded(diagnosticTask.id,start,end,'診断用・保存前のひとこと',63_000,[{startedAt:start+4_000,endedAt:start+8_000}])
   diagnosticOriginal=structuredClone(diagnostic)
   baselineSessions=read().sessions.filter(item=>item.id!==diagnostic.id)
-  check('Diagnostic session has precise 20-second times, 63000ms planned time and a precise exclusion',diagnostic.startedAt===start&&diagnostic.endedAt===end&&diagnostic.plannedMs===63_000&&diagnostic.pauses.some(pause=>pause.reason==='excluded'&&pause.startedAt===start+4_000&&pause.endedAt===start+8_000))
+  check('Diagnostic session has precise 80-second times, 63000ms planned time and a precise exclusion',diagnostic.startedAt===start&&diagnostic.endedAt===end&&diagnostic.plannedMs===63_000&&diagnostic.pauses.some(pause=>pause.reason==='excluded'&&pause.startedAt===start+4_000&&pause.endedAt===start+8_000))
   fs.writeFileSync(path.join(RUN,'fixture-database.json'),JSON.stringify(read(),null,2))
   await tab(8,'.week-workspace')
 }
@@ -366,6 +366,36 @@ async function discardEditor() {
   await button('やめる',EDITOR)
   if(await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(EDITOR+' .calendar-confirm')}))`))await button('入力を破棄して閉じる',EDITOR)
   await until(()=>page.evaluate(`!document.querySelector(${JSON.stringify(EDITOR)})`),'explicit SessionEditor discard closes only the editor')
+}
+async function verifyRetainedExclusionBounds() {
+  const expectedExclusions=diagnosticOriginal.pauses.filter(pause=>pause.reason==='excluded').map(({startedAt,endedAt})=>({startedAt,endedAt}))
+  const target=localDateTime(diagnosticOriginal.startedAt+20_000)
+  const cases=[{field:'startedAt',index:0,value:target},{field:'endedAt',index:1,value:target}]
+  for(const test of cases){
+    assert.notEqual(test.value,localDateTime(diagnosticOriginal[test.field]),'Time bounds probe changes the displayed field value')
+    await openEditor()
+    const before=fs.readFileSync(path.join(DATA,'data.json'))
+    await page.evaluate('(()=>{const input=document.querySelector('+JSON.stringify(EDITOR)+').querySelectorAll(\'.editor-grid input[type="datetime-local"]\')['+test.index+'];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,\'value\').set.call(input,'+JSON.stringify(test.value)+');input.dispatchEvent(new Event(\'input\',{bubbles:true}));input.dispatchEvent(new Event(\'change\',{bubbles:true}));})()')
+    const draft=(await inspectEditor()).values
+    const observation=beginExpectedErrors('retained-exclusion-'+test.field,['session:update'],'domain-validation')
+    await armRealResponseGate('retained-exclusion-'+test.field)
+    let held
+    try{
+      await button('修正を保存',EDITOR)
+      held=await until(async()=>{const state=await gateState();return state.entry?.held?state:null},'actual time-only exclusion rejection is held')
+      const patch=held.entry.request.args.patch
+      check(test.field+': a real time-only save sends every unchanged precise exclusion and receives the original range rejection',held.entry.actualResponse.ok===false&&JSON.stringify(held.entry.actualResponse).includes('除外はセッションの開始から終了までの中で指定する')&&isDeepStrictEqual(Object.keys(patch).sort(),[test.field,'exclusions'].sort())&&patch[test.field]===new Date(test.value).getTime()&&isDeepStrictEqual(patch.exclusions,expectedExclusions),held)
+    }finally{
+      if(held?.entry?.held)await releaseGate('retained-exclusion-'+test.field)
+      endExpectedErrors(observation)
+    }
+    await until(async()=>{const editor=await inspectEditor();return editor?.error?.includes('除外はセッションの開始から終了までの中で指定する')?editor:null},'real range rejection remains visible in the same editor')
+    const editor=await inspectEditor()
+    check(test.field+': a rejected time edit retains every draft input and changes no persisted database byte',isDeepStrictEqual(editor.values,draft)&&!editor.busy&&before.equals(fs.readFileSync(path.join(DATA,'data.json'))),editor)
+    transportTraces.push({label:'retained-exclusion-'+test.field,held,editor});writeTraces()
+    await discardEditor()
+    check(test.field+': explicit discard after the range rejection preserves the precise diagnostic and all baseline sessions',isDeepStrictEqual(savedSession(),diagnosticOriginal)&&isDeepStrictEqual(read().sessions.filter(item=>item.id!==diagnostic.id),baselineSessions))
+  }
 }
 async function verifyDirtyDismissal() {
   await openEditor();await fill(EDITOR+' .editor-note input','未保存の記録メモを保持する')
@@ -466,7 +496,7 @@ async function closeFailureEditors() {
 }
 let exitCode=1
 try {
-  await launch('seed');await fixture();await seedUnknownFieldAfterNaturalQuit();await verifyDirtyDismissal();await verifyHeldFailureAndRetry();await verifyDirtyNativeVeto();await verifyHeldSuccess()
+  await launch('seed');await fixture();await seedUnknownFieldAfterNaturalQuit();await verifyRetainedExclusionBounds();await verifyDirtyDismissal();await verifyHeldFailureAndRetry();await verifyDirtyNativeVeto();await verifyHeldSuccess()
   check('All SessionEditor operations preserve every original baseline session',isDeepStrictEqual(read().sessions.filter(item=>item.id!==diagnostic.id),baselineSessions))
   await stop('first');check('Natural quit preserves the entire saved SessionEditor database',isDeepStrictEqual(read(),persisted))
   await launch('restart');check('Restart restores every saved diagnostic and baseline session field',stateMatchesDatabase(await call('state:get'),persisted))
@@ -475,7 +505,7 @@ try {
   await screenshot('06-session-editor-after-restart',EDITOR,'center');await discardEditor();await key('Escape','Escape')
   await stop('restart');check('Final natural quit changes no database field or baseline session',isDeepStrictEqual(read(),persisted)&&isDeepStrictEqual(read().sessions.filter(item=>item.id!==diagnostic.id),baselineSessions))
   const appErrors=applicationErrors();fs.writeFileSync(path.join(RUN,'application-errors.json'),JSON.stringify(appErrors,null,2))
-  check('The actual filesystem fault and two observed native vetoes are the only app errors',appErrors.expected.length===3&&appErrors.unexpected.length===0,appErrors)
+  check('The actual filesystem fault, two exclusion rejections and two observed native vetoes are the only app errors',appErrors.expected.length===5&&appErrors.unexpected.length===0,appErrors)
   check('Every monitored SessionEditor renderer has no console error or uncaught exception',errors.length===0,errors)
   check('No owned Electron PID remains after SessionEditor natural shutdowns',processSnapshot().length===0,processObservation)
   exitCode=0

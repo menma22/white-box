@@ -179,14 +179,15 @@ function SessionEditor({ session, onClose }: { session: Session; onClose: () => 
   function save(): Promise<boolean> {
     if (running.current) return running.current
     setSaving(true); setError(null); setDiscard(false)
+    const times = changedSessionTimes(initial.current.session, startedAt, endedAt)
     running.current = invoke('session:update', {
         id: session.id,
         patch: {
-          ...changedSessionTimes(initial.current.session, startedAt, endedAt),
+          ...times,
           ...(minutes !== initial.current.minutes ? { plannedMs: minutes * MINUTE } : {}),
           ...(note !== initial.current.note ? { note } : {}),
           // 除外は終了済みのセッションだけのもの。実行中に送ると受け口が拒否する
-          ...(ended !== null && JSON.stringify(exclusions) !== JSON.stringify(initial.current.exclusions) ? { exclusions } : {}),
+          ...(ended !== null && (times.startedAt !== undefined || times.endedAt !== undefined || JSON.stringify(exclusions) !== JSON.stringify(initial.current.exclusions)) ? { exclusions } : {}),
         },
         ...(taskId && taskId !== initial.current.taskId ? { segmentTaskId: taskId } : {}),
       })
