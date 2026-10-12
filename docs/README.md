@@ -12,6 +12,7 @@
 | 6 | [packaging.md](packaging.md) | 配布物の作り方と、デスクトップ・タスクバーへの置き方 |
 | 7 | [decisions.md](decisions.md) | 決めたことと、**採らなかった選択肢** |
 | 8 | [michishirube.md](michishirube.md) | 道標の機能対応・使い方・旧データ取り込み・保存と検証 |
+| 9 | [michishirube-project-map-v1.md](michishirube-project-map-v1.md) | **検討中の構想 v1。** 実使用で見えた目標ツリーの限界、マイルストーン中心のマップ、フォーカス時の解決策付箋 |
 
 使い方は [ルートの README](../README.md)、コードを触る前の前提は [CLAUDE.local.md](../CLAUDE.local.md)。
 
@@ -24,6 +25,7 @@
 | この機能を入れるべきか判断したい | product-spec.md §25 の判断基準 |
 | 今どこまで進んでいるか知りたい | progress.md |
 | 使っていて困ったことを残したい | progress.md の「実使用で出た課題」 |
+| 道標で研究プロジェクトの道筋と解決策を整理したい | michishirube-project-map-v1.md |
 | コードのどこを触ればいいか知りたい | architecture.md |
 | 画面を作る・色を足す | design-language.md |
 | 変更が壊れていないか確かめたい | verification.md |
