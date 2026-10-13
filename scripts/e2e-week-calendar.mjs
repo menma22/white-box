@@ -488,10 +488,10 @@ async function verifyCaptionBoundary() {
   const savedSleep=read().calendarBlocks.find(block=>block.id===sleep.id)
   check('Caption diagnostics preserve the original sleep timestamps and recurrence fields',savedSleep.startedAt===sleep.startedAt&&savedSleep.endedAt===sleep.endedAt&&savedSleep.repeat===sleep.repeat&&isDeepStrictEqual(savedSleep.weekdays,sleep.weekdays)&&savedSleep.until===sleep.until)
   fs.writeFileSync(path.join(RUN,'caption-boundary-measurement.json'),JSON.stringify({diagnosticTask,diagnosticSession,initial,terminal,baselineSessionCount:baselineSessions.length},null,2))
+  await stop('boundary')
   const appErrors=applicationErrors()
   fs.writeFileSync(path.join(RUN,'application-errors.json'),JSON.stringify(appErrors,null,2))
   check('Caption boundary probe has no renderer or unexpected app errors',errors.length===0&&appErrors.unexpected.length===0,{renderer:errors,app:appErrors})
-  await stop('boundary')
 }
 
 async function verifyPreviewScreens() {
@@ -523,10 +523,10 @@ async function verifyPreviewScreens() {
   }
   check('Preview layout actions preserve all fixture sessions',isDeepStrictEqual(read().sessions,baselineSessions))
   fs.writeFileSync(path.join(RUN,'preview-layouts.json'),JSON.stringify({observations,lower,edit,rendererErrors:errors},null,2))
+  await stop('preview')
   const appErrors=applicationErrors()
   fs.writeFileSync(path.join(RUN,'application-errors.json'),JSON.stringify(appErrors,null,2))
   check('Preview has no renderer or unexpected application errors',errors.length===0&&appErrors.unexpected.length===0,{renderer:errors,app:appErrors})
-  await stop('preview')
 }
 
 async function verifyInitialCalendar() {
