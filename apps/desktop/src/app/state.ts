@@ -2,10 +2,11 @@
  * Database と実行時状態から、配信する AppState / LiveTick を導く。
  * ここは electron を知らない（テストは素の Database で回せる）。
  */
-import type { AppState, Database, ID, LiveTick, Session } from '@white-box/core/types'
+import type { AppState, Database, GoogleCalendarState, ID, LiveTick, Session } from '@white-box/core/types'
 import { activeTaskId, focusMs, isPaused, remainingMs } from '@white-box/core/engine'
 
 export interface RuntimeState {
+  googleCalendar?: GoogleCalendarState
   pendingReview: { sessionId: ID; thenStart: boolean } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
   /** 配信のたびに増える通し番号。 */
@@ -59,6 +60,7 @@ export function buildBreakTimer(db: Database): AppState['breakTimer'] {
 export function buildState(db: Database, runtime: RuntimeState, now: number): AppState {
   return {
     revision: ++runtime.revision,
+    googleCalendar: runtime.googleCalendar,
     projects: db.projects,
     tasks: db.tasks,
     sessions: db.sessions,

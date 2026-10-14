@@ -2,6 +2,7 @@
  * ユースケース（app 層）が外の世界に触るための口。実装は infra / presentation が注入する。
  * app 層はここにある型だけに依存し、electron を import しない（テストは偽物の Port で回す）。
  */
+import type { GoogleCalendarService } from './google-calendar-service.js'
 import type { Database, WindowKind } from '@white-box/core/types'
 import type { RuntimeState } from './state.js'
 
@@ -45,6 +46,7 @@ export interface DataIOPort {
 }
 
 export interface Ctx {
+  googleCalendar?: Pick<GoogleCalendarService, 'configure' | 'connect' | 'cancelConnect' | 'disconnect' | 'select' | 'sync' | 'create'>
   store: StorePort
   windows: WindowPort
   ticker: TickerPort

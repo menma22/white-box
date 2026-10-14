@@ -4,7 +4,10 @@
  *
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
-import { app, BrowserWindow, dialog, ipcMain, powerMonitor } from 'electron'
+import { GoogleCalendarService } from '../app/google-calendar-service.js'
+import { googleCalendarSecrets } from '../infra/google-calendar-secrets.js'
+import { authorizeGoogleCalendar } from '../infra/google-calendar-oauth.js'
+import { app, BrowserWindow, dialog, ipcMain, powerMonitor, shell } from 'electron'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { dayKey } from '@white-box/core/engine'
@@ -123,6 +126,16 @@ if (!app.requestSingleInstanceLock()) {
       },
     }
 
+    const googleProfileId = createHash('sha256').update(path.resolve(store.dir).toLowerCase()).digest('hex')
+    const googleCalendar = new GoogleCalendarService({
+      fetch: (...args) => globalThis.fetch(...args),
+      secrets: googleCalendarSecrets(path.join(app.getPath('userData'), 'google-calendar', `${googleProfileId}.encrypted`)),
+      authorize: (clientId, signal) => authorizeGoogleCalendar(clientId, signal, (url) => shell.openExternal(url)),
+      publish: (state) => { runtime.googleCalendar = state; ctx.publish(false) },
+      now: () => Date.now(),
+    })
+    ctx.googleCalendar = googleCalendar
+    googleCalendar.start()
     handlers = createHandlers(ctx)
     observeCurrentWorkWindow((open) => setCurrentWorkOpen(ctx, open))
     agentService = createAgentService(ctx, store.dir, handlers)
@@ -157,6 +170,7 @@ if (!app.requestSingleInstanceLock()) {
     const onWake = () => {
       if (runtime.quitting) return
       store.markAlive()
+      googleCalendar.resume()
       if (liveSession(store.data)) openWindow('hud', false)
       else if (store.data.settings.lastWelcomeDate !== dayKey(Date.now(), store.data.settings.dayStartHour)) openWindow('main')
     }
@@ -171,9 +185,11 @@ if (!app.requestSingleInstanceLock()) {
       event.preventDefault()
       if (runtime.preparingQuit) return
       runtime.preparingQuit = true
+      googleCalendar.cancelConnect()
       void editors.prepare('quit').then((release) => {
         try {
           prepareQuit(ctx)
+          googleCalendar.stop()
           startReminderService?.stop()
           agentService?.stop()
           noteReminders.stop()

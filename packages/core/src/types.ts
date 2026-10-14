@@ -307,7 +307,38 @@ export interface LiveTick {
   activeTaskId: ID | null
 }
 
+export interface GoogleCalendarInfo {
+  id: string
+  title: string
+  accessRole: string
+  primary: boolean
+}
+
+export interface GoogleCalendarEvent {
+  id: string
+  calendarId: string
+  title: string
+  startedAt: number
+  endedAt: number
+  allDay: boolean
+  htmlLink?: string
+  location?: string
+}
+
+export interface GoogleCalendarState {
+  configured: boolean
+  connected: boolean
+  account: string | null
+  calendars: GoogleCalendarInfo[]
+  selectedCalendarIds: string[]
+  events: GoogleCalendarEvent[]
+  syncing: boolean
+  lastSyncedAt: number | null
+  error: string | null
+}
+
 export interface AppState {
+  googleCalendar?: GoogleCalendarState
   revision: number
   projects: Project[]
   tasks: Task[]

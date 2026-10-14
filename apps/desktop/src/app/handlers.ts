@@ -2,6 +2,7 @@
  * ユースケース層。コマンド 1 つ = 関数 1 つ。外の世界には Ctx の Port 経由でしか触らない。
  * electron を import しないこと（ここが破れると Electron 起動なしのテストができなくなる）。
  */
+import { createGoogleCalendarHandlers } from './google-calendar-handlers.js'
 import type { ArgsOf, CommandName, ResultOf } from '@white-box/contracts'
 import { dayKey, isPaused, MINUTE, activeTaskId } from '@white-box/core/engine'
 import type { WindowKind } from '@white-box/core/types'
@@ -31,6 +32,7 @@ export function createHandlers(ctx: Ctx): Handlers {
   }
 
   const handlers: Handlers = {
+    ...createGoogleCalendarHandlers(ctx),
     ...createPresenceHandlers(ctx),
     ...createAgentHandlers(ctx),
     ...createNoteHandlers(ctx),

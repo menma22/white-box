@@ -1,3 +1,4 @@
+import { GoogleCalendarStateSchema } from './google-calendar.js'
 /**
  * データ型の実行時スキーマ。型の正は @white-box/core/types の interface（Decision Record D-02）。
  * スキーマと型がずれると末尾の Exact 検査がコンパイルで落ちる。
@@ -256,6 +257,7 @@ export const LiveTickSchema = z.object({
 })
 
 export const AppStateSchema = z.object({
+  googleCalendar: GoogleCalendarStateSchema.optional(),
   presenceCandidates: PresenceCandidatesSchema.optional(),
   revision: z.number(),
   projects: z.array(ProjectSchema),

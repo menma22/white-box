@@ -20,6 +20,12 @@ import { CalendarEditor } from './CalendarEditor'
 import { WeekCalendar } from './WeekCalendar'
 import { WeekBudgetPanel } from './WeekBudgetPanel'
 import type { CalendarEvent } from './calendar-layout'
+import { GoogleCalendarSettings } from '@/features/google-calendar/GoogleCalendarSettings'
+import { GoogleEventEditor } from '@/features/google-calendar/GoogleEventEditor'
+import { GoogleEventDetail } from '@/features/google-calendar/GoogleEventDetail'
+import { googleCalendarEvent, selectedGoogleEvents } from '@/features/google-calendar/google-calendar'
+import { useGoogleCalendarRange } from '@/features/google-calendar/useGoogleCalendarRange'
+import { runEditorAction } from '@/lib/useEditorFlush'
 
 export interface WeekViewHandle { flush(): Promise<boolean> }
 type Editor = { blockId?: string; startedAt: number; endedAt: number }
@@ -35,6 +41,8 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
   const [layer, setLayer] = useState<'both' | 'planned' | 'actual'>('both')
   const [zoom, setZoom] = useState(true)
   const [editor, setEditor] = useState<Editor | null>(null)
+  const [googleEditor, setGoogleEditor] = useState<Editor | null>(null)
+  const [googleSettingsOpen, setGoogleSettingsOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [fixedEditor, setFixedEditor] = useState(false)
   const [budgetOpen, setBudgetOpen] = useState(false)
@@ -45,6 +53,8 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
   const drafts = budgetDrafts ?? ownBudgetDrafts
   const budget = useRef<WeeklyBudgetHandle | null>(null)
   const period = useMemo(() => weekBounds(start), [start])
+  const googleRangeError = useGoogleCalendarRange(Boolean(state.googleCalendar?.connected), period.startedAt, period.endedAt, state.googleCalendar)
+  const googleEvents = selectedGoogleEvents(state.googleCalendar, period).map(googleCalendarEvent)
   const summary = useMemo(() => activitySummary(state.sessions, state.tasks, now, period), [state.sessions, state.tasks, now, period])
   const days = Array.from({ length: 7 }, (_, index) => {
     const key = shiftDay(start, index)
@@ -112,11 +122,11 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
       <div className="week-controls"><button type="button" className="btn btn-ghost btn-sm" onClick={() => void moveWeek(null)}>今週</button><div className="week-arrows"><button type="button" aria-label="前の週" onClick={() => void moveWeek(shiftDay(start, -7))}>‹</button><button type="button" aria-label="次の週" onClick={() => void moveWeek(shiftDay(start, 7))}>›</button></div><input type="date" aria-label="表示する週の日付" min="1000-01-13" max="9999-12-26" value={dateDraft ?? start} aria-invalid={Boolean(dateError) || undefined} aria-describedby={dateError ? 'week-date-error' : undefined} onChange={(event) => chooseDate(event.target.value)} />
         <Segmented<'both' | 'planned' | 'actual'> unstyled className="week-layer-switch" ariaLabel="カレンダーに表示する内容" value={layer} onChange={setLayer} options={[{ value: 'both', label: '予定・実績' }, { value: 'planned', label: '予定' }, { value: 'actual', label: '実績' }]} />
         <Segmented<'day' | 'expanded'> unstyled className="week-zoom-switch" ariaLabel="時間軸の大きさ" value={zoom ? 'expanded' : 'day'} onChange={(value) => setZoom(value === 'expanded')} options={[{ value: 'day', label: '24時間' }, { value: 'expanded', label: '拡大' }]} />
-        <button type="button" className="btn btn-solid btn-md" aria-label="予定を追加" onClick={newPlan}><span aria-hidden>＋</span> 予定を追加</button></div>
+        <button type="button" className="btn btn-solid btn-md" aria-label="予定を追加" onClick={newPlan}><span aria-hidden>＋</span> 予定を追加</button><button type="button" className={'google-week-status' + (state.googleCalendar?.error || googleRangeError ? ' has-error' : '')} aria-label="Google カレンダーの接続と同期" title={state.googleCalendar?.error || googleRangeError || (state.googleCalendar?.connected ? 'Google カレンダー 接続中' : 'Google カレンダーを接続')} onClick={() => setGoogleSettingsOpen(true)}><span aria-hidden>G</span>{state.googleCalendar?.syncing && <i aria-label="同期中" />}{(state.googleCalendar?.error || googleRangeError) && <i aria-label="同期エラー" />}</button></div>
     </header>
     {dateError && <p id="week-date-error" className="task-command-error" role="alert">{dateError}</p>}
       <div className="week-calendar-area">
-        <WeekCalendar start={start} today={today} now={now} events={layer === 'planned' ? planned : layer === 'actual' ? actual : [...planned, ...actual]} actualByDay={new Map(days.map((day) => [day.key, day.summary.focusMs]))} zoom={zoom} onCreate={(startedAt, endedAt) => setEditor({ startedAt, endedAt })} onEvent={openEvent} />
+        <WeekCalendar start={start} today={today} now={now} events={layer === 'planned' ? [...planned, ...googleEvents] : layer === 'actual' ? actual : [...planned, ...googleEvents, ...actual]} actualByDay={new Map(days.map((day) => [day.key, day.summary.focusMs]))} zoom={zoom} onCreate={(startedAt, endedAt) => setEditor({ startedAt, endedAt })} onEvent={openEvent} />
       </div>
     </section>
     <section className="week-secondary" aria-label="この週の時間配分と記録">
@@ -135,9 +145,12 @@ export const WeekView = forwardRef<WeekViewHandle, { onOpenTask?: (id: string, t
     </details>
     <p className="week-boundary-note">週は月曜 0:00〜日曜 24:00。予定は実績に含まれない。実作業は停止・除外・重複を差し引いた記録。</p>
     </section>
-    {editor && <CalendarEditor block={block} startedAt={editor.startedAt} endedAt={editor.endedAt} onClose={() => setEditor(null)} />}
+    {editor && <CalendarEditor block={block} startedAt={editor.startedAt} endedAt={editor.endedAt} onClose={() => setEditor(null)} onGoogle={state.googleCalendar?.connected && !block ? () => { setGoogleEditor(editor); setEditor(null) } : undefined} />}
+    {googleEditor && <GoogleEventEditor calendars={state.googleCalendar?.calendars ?? []} startedAt={googleEditor.startedAt} endedAt={googleEditor.endedAt} onClose={() => setGoogleEditor(null)} />}
+    <GoogleEventDetail event={selectedEvent?.googleEvent ?? null} calendars={state.googleCalendar?.calendars ?? []} onClose={() => setSelectedEvent(null)} />
+    <Modal open={googleSettingsOpen} onClose={() => void runEditorAction(() => setGoogleSettingsOpen(false))} width={680} labelledBy="google-settings-title"><div className="google-settings-dialog"><GoogleCalendarSettings period={period} />{googleRangeError && <p className="task-command-error" role="alert">{googleRangeError}</p>}<div className="modal-actions"><button type="button" className="btn btn-ghost btn-md" onClick={() => void runEditorAction(() => setGoogleSettingsOpen(false))}>閉じる</button></div></div></Modal>
     <Modal open={budgetOpen} onClose={() => void closeBudget()} width={800} labelledBy="week-budget-title"><div className="week-budget-dialog"><header className="calendar-editor-head"><div><span className="label">TIME BUDGET</span><h2 id="week-budget-title">この週の時間予算</h2></div><button type="button" className="calendar-close" aria-label="時間予算を閉じる" onClick={() => void closeBudget()}>×</button></header><WeeklyBudget ref={budget} state={state} weekStart={start} draftCache={drafts} draftStorage={budgetDraftStorage} expanded initialEditing onSaved={() => setBudgetOpen(false)} /></div></Modal>
-    <Modal open={Boolean(selectedEvent) && !fixedEditor} onClose={() => { if (!saving && document.querySelectorAll('[role="dialog"]').length <= 1) setSelectedEvent(null) }} width={680} labelledBy="week-event-title">
+    <Modal open={Boolean(selectedEvent) && selectedEvent?.kind !== 'google' && !fixedEditor} onClose={() => { if (!saving && document.querySelectorAll('[role="dialog"]').length <= 1) setSelectedEvent(null) }} width={680} labelledBy="week-event-title">
       <div className="week-event-detail"><span className="label">{selectedEvent?.kind === 'actual' ? '実績の記録' : '外部固定予定'}</span><h2 id="week-event-title">{selectedEvent?.title}</h2>{selectedEvent && <p className="calendar-hint">{new Date(selectedEvent.startedAt).toLocaleString('ja-JP')} — {new Date(selectedEvent.endedAt).toLocaleString('ja-JP')}</p>}
         {session && <SessionRow session={session} now={now} inPeriod={{ ms: summary.sessionMs.get(session.id) ?? 0, label: 'この週' }} />}
         {fixed && <><p>{fixed.externalReason}</p><p className="calendar-hint">外部の事情で時刻が決まっている予定。実績はセッションに記録する。</p>{error && <p role="alert" className="task-command-error">{error}</p>}{fixedCancel && <div className="calendar-confirm"><p>この外部固定予定を取り消す？ 実績の記録は残る。</p><button type="button" className="btn btn-danger btn-sm" disabled={saving} onClick={async () => { setSaving(true); try { await invoke('fixedWork:update', { id: fixed.id, patch: { cancelled: true } }); setSelectedEvent(null) } catch (cause) { setError(String(cause).replace(/^(Error:\s*)+/, '')) } finally { setSaving(false) } }}>取り消す</button></div>}<div className="phase2-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={fixed.startedAt <= now || saving} onClick={() => setFixedEditor(true)}>外部固定予定を編集</button><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setFixedCancel(true)}>予定を取り消す</button></div></>}

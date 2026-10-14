@@ -4,7 +4,7 @@ import { formatClock, formatDuration } from '@white-box/core/engine'
 import { formatRecordDuration } from '@/lib/record-duration'
 import { layoutDayEvents, selectionMinutes, type CalendarEvent } from './calendar-layout'
 
-const KIND = { planned: '予定', actual: '実績', routine: '生活・固定', fixed: '外部固定' }
+const KIND = { planned: '予定', actual: '実績', routine: '生活・固定', fixed: '外部固定', google: 'Google の予定' }
 const CAPTION_HEIGHT = 56
 export function WeekCalendar({ start, today, now, events, actualByDay, zoom, onCreate, onEvent }: {
   start: string; today: string; now: number; events: CalendarEvent[]; actualByDay: Map<string, number>; zoom: boolean
@@ -42,10 +42,14 @@ export function WeekCalendar({ start, today, now, events, actualByDay, zoom, onC
           <div className="calendar-day-top"><span>{new Date(day + 'T12:00:00').toLocaleDateString('ja-JP', { weekday: 'short' })}</span><strong className="calendar-date num">{Number(day.slice(-2))}</strong><button type="button" aria-label={day + 'に予定を追加'} title="この日に予定を追加" onClick={() => create(day, 9 * 60, 10 * 60)}>+</button></div>
           <span className="calendar-day-total num">{formatDuration(actualByDay.get(day) ?? 0, 'compact')} <small>実績</small></span>
         </div>)}
+        {events.some((event) => event.allDay) && <><div className="calendar-all-day-label">終日</div>{days.map((day) => {
+          const period = dayRange(day, 0)
+          return <div key={day} className="calendar-all-day-cell">{events.filter((event) => event.allDay && event.startedAt < period.endedAt && event.endedAt > period.startedAt).map((event) => <button type="button" key={event.key} data-calendar-event={event.kind} className="calendar-all-day-event" title={'Google の終日予定 · ' + event.title} aria-label={'Google の終日予定 · ' + event.title} onClick={() => onEvent(event)}>{event.title}</button>)}</div>
+        })}</>}
         <div className="calendar-axis" style={{ height }}>{Array.from({ length: Math.ceil(24 / hourStep) }, (_, index) => index * hourStep).map((hour) => <span key={hour} style={{ top: hour * hourHeight }} className="num">{String(hour).padStart(2, '0')}:00</span>)}<span className="calendar-midnight num">24:00</span></div>
         {days.map((day) => {
           const period = dayRange(day, 0)
-          const positions = layoutDayEvents(events, period, 18 / hourHeight * 60)
+          const positions = layoutDayEvents(events.filter((event) => !event.allDay), period, 18 / hourHeight * 60)
           const current = new Date(now)
           const currentMinute = current.getHours() * 60 + current.getMinutes()
           return <div key={day} data-calendar-column={day} className={'calendar-day-column' + (day === today ? ' is-today' : '')} style={{ height }}
