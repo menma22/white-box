@@ -35,13 +35,13 @@ function planFrom(draft: BudgetDraft): WeeklyBudgetPlan {
 
 function duration(value: number): string { return `${value < 0 ? '−' : ''}${formatDuration(Math.abs(value) * 60_000, 'compact')}` }
 
-export const WeeklyBudget = forwardRef<WeeklyBudgetHandle, { state: AppState; weekStart: string; draftCache?: RefObject<BudgetDraftCache>; draftStorage?: BudgetDraftStorage }>(function WeeklyBudget({ state, weekStart, draftCache, draftStorage }, ref) {
+export const WeeklyBudget = forwardRef<WeeklyBudgetHandle, { state: AppState; weekStart: string; draftCache?: RefObject<BudgetDraftCache>; draftStorage?: BudgetDraftStorage; expanded?: boolean; initialEditing?: boolean; onSaved?: () => void }>(function WeeklyBudget({ state, weekStart, draftCache, draftStorage, expanded, initialEditing, onSaved }, ref) {
   const saved = state.weeklyBudgets?.find((budget) => budget.weekStart === weekStart)
   const ownCache = useRef<BudgetDraftCache>({})
   const cache = draftCache ?? ownCache
   const [, refresh] = useState(0)
   const drafts = cache.current
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(initialEditing ?? false)
   const [saving, setSaving] = useState(false)
   const busy = useRef(false)
   const disclosure = useRef<HTMLDetailsElement | null>(null)
@@ -50,7 +50,7 @@ export const WeeklyBudget = forwardRef<WeeklyBudgetHandle, { state: AppState; we
   let preview = null
   try {
     const plan = planFrom(draft)
-    preview = weeklyBudgetSummary({ weeklyBudgets: [{ ...plan, weekStart, createdAt: 0, updatedAt: 0 }], fixedWork: state.fixedWork }, weekStart)
+    preview = weeklyBudgetSummary({ weeklyBudgets: [{ ...plan, weekStart, createdAt: 0, updatedAt: 0 }], fixedWork: state.fixedWork, calendarBlocks: state.calendarBlocks }, weekStart)
   } catch { /* 未入力の計算結果は表示しない。 */ }
   function setDrafts(update: (all: BudgetDraftCache) => BudgetDraftCache) { cache.current = update(cache.current); draftStorage?.persist(cache.current); refresh((value) => value + 1) }
   function update(patch: Partial<BudgetDraft>) { setDrafts((all) => ({ ...all, [weekStart]: { ...draft, ...patch, error: patch.error ?? '' } })) }
@@ -71,25 +71,27 @@ export const WeeklyBudget = forwardRef<WeeklyBudgetHandle, { state: AppState; we
       await invoke('weeklyBudget:set', { weekStart, plan, reuseAsDefault: draft.reuseAsDefault })
       setDrafts((all) => { const next = { ...all }; delete next[weekStart]; return next })
       setEditing(false)
+      onSaved?.()
     } catch (cause) { update({ error: String(cause).replace(/^(Error:\s*)+/, '') }) }
     finally { busy.current = false; setSaving(false) }
   }
 
-  return <details ref={disclosure} className="phase2-disclosure weekly-budget" data-week-budget={weekStart}>
+  return <details ref={disclosure} open={expanded ? true : undefined} className="phase2-disclosure weekly-budget" data-week-budget={weekStart}>
     <summary>この週の時間配分 <span>{summary ? `柔軟に配分できる時間 ${duration(summary.availableMinutes)}` : '未設定'}{drafts[weekStart] ? ' · 保存前の入力あり' : ''}</span></summary>
     <p className="phase2-hint">一週間 168 時間から生活時間と外部固定作業を引き、残りを柔軟に配分する。配分の最小・最大は計画値。</p>
-    <p className="phase2-hint">この配分は暦の月曜 0:00〜翌月曜 0:00。上の実績は設定した日境界から集計する。</p>
+    <p className="phase2-hint">この配分と週の実績は、暦の月曜 0:00〜翌月曜 0:00。</p>
     {draftStorage?.error && <p className="task-command-error" role="alert">{draftStorage.error}</p>}
     {summary && !editing && <>
-      <p className="weekly-budget-equation">168h − 睡眠 {duration(saved!.sleepMinutes)} − 食事 {duration(saved!.mealMinutes)} − その他の固定時間 {duration(saved!.fixedMinutes)} − 外部固定作業 {duration(summary.fixedWorkMinutes)} = <strong>{duration(summary.availableMinutes)}</strong></p>
+      <p className="weekly-budget-equation">168h − 予定として確保 {duration(summary.reservedMinutes)} − 未配置の生活時間 {duration(summary.additionalLifeMinutes)} = <strong>{duration(summary.availableMinutes)}</strong></p>
       {summary.overcommitted && <p className="phase2-constraint">最小配分の合計が、利用可能時間を {duration(-summary.unallocatedMinutes)} 超えている。配分か生活・固定時間を見直せる。</p>}
       {saved!.allocations.map((item) => <div key={item.projectId} className="activity-entry"><span>{state.projects.find((project) => project.id === item.projectId)?.name ?? '削除されたプロジェクト'}</span><span className="num">{item.mode === 'minimum' ? `最小 ${duration(item.minutes)}` : item.mode === 'maximum' ? `最大 ${duration(item.minutes)}` : item.mode === 'range' ? `${duration(item.minimumMinutes)}〜${duration(item.maximumMinutes)}` : '上限なし'}</span></div>)}
       <p className="phase2-hint">最小配分の後に残る時間 {duration(summary.unallocatedMinutes)}。実作業の時間は上の実績に記録される。</p>
     </>}
     {!editing && <div className="phase2-actions"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>{saved ? '時間配分を編集' : '時間配分を決める'}</button>{state.weeklyBudgetDefaults && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setDrafts((all) => ({ ...all, [weekStart]: draftFrom(state.weeklyBudgetDefaults) })); setEditing(true) }}>既定の配分を使う</button>}</div>}
     {editing && <form className="phase2-form" onSubmit={(event) => { event.preventDefault(); void save() }}>
+      {state.weeklyBudgetDefaults && <div className="phase2-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => { setDrafts((all) => ({ ...all, [weekStart]: draftFrom(state.weeklyBudgetDefaults) })); setEditing(true) }}>既定の配分を使う</button></div>}
       <div className="weekly-budget-inputs">{([['sleep', '睡眠（週の合計時間）'], ['meal', '食事（週の合計時間）'], ['fixed', 'その他の固定時間（週の合計時間）']] as const).map(([key, label]) => <label key={key}>{label}<input className="input" type="number" min="0" max="168" step="any" required aria-label={label} value={draft[key]} onChange={(event) => update({ [key]: event.target.value })} disabled={saving} /></label>)}</div>
-      <p className="phase2-hint">「その他の固定時間」には、別に登録した外部固定作業を含めない。該当なしは 0。</p>
+      <p className="phase2-hint">週の総量を入力する。定型の睡眠・食事・固定時間はこの総量に含まれ、予定のほうが長ければその時間を最低確保する。外部固定作業は別枠。該当なしは 0。</p>
       {preview && <><p className="weekly-budget-equation">外部固定作業 {duration(preview.fixedWorkMinutes)} を別枠に確保 → 柔軟に配分できる時間 <strong>{duration(preview.availableMinutes)}</strong></p>{preview.overcommitted && <p className="phase2-constraint">最小配分の合計 {duration(preview.minimumMinutes)} が利用可能時間を超えている。</p>}</>}
       <div>{draft.allocations.map((item, index) => <div className="weekly-allocation" key={item.projectId} data-allocation-project-id={item.projectId}>
         <div className="allocation-project"><strong>{state.projects.find((project) => project.id === item.projectId)?.name ?? '削除されたプロジェクト'}</strong><small>柔軟な時間の配分</small></div>

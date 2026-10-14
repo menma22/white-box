@@ -12,6 +12,7 @@ import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
 import { NOTE_COMMANDS } from './notes.js'
 import { TaskControlSchema } from './task-control.js'
 import { PLANNING_COMMANDS } from './planning.js'
+import { CALENDAR_COMMANDS } from './calendar.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -37,6 +38,7 @@ const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
   ...PLANNING_COMMANDS,
+  ...CALENDAR_COMMANDS,
   ...PRESENCE_COMMANDS,
   'agent:config': { args: NoArgs, result: z.string() },
   'agent:context': {

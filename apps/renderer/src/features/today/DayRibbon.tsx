@@ -2,15 +2,12 @@ import { useState } from 'react'
 import type { Session, TimeRange } from '@white-box/core/types'
 import { useData } from '@/stores/app'
 import { projectById, projectColor, taskById, taskTitle } from '@/lib/selectors'
-import { formatClock, formatDuration, MINUTE } from '@white-box/core/engine'
+import { formatClock } from '@white-box/core/engine'
+import { formatRecordDuration } from '@/lib/record-duration'
 import { ribbonRows, type RibbonItem } from '@/lib/day-ribbon'
 
 function dateTime(at: number): string {
   return `${new Date(at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })} ${formatClock(at)}`
-}
-
-function duration(ms: number): string {
-  return ms < MINUTE ? `${Math.floor(ms / 1000)}s` : formatDuration(ms, 'compact')
 }
 
 export function DayRibbon({ sessions, now, period }: { sessions: Session[]; now: number; period?: TimeRange }) {
@@ -21,7 +18,7 @@ export function DayRibbon({ sessions, now, period }: { sessions: Session[]; now:
   const selected = rows.flatMap((row) => row.items).find((item) => item.key === selectedKey)
   const project = (item: RibbonItem) => projectById(state, taskById(state, item.taskId)?.projectId ?? null)
   const label = (item: RibbonItem) => item.kind === 'work' ? taskTitle(state, item.taskId!) : item.kind === 'excluded' ? '除外（後から申告）' : '一時停止'
-  const summary = (item: RibbonItem) => `${label(item)}｜${dateTime(item.startedAt)}–${dateTime(item.endedAt)}｜${item.kind === 'work' ? '実作業' : '長さ'} ${duration(item.kind === 'work' ? item.focusMs : item.endedAt - item.startedAt)}`
+  const summary = (item: RibbonItem) => `${label(item)}｜${dateTime(item.startedAt)}–${dateTime(item.endedAt)}｜${item.kind === 'work' ? '実作業' : '長さ'} ${formatRecordDuration(item.kind === 'work' ? item.focusMs : item.endedAt - item.startedAt)}`
 
   return (
     <section className="ribbon" aria-label="今日のタイムライン">
@@ -59,7 +56,7 @@ export function DayRibbon({ sessions, now, period }: { sessions: Session[]; now:
             <div className="ribbon-detail-heading"><strong>{label(selected)}</strong><span>{project(selected)?.name ?? (selected.kind === 'work' ? 'プロジェクトなし' : '')}</span></div>
             <div className="ribbon-detail-meta num">
               <span>{dateTime(selected.startedAt)} – {dateTime(selected.endedAt)}</span>
-              <span>{selected.kind === 'work' ? '実作業' : '長さ'} {duration(selected.kind === 'work' ? selected.focusMs : selected.endedAt - selected.startedAt)}</span>
+              <span>{selected.kind === 'work' ? '実作業' : '長さ'} {formatRecordDuration(selected.kind === 'work' ? selected.focusMs : selected.endedAt - selected.startedAt)}</span>
               {selected.live && <span>進行中</span>}
             </div>
           </>

@@ -146,7 +146,7 @@ async function stop() {
       throw error
     }
   }
-  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null || !pidAlive()
+  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null
   const waitForExit = async (timeout) => {
     const deadline = Date.now() + timeout
     while (!exited()) {
@@ -159,8 +159,10 @@ async function stop() {
     if (exited()) return
     quitRequested = Boolean(page)
     try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
-    page?.close()
-    if (await waitForExit(15000)) return
+    if (await waitForExit(15000)) {
+      if (owned.exitCode !== 0 || owned.signalCode !== null) throw new Error('Owned Electron did not exit naturally with code 0: ' + JSON.stringify({ exitCode: owned.exitCode, signalCode: owned.signalCode }))
+      return
+    }
     forcedKill = true
     console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
     killAccepted = owned.kill('SIGKILL')

@@ -9,6 +9,7 @@ import { TaskSuggestionSchema } from './agent.js'
 import { NoteSchema } from './notes.js'
 import { TaskControlSchema } from './task-control.js'
 import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema } from './planning.js'
+import { CalendarBlockSchema } from './calendar.js'
 import type {
   AppState,
   GoalHistory,
@@ -272,6 +273,7 @@ export const AppStateSchema = z.object({
   weeklyBudgets: z.array(WeeklyTimeBudgetSchema).optional(),
   weeklyBudgetDefaults: WeeklyBudgetPlanSchema.optional(),
   fixedWork: z.array(FixedWorkSchema).optional(),
+  calendarBlocks: z.array(CalendarBlockSchema).optional(),
 })
 
 // ── スキーマ ⇄ core 型の等価性検査（ずれるとここがコンパイルエラーになる）──

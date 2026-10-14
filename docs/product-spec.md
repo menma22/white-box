@@ -215,7 +215,7 @@ Planning 自体は必要。ただし、
 
 > 火曜 14:00〜16:00 論文
 
-のような、自分だけで自由に実行できる仕事の詳細 Time Blocking は基本的に採用しない。外部制約で時刻が固定されている、
+のような、自分だけで自由に実行できる仕事の詳細 Time Blocking は必須にしない。2026-10-11の本人依頼により、週間画面では任意の作業予定・定型時間を時刻で配置できる。予定で実績を生成したり、作業を自動開始したりしない。外部制約で時刻が固定されている、
 
 > 14:00 定例ミーティング
 
@@ -464,7 +464,7 @@ PC 起動 → タスクを見る → ショートカット → タスク選択 �
 ## Phase 2 — Task Control / 可視化強化
 
 - **Today View**: 今日の総作業時間 / Project 別時間 / Task 別時間 / Timeline / Session 履歴 / Task 進捗
-- **Week View**: 基本は実績画面。日ごとの作業時間、Project 別・Task 別時間、何をしたか、Weekly Metrics。予定表中心にはしない
+- **Week View**: 7日×時刻のカレンダーで予定・実績・定型時間を併記し、週予算とProject別の予定・実績を同じ画面で扱う。任意予定と毎週の定型予定を登録・変更・取消できる。予定は実績を生成しない。週は暦の月曜0:00〜翌月曜0:00。2026-10-11の直接依頼による拡張は [週間カレンダーstory](stories/20261011_story_weekly-calendar.md)。
 - **最近の作業時間推移**: 折れ線等で直感的に見る
 - **Blocked**: Progress とは別軸（例：70% / Blocked）
 - **Dependency Blocked**: 別タスクが終了しないと進めない。タスク同士をリンク
@@ -478,8 +478,8 @@ PC 起動 → タスクを見る → ショートカット → タスク選択 �
 - **Warning Escalation**: Normal → Warning → High Risk → Overdue。「やっていない = 怠け」とは判定しない
 - **Warning 表示場所**: Welcome / Task Board / Today / Week など、通常必ず見る場所
 - **Project Priority**: プロジェクト自体の重要度
-- **Weekly Time Budget**: 一週間全体から睡眠・食事・固定時間を引いた利用可能時間を出し、プロジェクトごとに資源配分（Minimum / Maximum / Range / 上限なし、既定配分の再利用）
-- **Fixed Work**: 外部要因で時刻が確定している Work Task のみ事前登録
+- **Weekly Time Budget**: 一週間全体から睡眠・食事・固定時間を引いた利用可能時間を出し、プロジェクトごとに資源配分（Minimum / Maximum / Range / 上限なし、既定配分の再利用）。定型生活予定は最低確保し、生活予定と外部固定予定の重複時刻を二重控除しない。配分対象実績は外部固定予定の時間帯を除く。
+- **Fixed Work**: 外部要因で時刻が確定している Work Task を事前登録。外部理由と開始前の登録を要求する。任意の週間予定とは別の契約を維持する
 - **Task Notes / Problems**【後続寄り】: Notes / Problems / Decisions / Next Context / 再開時に覚えておくこと
 
 ---
@@ -568,7 +568,7 @@ MVP は「Session 削除可能 + 確認」。長期は Soft Delete / Audit Log �
 1. Browser App（Desktop 機能が必要）
 2. iOS-first（Windows-first）
 3. Cloud / Login を MVP から入れる（Local Only）
-4. 詳細 Time Blocking（External Fixed Work のみ例外）
+4. 週間画面外の詳細 Time Blocking（週間画面の任意予定・毎週の定型時間・External Fixed Work は対象）
 5. Planning を MVP に入れる（まず Execution Tracking）
 6. Week = Outcome（Week は時間軸）
 7. Weekly Outcome しか置けない（Task / 親 Task / Milestone 等も置ける）

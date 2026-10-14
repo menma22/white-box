@@ -17,6 +17,9 @@
 | 今日・週・履歴の実績 | `node scripts/e2e-activity.mjs` | 日・週境界、Project/Task別の和、最近14日、実IPCの時刻編集・停止・除外・満了、削除Task、月別Historyと全期間合計、最小画面幅、保存と再起動 |
 | 依存関係・外部待ち | `node scripts/e2e-dependencies.mjs` | 旧DB互換・開始ガード・循環拒否・削除後のリンク保持・外部待ちUI・確認導線・保存と再起動。WHITEBOX_EXE経路対応 |
 | 週の時間配分・固定予定・再開文脈 | `node scripts/e2e-phase2-planning.mjs` | 実画面での4方式の週予算、未入力・再利用・下書き、Project Priority、Fixed Work、Task/linked Note、保存失敗時の入力保持、別窓からの終了・切替、自然終了・再起動。WHITEBOX_EXE経路対応 |
+| 週間カレンダー | `node scripts/e2e-week-calendar.mjs` | 予定・実績・生活/定型時間の同時表示、ドラッグ作成、繰返し・取消、4方式の時間配分、参照先移動/削除、保存故障と入力保持、キーボード、通常起動と縦幅/倍率、自然終了・再起動。WHITEBOX_EXE経路対応 |
+| 予定編集中の窓を閉じる | `node scripts/e2e-calendar-close.mjs` | 未保存の予定入力で実BrowserWindow closeを抑止し、値を保持。明示破棄・保存後の自然終了、再起動の保存読戻し、レンダラエラーと所有PIDを確認。WHITEBOX_EXE経路対応 |
+| 記録編集中の保存と終了 | `node scripts/e2e-session-editor.mjs` | 未保存・保存中・保存失敗時の入力保持、実BrowserWindow closeの抑止、再保存と自然終了・再起動、変更していない時刻・予定分数・未知フィールドと監査イベントの保存。WHITEBOX_EXE経路対応 |
 | 終了イベント・保存・窓・PID | `node scripts/e2e-quit.mjs` | 隔離したソース版で実際の終了イベントと保存、自然終了・再起動後のDB全体、所有PIDの不在を観測。`WHITEBOX_QUIT_LIVE=1`で複数窓、`WHITEBOX_QUIT_OBSERVER=0`で観測器なしでも確認 |
 | 所有プロセスの判定 | `node --test scripts/owned-processes.test.mjs` | PIDと作成時刻で所有を照合し、子・孫・親が終了した後の子を検出する。同名・別名のPID再利用を残存と取り違えず、旧PIDだけの判定が誤検出する実例も確認 |
 | 開始通知 | `node scripts/e2e-start-reminder.mjs` | 実設定UI・保存・再起動・監視helperの起動と終了。WHITEBOX_EXE経路も対応 |
