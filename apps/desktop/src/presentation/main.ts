@@ -5,6 +5,7 @@
  * タイマーをレンダラに持たせないこと（ウィンドウを閉じても計測は続く必要がある）。
  */
 import { GoogleCalendarService } from '../app/google-calendar-service.js'
+import { appGoogleOAuthClient } from '../infra/google-oauth-client.js'
 import { googleCalendarSecrets } from '../infra/google-calendar-secrets.js'
 import { authorizeGoogleCalendar } from '../infra/google-calendar-oauth.js'
 import { app, BrowserWindow, dialog, ipcMain, powerMonitor, shell } from 'electron'
@@ -128,6 +129,7 @@ if (!app.requestSingleInstanceLock()) {
 
     const googleProfileId = createHash('sha256').update(path.resolve(store.dir).toLowerCase()).digest('hex')
     const googleCalendar = new GoogleCalendarService({
+      appClient: () => appGoogleOAuthClient(APP_ROOT, app.isPackaged, process.env.WHITEBOX_GOOGLE_OAUTH_CONFIG),
       fetch: (...args) => globalThis.fetch(...args),
       secrets: googleCalendarSecrets(path.join(app.getPath('userData'), 'google-calendar', `${googleProfileId}.encrypted`)),
       authorize: (clientId, signal) => authorizeGoogleCalendar(clientId, signal, (url) => shell.openExternal(url)),

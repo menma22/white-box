@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GoogleCalendarState } from '@white-box/core/types'
 import { GoogleCalendarService, type GoogleCalendarProfile } from '../src/app/google-calendar-service.js'
+import type { GoogleOAuthClient } from '@white-box/contracts'
 import { authorizeGoogleCalendar } from '../src/infra/google-calendar-oauth.js'
 
 const NOW = new Date(2026, 9, 12, 12).getTime()
@@ -10,7 +11,7 @@ const rawEvent = { id: 'event1', summary: 'Meeting', start: { dateTime: new Date
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } })
 const services: GoogleCalendarService[] = []
 afterEach(() => { services.forEach((service) => service.stop()); services.length = 0; vi.useRealTimers() })
-function fixture(custom?: (url: URL, init?: RequestInit) => Promise<Response> | Response, initial: GoogleCalendarProfile | null = { clientId: 'client', clientSecret: 'secret', refreshToken: 'refresh', account: 'primary@example.com', selectedCalendarIds: null }) {
+function fixture(custom?: (url: URL, init?: RequestInit) => Promise<Response> | Response, initial: GoogleCalendarProfile | null = { clientId: 'client', clientSecret: 'secret', refreshToken: 'refresh', account: 'primary@example.com', selectedCalendarIds: null }, appClient?: () => GoogleOAuthClient | null) {
   let profile = initial
   let state: GoogleCalendarState | undefined
   const publish = vi.fn((next: GoogleCalendarState) => { state = next })
@@ -23,7 +24,7 @@ function fixture(custom?: (url: URL, init?: RequestInit) => Promise<Response> | 
   })
   const save = vi.fn((next: GoogleCalendarProfile) => { profile = structuredClone(next) })
   const authorize = vi.fn(async (_clientId: string, _signal: AbortSignal) => ({ code: 'code', verifier: 'verifier', redirectUri: 'http://127.0.0.1:3210/oauth2callback' }))
-  const service = new GoogleCalendarService({ fetch: transport as typeof fetch, secrets: { load: () => profile, save }, authorize, publish, now: () => NOW })
+  const service = new GoogleCalendarService({ appClient, fetch: transport as typeof fetch, secrets: { load: () => profile, save }, authorize, publish, now: () => NOW })
   services.push(service)
   return { service, transport, save, authorize, publish, state: () => state!, profile: () => profile }
 }
@@ -31,6 +32,73 @@ async function ready(f: ReturnType<typeof fixture>) { f.service.start(); await v
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>((r) => { resolve = r }); return { promise, resolve } }
 
 describe('Google Calendar service', () => {
+  const appClient = { clientId: 'app-desktop.apps.googleusercontent.com', clientSecret: 'app-secret' }
+
+  it('starts ready for ordinary Google login without persisting an app-only client or making requests', () => {
+    const f = fixture(undefined, null, () => appClient)
+    f.service.start()
+    expect(f.state()).toMatchObject({ configured: true, connected: false, account: null, error: null })
+    expect(f.save).not.toHaveBeenCalled(); expect(f.transport).not.toHaveBeenCalled()
+    expect(JSON.stringify(f.state())).not.toMatch(/app-secret|app-desktop/)
+  })
+
+  it('uses the app client for successful browser login and stores tokens only after authorization', async () => {
+    const f = fixture((url, init) => {
+      if (url.pathname === '/token') {
+        const fields = new URLSearchParams(String(init?.body))
+        expect(fields.get('client_id')).toBe(appClient.clientId); expect(fields.get('client_secret')).toBe(appClient.clientSecret)
+        expect(f.save).not.toHaveBeenCalled()
+        return json({ access_token: 'access', refresh_token: 'connected-refresh', expires_in: 3600 })
+      }
+      if (url.pathname.endsWith('/userinfo')) return json({ email: 'new@example.com' })
+      if (url.pathname.endsWith('/calendarList')) return json({ items: [calendar] })
+      return json({ items: [] })
+    }, null, () => appClient)
+    f.service.start(); await f.service.connect()
+    expect(f.authorize).toHaveBeenCalledWith(appClient.clientId, expect.any(AbortSignal))
+    expect(f.save).toHaveBeenCalledTimes(1)
+    expect(f.profile()).toMatchObject({ ...appClient, refreshToken: 'connected-refresh', account: 'new@example.com' })
+    expect(f.state().connected).toBe(true)
+  })
+
+  it('preserves legacy credentials, tokens and selections without reading a broken app config', async () => {
+    const loadClient = vi.fn(() => { throw new Error('broken distribution') })
+    const profile = { clientId: 'legacy', clientSecret: 'legacy-secret', refreshToken: 'refresh', account: 'primary@example.com', selectedCalendarIds: [calendar.id] }
+    const f = fixture(undefined, profile, loadClient); await ready(f)
+    expect(loadClient).not.toHaveBeenCalled(); expect(f.profile()).toEqual(profile)
+    expect(f.save).not.toHaveBeenCalled(); expect(f.state().selectedCalendarIds).toEqual([calendar.id])
+  })
+
+  it('reports absent and invalid app clients honestly without writing user storage', async () => {
+    for (const loadClient of [() => null, () => { throw new Error('secret-path-invalid') }, () => ({ ...appClient, clientId: 'dummy' })]) {
+      const f = fixture(undefined, null, loadClient); f.service.start()
+      expect(f.state().configured).toBe(false); expect(f.state().error).toContain('設定')
+      await expect(f.service.connect()).rejects.toThrow('設定')
+      expect(f.save).not.toHaveBeenCalled(); expect(f.authorize).not.toHaveBeenCalled()
+      expect(f.state().error).not.toContain('secret-path-invalid')
+    }
+  })
+
+  it.each([
+    ['invalid_client', 400, 'アプリ接続設定が無効'],
+    ['invalid_grant', 400, '接続許可が失効'],
+    ['access_denied', 400, '許可されませんでした'],
+    ['unknown-secret-value', 403, 'HTTP 403'],
+    ['unknown-secret-value', 400, 'HTTP 400'],
+  ])('sanitizes provider category %s without exposing provider details', async (category, status, message) => {
+    const f = fixture(() => json({ error: category, error_description: 'secret-provider-url https://evil.test/token' }, status), null, () => appClient)
+    f.service.start()
+    await expect(f.service.connect()).rejects.toThrow(message)
+    expect(f.state().error).not.toMatch(/secret-provider-url|evil\.test|unknown-secret/)
+    expect(f.save).not.toHaveBeenCalled(); expect(f.state().connected).toBe(false)
+  })
+
+  it('bounds error parsing and never echoes oversized provider responses', async () => {
+    const f = fixture(() => json({ error_description: 'secret'.repeat(2000), error: 'invalid_client' }, 400), null, () => appClient)
+    f.service.start(); await expect(f.service.connect()).rejects.toThrow('HTTP 400')
+    expect(f.state().error).not.toContain('secret'); expect(f.save).not.toHaveBeenCalled()
+  })
+
   it('refreshes saved credentials, pages calendars/events, expands recurrence and maps exclusive all-day dates locally', async () => {
     const f = fixture((url, init) => {
       if (url.pathname === '/token') { expect(String(init?.body)).toContain('refresh_token=refresh'); return json({ access_token: 'access', refresh_token: 'rotated', expires_in: 3600 }) }
