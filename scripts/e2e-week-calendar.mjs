@@ -30,12 +30,18 @@ const runtime = { startedAt, harnessSha256: createHash('sha256').update(fs.readF
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify(runtime, null, 2))
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const checks = [], errors = [], ownedProcesses = new OwnedProcesses(), pages = new Set(), expectedErrorWindows = []
-let child, childIdentity, processObservation, page, port, appLog, faultLog, faultOwned = false
+let child, childIdentity, childMainWindowHandle, childNativeStartTime, processObservation, page, port, appLog, faultLog, faultOwned = false
+
+let intentionalWeekDateError
 
 function check(name, condition, detail) {
   checks.push({ name, passed: Boolean(condition), ...(detail === undefined ? {} : { detail }) })
   console.log(`${condition ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : ' ' + JSON.stringify(detail)}`)
   assert.ok(condition, name)
+  if (detail?.input && detail?.days?.length === 7) {
+    if (!detail.error) intentionalWeekDateError = undefined
+    else if (detail.error.role === 'alert' && detail.input.invalid === 'true' && detail.input.describedBy?.split(/\s+/).includes('week-date-error')) intentionalWeekDateError = { name, normalDate: detail.days[0], inputValue: detail.input.value, days: [...detail.days], errorText: detail.error.text }
+  }
 }
 async function until(test, label, timeout = 10000) {
   const deadline = Date.now() + timeout
@@ -76,7 +82,7 @@ function processSnapshot(inventory = readWindowsProcesses()) {
   fs.writeFileSync(path.join(RUN, 'owned-process-observation.json'), JSON.stringify(processObservation, null, 2))
   return processObservation.remaining
 }
-const nativeHelperSource = "using System; using System.Runtime.InteropServices; public static class QaWindow { [DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h); [DllImport(\"user32.dll\")] public static extern bool IsIconic(IntPtr h); [DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr h,int mode); [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid); }"
+const nativeHelperSource = "using System; using System.Runtime.InteropServices; public static class QaWindow { [DllImport(\"user32.dll\")] public static extern bool IsWindow(IntPtr h); [DllImport(\"user32.dll\", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder text, int capacity); [DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h); [DllImport(\"user32.dll\")] public static extern bool IsIconic(IntPtr h); [DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr h,int mode); [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid); }"
 const nativeHelperCS = path.join(RUN, 'native-window-helper.cs')
 const nativeHelperDLL = path.join(RUN, 'native-window-helper.dll')
 const nativeHelperInvocations = []
@@ -102,8 +108,8 @@ function ensureNativeWindowHelper() {
   }
   fs.writeFileSync(nativeHelperCS, nativeHelperSource, 'utf8')
   nativeShell('Add-Type -Path ' + psQuote(nativeHelperCS) + ' -OutputAssembly ' + psQuote(nativeHelperDLL) + ';[pscustomobject]@{compiled=(Test-Path -LiteralPath ' + psQuote(nativeHelperDLL) + ')} | ConvertTo-Json -Compress', 'compile', 20000)
-  const preflight = nativeShell('Add-Type -Path ' + psQuote(nativeHelperDLL) + ';[pscustomobject]@{invalidVisible=[QaWindow]::IsWindowVisible([IntPtr]::Zero);invalidIconic=[QaWindow]::IsIconic([IntPtr]::Zero)} | ConvertTo-Json -Compress', 'DLL preflight')
-  assert.ok(preflight && !preflight.invalidVisible && !preflight.invalidIconic, 'The actual Win32 DLL rejects an invalid HWND')
+  const preflight = nativeShell('Add-Type -Path ' + psQuote(nativeHelperDLL) + ';[pscustomobject]@{invalidWindow=[QaWindow]::IsWindow([IntPtr]::Zero);invalidVisible=[QaWindow]::IsWindowVisible([IntPtr]::Zero);invalidIconic=[QaWindow]::IsIconic([IntPtr]::Zero)} | ConvertTo-Json -Compress', 'DLL preflight')
+  assert.ok(preflight && !preflight.invalidWindow && !preflight.invalidVisible && !preflight.invalidIconic, 'The actual Win32 DLL rejects an invalid HWND')
   const copyRoot = path.join(RUN, 'native-helper-runtime')
   fs.mkdirSync(copyRoot)
   fs.copyFileSync(nativeHelperCS, path.join(copyRoot, 'native-window-helper.cs'))
@@ -114,18 +120,26 @@ function ensureNativeWindowHelper() {
 
 function nativeMainWindow(restore = false) {
   ensureNativeWindowHelper()
-  const identity = readWindowsProcesses().find((item) => item.ProcessId === child.pid)
-  assert.ok(identity && sameProcess(childIdentity, identity), 'Native visibility is measured on the owned Electron')
+  if (childNativeStartTime === undefined) {
+    const identity = readWindowsProcesses().find((item) => item.ProcessId === child.pid)
+    assert.ok(identity && sameProcess(childIdentity, identity), 'Native visibility is measured on the owned Electron')
+  } else assert.match(childNativeStartTime, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$/, 'The owned native process has an exact same-source .NET creation pin')
+  if (childMainWindowHandle !== undefined) assert.ok(Number.isSafeInteger(childMainWindowHandle) && childMainWindowHandle > 0, 'The pinned Main HWND is a valid exact integer')
   const command = `[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false);
     Add-Type -Path ${psQuote(nativeHelperDLL)};
-    $owned=Get-Process -Id ${child.pid} -ErrorAction Stop; $owned.Refresh(); $handle=$owned.MainWindowHandle; [uint32]$windowOwner=0;
+    $owned=Get-Process -Id ${child.pid} -ErrorAction Stop; $owned.Refresh(); $nativeStartTime=$owned.StartTime.ToUniversalTime().ToString('o'); ${childNativeStartTime === undefined ? '' : 'if($nativeStartTime -cne ' + psQuote(childNativeStartTime) + ') { throw "Owned native process creation changed" };'} $handle=${childMainWindowHandle === undefined ? '$owned.MainWindowHandle' : '[IntPtr]::new(' + childMainWindowHandle + ')'}; [uint32]$windowOwner=0;
+    if(-not [QaWindow]::IsWindow($handle)) { throw "Owned Main HWND no longer exists" };
     [void][QaWindow]::GetWindowThreadProcessId($handle,[ref]$windowOwner);
-    if($windowOwner -ne ${child.pid}) { throw "Owned window PID changed" }; $wasIconic=[QaWindow]::IsIconic($handle);
+    if($windowOwner -ne ${child.pid}) { throw "Owned window PID changed" };
+    $windowTitle=[System.Text.StringBuilder]::new(256); [void][QaWindow]::GetWindowText($handle,$windowTitle,$windowTitle.Capacity);
+    if($windowTitle.ToString() -ne 'White Box') { throw "Owned Main window title changed" }; $wasIconic=[QaWindow]::IsIconic($handle);
     if(${restore ? "$true" : "$false"}) { if($wasIconic) { [void][QaWindow]::ShowWindowAsync($handle,9) }; [void][QaWindow]::SetForegroundWindow($handle) };
-    [pscustomobject]@{pid=$owned.Id;windowPid=$windowOwner;handle=$handle.ToInt64();title=$owned.MainWindowTitle;visible=[QaWindow]::IsWindowVisible($handle);iconic=[QaWindow]::IsIconic($handle);wasIconic=$wasIconic;restoreRequested=${restore ? "$true" : "$false"}} | ConvertTo-Json -Compress`
+    [pscustomobject]@{pid=$owned.Id;nativeStartTime=$nativeStartTime;windowPid=$windowOwner;handle=$handle.ToInt64();title=$windowTitle.ToString();selection='${childMainWindowHandle === undefined ? 'launch-discovery' : 'pinned-main'}';processMainWindowHandle=$owned.MainWindowHandle.ToInt64();processMainWindowTitle=$owned.MainWindowTitle;visible=[QaWindow]::IsWindowVisible($handle);iconic=[QaWindow]::IsIconic($handle);wasIconic=$wasIconic;restoreRequested=${restore ? "$true" : "$false"}} | ConvertTo-Json -Compress`
   return nativeShell(command, restore ? 'owned restore/probe' : 'owned read-only probe')
 }
 async function launch(label) {
+  childMainWindowHandle = undefined
+  childNativeStartTime = undefined
   ensureNativeWindowHelper()
   port = await freePort()
   const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }
@@ -146,6 +160,12 @@ async function launch(label) {
   ownedProcesses.registerRoot(childIdentity, { parentPid: process.pid, name: path.basename(electron), notBefore: launchStartedAt })
   processSnapshot(inventory)
   const native = await until(() => { const value = nativeMainWindow(true); return value.visible && !value.iconic && value.windowPid === child.pid && value.title === 'White Box' ? value : null }, 'owned native Main window visible', 20000)
+  assert.ok(Number.isSafeInteger(native.handle) && native.handle > 0, 'Launch discovers an exact owned Main HWND')
+  const nativePinIdentity = readWindowsProcesses().find((item) => item.ProcessId === child.pid)
+  assert.ok(nativePinIdentity && sameProcess(childIdentity, nativePinIdentity), 'Native .NET and HWND pins belong to the same launch bracketed by exact canonical CIM checks')
+  assert.match(native.nativeStartTime, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$/, 'Launch captures the native process .NET creation timestamp')
+  childNativeStartTime = native.nativeStartTime
+  childMainWindowHandle = native.handle
   fs.writeFileSync(path.join(RUN, label + '-native-window.json'), JSON.stringify(native, null, 2))
   check(label + ': owned native Main window is visible', native.visible && native.windowPid === child.pid, native)
   page = await windowPage('main')
@@ -177,22 +197,32 @@ async function call(name, args = {}) { const response = await raw(name, args); a
 const exposedDatabaseFields = ['projects', 'tasks', 'sessions', 'settings', 'dayNotes', 'taskSuggestions', 'notes', 'goalMap', 'presenceCandidates', 'weeklyBudgets', 'weeklyBudgetDefaults', 'fixedWork', 'calendarBlocks']
 const stateMatchesDatabase = (state, database) => exposedDatabaseFields.every((field) => isDeepStrictEqual(state[field], database[field]))
 async function observeScreenshot(name, stage) {
-  if (name !== '00-calendar-expanded-initial' && !stage.startsWith('capture-error:')) return
+  if (name !== '00-calendar-expanded-initial' && !(layoutPreview && name === '01-preview-native') && !stage.startsWith('capture-error:')) return
   const observation = { at: new Date().toISOString(), name, stage, expectedPid: child?.pid, expectedCreationDate: childIdentity?.CreationDate, cdpIdentity: page?.identity }
+  observation.nativeStartedAt = new Date().toISOString()
   try { observation.native = nativeMainWindow() } catch (error) { observation.nativeError = error.message }
+  observation.nativeCompletedAt = new Date().toISOString()
+  observation.rendererStartedAt = new Date().toISOString()
   try { observation.renderer = await page.evaluate("(() => {\n  const rect=element=>element?.getBoundingClientRect().toJSON()??null;\n  const main=document.querySelector('.main-content'),scroll=document.querySelector('.calendar-scroll'),active=document.activeElement;\n  const scroller=element=>element?{rect:rect(element),scrollTop:element.scrollTop,scrollLeft:element.scrollLeft,clientHeight:element.clientHeight,scrollHeight:element.scrollHeight,clientWidth:element.clientWidth,scrollWidth:element.scrollWidth}:null;\n  return {url:location.href,readyState:document.readyState,visibilityState:document.visibilityState,hasFocus:document.hasFocus(),width:innerWidth,height:innerHeight,dpr:devicePixelRatio,visualViewport:visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetTop:visualViewport.offsetTop,offsetLeft:visualViewport.offsetLeft,pageTop:visualViewport.pageTop,pageLeft:visualViewport.pageLeft,scale:visualViewport.scale}:null,main:scroller(main),calendarScroll:scroller(scroll),calendar:rect(document.querySelector('.week-calendar')),hourHeight:document.querySelector('.calendar-day-column')?.getBoundingClientRect().height/24,activeElement:active?{tag:active.tagName,id:active.id,className:active.className,ariaLabel:active.getAttribute('aria-label'),calendarEvent:active.getAttribute('data-calendar-event'),calendarBlockId:active.getAttribute('data-calendar-block-id'),rect:rect(active)}:null,headers:[...document.querySelectorAll('.calendar-day-header')].map(element=>({day:element.dataset.calendarDay,rect:rect(element)})),actualCards:[...document.querySelectorAll('[data-calendar-event=\"actual\"]')].map(element=>({id:element.getAttribute('data-calendar-block-id'),narrow:element.classList.contains('is-narrow'),rect:rect(element),title:rect(element.querySelector('.calendar-event-title')),time:rect(element.querySelector('.calendar-event-time'))}))};\n})()") } catch (error) { observation.rendererError = error.message }
+  observation.rendererCompletedAt = new Date().toISOString()
   try { observation.layoutMetrics = await page.send('Page.getLayoutMetrics') } catch (error) { observation.layoutMetricsError = error.message }
   observation.completedAt = new Date().toISOString()
   try { fs.appendFileSync(path.join(RUN, 'screenshot-viewport-observations.jsonl'), JSON.stringify(observation) + "\n") } catch (error) { console.error('Screenshot viewport receipt could not be written: ' + error.message) }
 }
-async function screenshot(name, selector, alignment = 'start') {
+async function screenshot(name, selector, alignment = 'start', prepareTarget) {
   await observeScreenshot(name, 'before-native-restore')
   const native = await until(() => { const value = nativeMainWindow(true); return value.visible && !value.iconic && value.windowPid === child.pid ? value : null }, 'owned capture window is visible and not minimized')
   fs.appendFileSync(path.join(RUN, 'screenshot-native-observations.jsonl'), JSON.stringify({ at: new Date().toISOString(), name, native }) + '\n')
   await observeScreenshot(name, 'after-native-restore')
+  await observeScreenshot(name, 'before-cdp-bring-to-front')
+  const activationStartedAt = new Date().toISOString()
   await page.send('Page.bringToFront')
+  fs.appendFileSync(path.join(RUN, 'screenshot-activation-commands.jsonl'), JSON.stringify({ name, method: 'Page.bringToFront', startedAt: activationStartedAt, completedAt: new Date().toISOString(), expectedPid: child.pid, expectedCreationDate: childIdentity.CreationDate, cdpIdentity: page.identity }) + '\n')
+  await observeScreenshot(name, 'after-cdp-bring-to-front')
+  const verifyTarget = prepareTarget ? await prepareTarget() : null
   if (selector) await page.evaluate(`(() => { const target=document.querySelector(${JSON.stringify(selector)}); if(!target) throw Error('Missing screenshot target'); target.scrollIntoView({block:${JSON.stringify(alignment)}}); })()`)
   await wait(350)
+  if (verifyTarget) await verifyTarget()
   await observeScreenshot(name, 'before-capture')
   try {
     const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
@@ -277,14 +307,39 @@ const calendar = (value) => { const date = new Date(value); return `${date.getFu
 const shift = (key, days) => { const date = new Date(`${key}T12:00:00`); date.setDate(date.getDate() + days); return calendar(date) }
 const at = (key, hour, minute = 0) => { const date = new Date(`${key}T00:00:00`); date.setHours(hour, minute, 0, 0); return date.getTime() }
 const localDateTime = (value) => { const date = new Date(value); return `${calendar(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
-const monday = new Date()
-monday.setHours(0, 0, 0, 0)
-monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7)
-const thisWeek = calendar(monday), nextWeek = shift(thisWeek, 7)
+function weekStart(value) {
+  const monday = new Date(value)
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7)
+  return calendar(monday)
+}
+let fixtureWeek, nextFixtureWeek
 const labels = ['Calendar Alpha', 'Calendar Beta', 'Calendar Gamma']
 let projects, tasks, fixedTask, baselineSessions, uiBlock, recurringBlock, projectBlock, draggedBlock, persisted
 
-async function navigateWeek() { await tab(8, '.week-workspace'); await until(() => page.evaluate('document.querySelectorAll(".calendar-day-header[data-calendar-day]").length===7'), 'seven calendar headers') }
+async function navigateWeek() { await tab(8, '.week-workspace'); await until(() => page.evaluate('document.querySelectorAll(".calendar-day-header[data-calendar-day]").length===7'), 'seven calendar headers'); await selectWeek(fixtureWeek) }
+async function observeWeekSelection(week, stage, native) {
+  const renderer = await page.evaluate(`(() => { const el=document.querySelector('[aria-label="表示する週の日付"]'); if(!el) return {found:false}; const animations=[],inert=[]; for(let ancestor=el;ancestor;ancestor=ancestor.parentElement) { if(ancestor.inert) inert.push({tag:ancestor.tagName,className:ancestor.className}); for(const animation of ancestor.getAnimations()) if(animation.playState==='running' && animation.effect?.getTiming().iterations!==Infinity) animations.push({tag:ancestor.tagName,className:ancestor.className,playState:animation.playState,timing:animation.effect?.getTiming()}); } const r=el.getBoundingClientRect(),point={x:r.x+r.width/2,y:r.y+r.height/2},hit=document.elementFromPoint(point.x,point.y),inside=point.x>0&&point.x<innerWidth&&point.y>0&&point.y<innerHeight,hitOwned=el.contains(hit); return {found:true,value:el.value,disabled:el.disabled,inert,animations,rect:r.toJSON(),point,width:innerWidth,height:innerHeight,visibilityState:document.visibilityState,hasFocus:document.hasFocus(),inside,hitOwned,hit:hit?{tag:hit.tagName,className:hit.className,ariaLabel:hit.getAttribute('aria-label')}:null,clickReady:Boolean(!el.disabled&&animations.length===0&&r.width&&r.height&&inside&&hitOwned)}; })()`)
+  fs.appendFileSync(path.join(RUN, 'week-selection-window-observations.jsonl'), JSON.stringify({ at: new Date().toISOString(), week, stage, expectedPid: child.pid, expectedCreationDate: childIdentity.CreationDate, cdpIdentity: page.identity, native, renderer }) + '\n')
+}
+async function selectWeek(week) {
+  await observeWeekSelection(week, 'before-window-preparation', nativeMainWindow())
+  const native = await until(() => { const value = nativeMainWindow(true); return value.visible && !value.iconic && value.windowPid === child.pid ? value : null }, 'owned week-selection window is visible and not minimized')
+  await page.send('Page.bringToFront')
+  await observeWeekSelection(week, 'after-window-preparation', native)
+  await nativeValue('[aria-label="表示する週の日付"]', week)
+  await until(() => page.evaluate('[...document.querySelectorAll(".calendar-day-header[data-calendar-day]")].map(el=>el.dataset.calendarDay).join() === ' + JSON.stringify(Array.from({ length: 7 }, (_, index) => shift(week, index)).join())), 'selected seven-day week ' + week)
+}
+async function returnToCurrentWeek(inspect = () => page.evaluate('({now:Date.now(),days:[...document.querySelectorAll(".calendar-day-header[data-calendar-day]")].map(el=>el.dataset.calendarDay),input:{value:document.querySelector("[aria-label=表示する週の日付]").value}})')) {
+  await button('今週', '.week-workspace')
+  const observed = await until(async () => {
+    const value = await inspect()
+    const currentWeek = weekStart(value.now)
+    return value.input.value === currentWeek && isDeepStrictEqual(value.days, Array.from({ length: 7 }, (_, index) => shift(currentWeek, index))) ? { ...value, currentWeek } : null
+  }, 'today button selects the actual current seven-day week')
+  check('Today-week navigation uses the actual current date independently of the fixture week', observed.currentWeek === weekStart(observed.now) && observed.input.value === observed.currentWeek && isDeepStrictEqual(observed.days, Array.from({ length: 7 }, (_, index) => shift(observed.currentWeek, index))), observed)
+  return observed
+}
 async function nativeValue(selector, value, expected = value) {
   await click(selector)
   await page.evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; setter.call(el,${JSON.stringify(value)}); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); })()`)
@@ -320,6 +375,8 @@ async function createFixture() {
   const initial = await call('state:get')
   check('Isolated profile starts with no projects, tasks or sessions', initial.projects.length === 0 && initial.tasks.length === 0 && initial.sessions.length === 0)
   const now = Date.now(), today = calendar(now - 4 * 60 * MINUTE)
+  fixtureWeek = weekStart(now + 4 * 60 * MINUTE)
+  nextFixtureWeek = shift(fixtureWeek, 7)
   await call('settings:update', { patch: { onboardedAt: now, lastWelcomeDate: today, dayStartHour: 4, showSessionCard: false, soundOnExpire: false, autoPauseOnSuspend: false, launchAtLogin: false, shortcuts: { startPause: '', currentWork: '', dashboard: '' } } })
   await page.send('Page.reload')
   await until(() => page.evaluate('Boolean(document.querySelector(".rail-tabs")) && !document.querySelector(".onboarding") && !document.querySelector(".welcome")'), 'isolated onboarding dismissed')
@@ -330,11 +387,11 @@ async function createFixture() {
     tasks.push(await call('task:create', { title: index === 2 ? '短い記録と、予定が重なっても読み取れる長いタイトルの実作業 ' + '具体的な調査事項を保持する '.repeat(8) : labels[index] + ' の実作業', projectId: projects[index].id, status: 'todo' }))
   }
   fixedTask = await call('task:create', { title: '外部の固定ミーティング', projectId: projects[1].id, status: 'todo' })
-  for (let index = 0; index < 7; index++) await recorded(tasks[index % 3].id, at(shift(thisWeek, index), 9), at(shift(thisWeek, index), 10), '実IPCで作成した日別記録 ' + index)
-  await recorded(tasks[1].id, at(thisWeek, 9, 30), at(thisWeek, 10, 30), '重なる記録の追加30分')
-  await recorded(tasks[2].id, at(shift(thisWeek, 2), 12), at(shift(thisWeek, 2), 12) + 20_000, '20秒の短い記録')
-  await recorded(tasks[0].id, at(shift(thisWeek, 5), 23, 30), at(shift(thisWeek, 6), 0, 30), '夜を跨ぐ60分の記録')
-  await recorded(tasks[0].id, at(thisWeek, 0, 15), at(thisWeek, 0, 45), '設定した日境界4時より前でも暦の月曜に属する30分')
+  for (let index = 0; index < 7; index++) await recorded(tasks[index % 3].id, at(shift(fixtureWeek, index), 9), at(shift(fixtureWeek, index), 10), '実IPCで作成した日別記録 ' + index)
+  await recorded(tasks[1].id, at(fixtureWeek, 9, 30), at(fixtureWeek, 10, 30), '重なる記録の追加30分')
+  await recorded(tasks[2].id, at(shift(fixtureWeek, 2), 12), at(shift(fixtureWeek, 2), 12) + 20_000, '20秒の短い記録')
+  await recorded(tasks[0].id, at(shift(fixtureWeek, 5), 23, 30), at(shift(fixtureWeek, 6), 0, 30), '夜を跨ぐ60分の記録')
+  await recorded(tasks[0].id, at(fixtureWeek, 0, 15), at(fixtureWeek, 0, 45), '設定した日境界4時より前でも暦の月曜に属する30分')
   const paused = await call('session:start', { taskId: tasks[2].id, mode: 'stopwatch' })
   await wait(250)
   await call('session:pause')
@@ -346,19 +403,20 @@ async function createFixture() {
   const ended = read().sessions.find((item) => item.id === paused.id)
   const start = ended.endedAt - 10 * MINUTE
   await call('session:update', { id: paused.id, patch: { startedAt: start, exclusions: [{ startedAt: start, endedAt: start + 2 * MINUTE }], note: '観測された一時停止と申告された除外を持つ記録' } })
-  const fixedNow = Date.now(), fixedSlot = Math.floor(Math.min(60 * MINUTE, (at(nextWeek, 0) - fixedNow) / 4))
-  assert.ok(fixedSlot > MINUTE, 'This fixture has room for a future fixed appointment within the current week')
-  await call('fixedWork:create', { taskId: fixedTask.id, startedAt: fixedNow + fixedSlot, endedAt: fixedNow + 2 * fixedSlot, externalReason: '他者と合意したミーティング' })
-  const input = { title: '先に置いた作業予定', category: 'work', taskId: tasks[0].id, projectId: projects[0].id, startedAt: at(thisWeek, 9, 15), endedAt: at(thisWeek, 10, 15), repeat: 'none', weekdays: [], until: null }
+  const fixedNow = Date.now(), fixedStartedAt = Math.max(fixedNow, at(fixtureWeek, 0)) + 60 * MINUTE, fixedEndedAt = fixedStartedAt + 60 * MINUTE
+  assert.ok(fixedStartedAt > fixedNow && fixedEndedAt - fixedStartedAt > MINUTE && fixedStartedAt >= at(fixtureWeek, 0) && fixedEndedAt < at(nextFixtureWeek, 0), 'This fixture has room for a future fixed appointment within its selected week')
+  await call('fixedWork:create', { taskId: fixedTask.id, startedAt: fixedStartedAt, endedAt: fixedEndedAt, externalReason: '他者と合意したミーティング' })
+  const input = { title: '先に置いた作業予定', category: 'work', taskId: tasks[0].id, projectId: projects[0].id, startedAt: at(fixtureWeek, 9, 15), endedAt: at(fixtureWeek, 10, 15), repeat: 'none', weekdays: [], until: null }
   await call('calendar:create', input)
-  await call('calendar:create', { ...input, title: '重なる予定 ' + '長いタイトルでも他の予定を選べる '.repeat(10), taskId: null, projectId: projects[1].id, startedAt: at(thisWeek, 9, 30), endedAt: at(thisWeek, 11) })
-  await call('calendar:create', { ...input, title: '睡眠の定型時間', category: 'sleep', taskId: null, projectId: null, startedAt: at(thisWeek, 23), endedAt: at(shift(thisWeek, 1), 7), repeat: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6], until: shift(nextWeek, 6) })
-  await call('calendar:create', { ...input, title: '定型の食事', category: 'meal', taskId: null, projectId: null, startedAt: at(thisWeek, 12, 30), endedAt: at(thisWeek, 13), repeat: 'weekly', weekdays: [1, 3, 5], until: shift(nextWeek, 6) })
-  await call('weeklyBudget:set', { weekStart: thisWeek, plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 420, allocations: [] } })
+  await call('calendar:create', { ...input, title: '重なる予定 ' + '長いタイトルでも他の予定を選べる '.repeat(10), taskId: null, projectId: projects[1].id, startedAt: at(fixtureWeek, 9, 30), endedAt: at(fixtureWeek, 11) })
+  await call('calendar:create', { ...input, title: '睡眠の定型時間', category: 'sleep', taskId: null, projectId: null, startedAt: at(fixtureWeek, 23), endedAt: at(shift(fixtureWeek, 1), 7), repeat: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6], until: shift(nextFixtureWeek, 6) })
+  await call('calendar:create', { ...input, title: '定型の食事', category: 'meal', taskId: null, projectId: null, startedAt: at(fixtureWeek, 12, 30), endedAt: at(fixtureWeek, 13), repeat: 'weekly', weekdays: [1, 3, 5], until: shift(nextFixtureWeek, 6) })
+  await call('weeklyBudget:set', { weekStart: fixtureWeek, plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 420, allocations: [] } })
   baselineSessions = read().sessions
   const pausedSaved = baselineSessions.find((item) => item.id === paused.id)
   check('Fixture preserves observed pauses and separate declared exclusions', pausedSaved.pauses.some((pause) => pause.reason === 'manual' && pause.endedAt > pause.startedAt) && pausedSaved.pauses.some((pause) => pause.reason === 'excluded' && pause.endedAt - pause.startedAt === 2 * MINUTE))
   check('All fixture records were created through IPC', baselineSessions.length === 12 && baselineSessions.every((session) => session.editedAt !== null))
+  fs.writeFileSync(path.join(RUN, 'fixture-week.json'), JSON.stringify({ selectionNow: now, fixtureWeek, nextFixtureWeek, fixedNow, fixedStartedAt, fixedEndedAt }, null, 2))
   fs.writeFileSync(path.join(RUN, 'fixture-database.json'), JSON.stringify(read(), null, 2))
 }
 
@@ -407,7 +465,7 @@ async function verifyEventCaptions(label) {
 async function verifyCaptionBoundary() {
   await createFixture()
   const diagnosticTask=await call('task:create',{title:'58分境界の長いタイトルを省略して表示する '.repeat(5),projectId:projects[1].id,status:'todo'})
-  const diagnosticSession=await recorded(diagnosticTask.id,at(shift(thisWeek,1),14),at(shift(thisWeek,1),14)+58*MINUTE,'58分の表示境界だけを測る独立診断記録')
+  const diagnosticSession=await recorded(diagnosticTask.id,at(shift(fixtureWeek,1),14),at(shift(fixtureWeek,1),14)+58*MINUTE,'58分の表示境界だけを測る独立診断記録')
   const sleep=read().calendarBlocks.find(block=>block.category==='sleep')
   await call('calendar:update',{id:sleep.id,patch:{title:'長い睡眠の継続キャプションを二行で読む '.repeat(5)}})
   await navigateWeek()
@@ -430,10 +488,10 @@ async function verifyCaptionBoundary() {
   const savedSleep=read().calendarBlocks.find(block=>block.id===sleep.id)
   check('Caption diagnostics preserve the original sleep timestamps and recurrence fields',savedSleep.startedAt===sleep.startedAt&&savedSleep.endedAt===sleep.endedAt&&savedSleep.repeat===sleep.repeat&&isDeepStrictEqual(savedSleep.weekdays,sleep.weekdays)&&savedSleep.until===sleep.until)
   fs.writeFileSync(path.join(RUN,'caption-boundary-measurement.json'),JSON.stringify({diagnosticTask,diagnosticSession,initial,terminal,baselineSessionCount:baselineSessions.length},null,2))
+  await stop('boundary')
   const appErrors=applicationErrors()
   fs.writeFileSync(path.join(RUN,'application-errors.json'),JSON.stringify(appErrors,null,2))
   check('Caption boundary probe has no renderer or unexpected app errors',errors.length===0&&appErrors.unexpected.length===0,{renderer:errors,app:appErrors})
-  await stop('boundary')
 }
 
 async function verifyPreviewScreens() {
@@ -465,10 +523,10 @@ async function verifyPreviewScreens() {
   }
   check('Preview layout actions preserve all fixture sessions',isDeepStrictEqual(read().sessions,baselineSessions))
   fs.writeFileSync(path.join(RUN,'preview-layouts.json'),JSON.stringify({observations,lower,edit,rendererErrors:errors},null,2))
+  await stop('preview')
   const appErrors=applicationErrors()
   fs.writeFileSync(path.join(RUN,'application-errors.json'),JSON.stringify(appErrors,null,2))
   check('Preview has no renderer or unexpected application errors',errors.length===0&&appErrors.unexpected.length===0,{renderer:errors,app:appErrors})
-  await stop('preview')
 }
 
 async function verifyInitialCalendar() {
@@ -480,14 +538,15 @@ async function verifyInitialCalendar() {
   await verifyEventCaptions('Initial calendar captions')
   await button('24時間', '.week-workspace')
   const surface = await page.evaluate(`(() => { const headers=[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')]; return {days:headers.map(el=>el.dataset.calendarDay), layers:[...new Set([...document.querySelectorAll('[data-calendar-event]')].map(el=>el.dataset.calendarEvent))], short:[...document.querySelectorAll('[data-calendar-event="actual"]')].filter(el=>el.textContent.includes('短い記録')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})), text:document.querySelector('.week-workspace').innerText}; })()`)
-  check('Calendar shows Monday through Sunday in chronological order', isDeepStrictEqual(surface.days, Array.from({ length: 7 }, (_, index) => shift(thisWeek, index))), surface.days)
+  check('Calendar shows Monday through Sunday in chronological order', isDeepStrictEqual(surface.days, Array.from({ length: 7 }, (_, index) => shift(fixtureWeek, index))), surface.days)
   check('Planned, actual, recurring and external fixed layers are all present', ['planned', 'actual', 'routine', 'fixed'].every((layer) => surface.layers.includes(layer)), surface.layers)
   check('Planning leaves all session records byte-for-byte unchanged', isDeepStrictEqual(read().sessions, baselineSessions) && (await call('state:get')).live === null)
   const actualTotals = await page.evaluate('({week:document.querySelector(".week-overview strong").textContent, days:[...document.querySelectorAll(".calendar-day-total")].map(el=>el.firstChild.textContent)})')
-  const expectedDays = Array.from({ length: 7 }, (_, index) => Math.floor(expectedFocusMs(at(shift(thisWeek, index), 0), at(shift(thisWeek, index + 1), 0)) / MINUTE))
-  check('Weekly and all seven daily actual totals match an independent interval sweep at calendar midnight', displayedMinutes(actualTotals.week) === Math.floor(expectedFocusMs(at(thisWeek, 0), at(nextWeek, 0)) / MINUTE) && isDeepStrictEqual(actualTotals.days.map(displayedMinutes), expectedDays), { actualTotals, expectedDays })
-  const short = await page.evaluate('([...document.querySelectorAll(\'[data-calendar-column="' + shift(thisWeek, 2) + '"] [data-calendar-event="actual"]\')].find(el=>el.title.includes("12:00"))?.getBoundingClientRect().toJSON())')
+  const expectedDays = Array.from({ length: 7 }, (_, index) => Math.floor(expectedFocusMs(at(shift(fixtureWeek, index), 0), at(shift(fixtureWeek, index + 1), 0)) / MINUTE))
+  check('Weekly and all seven daily actual totals match an independent interval sweep at calendar midnight', displayedMinutes(actualTotals.week) === Math.floor(expectedFocusMs(at(fixtureWeek, 0), at(nextFixtureWeek, 0)) / MINUTE) && isDeepStrictEqual(actualTotals.days.map(displayedMinutes), expectedDays), { actualTotals, expectedDays })
+  const short = await page.evaluate('(() => { const el=[...document.querySelectorAll(\'[data-calendar-column="' + shift(fixtureWeek, 2) + '"] [data-calendar-event="actual"]\')].find(el=>el.title.includes("12:00")); return el ? {...el.getBoundingClientRect().toJSON(),title:el.title,ariaLabel:el.getAttribute("aria-label")} : null; })()')
   check('A 20-second record has a visible and selectable minimum height', short && short.height >= 17 && short.width > 6, short)
+  check('A 20-second record exposes 20s rather than 0m in both its tooltip and accessible label', short && [short.title, short.ariaLabel].every(value => value?.includes('20s') && !value.includes('0m')), short)
   await screenshot('01-calendar-24h')
   await button('拡大', '.week-workspace')
   await screenshot('02-calendar-expanded')
@@ -508,12 +567,12 @@ async function verifyInitialCalendar() {
 }
 async function verifyCreationEditingAndFailure() {
   await createDialog()
-  await form('UIから作るタスクなしの予定', at(thisWeek, 13), at(thisWeek, 14))
+  await form('UIから作るタスクなしの予定', at(fixtureWeek, 13), at(fixtureWeek, 14))
   await button('閉じる', '[role="dialog"]')
   check('Unsaved close asks inside the modal and retains every input', await page.evaluate('document.querySelector(".calendar-confirm[role=alert]")?.textContent.includes("破棄") && document.querySelector("[aria-label=タイトル]").value==="UIから作るタスクなしの予定"'))
   await button('編集へ戻る', '[role="dialog"]')
   uiBlock = await saveCalendar('UIから作るタスクなしの予定')
-  check('Task-free planned time persists without invented links', uiBlock.taskId === null && uiBlock.projectId === null && uiBlock.startedAt === at(thisWeek, 13) && uiBlock.endedAt === at(thisWeek, 14))
+  check('Task-free planned time persists without invented links', uiBlock.taskId === null && uiBlock.projectId === null && uiBlock.startedAt === at(fixtureWeek, 13) && uiBlock.endedAt === at(fixtureWeek, 14))
   await editCalendar(uiBlock.id)
   await fill('[role="dialog"] [aria-label="タイトル"]', 'UIで編集した作業予定')
   await select('[role="dialog"] [aria-label="プロジェクト"]', projects[0].id)
@@ -521,7 +580,7 @@ async function verifyCreationEditingAndFailure() {
   uiBlock = await saveCalendar('UIで編集した作業予定')
   check('Editing updates the existing planned block with project and task', uiBlock.projectId === projects[0].id && uiBlock.taskId === tasks[0].id)
   await createDialog()
-  await form('プロジェクトだけの予定', at(shift(thisWeek, 1), 14), at(shift(thisWeek, 1), 15))
+  await form('プロジェクトだけの予定', at(shift(fixtureWeek, 1), 14), at(shift(fixtureWeek, 1), 15))
   await select('[role="dialog"] [aria-label="プロジェクト"]', projects[1].id)
   projectBlock = await saveCalendar('プロジェクトだけの予定')
   check('Project-only planned time persists with no task', projectBlock.projectId === projects[1].id && projectBlock.taskId === null)
@@ -532,23 +591,23 @@ async function verifyCreationEditingAndFailure() {
   await until(() => page.evaluate('!document.querySelector("[role=dialog]")'), 'cancelled planned modal closes')
   check('Cancellation preserves planned history and hides the cancelled occurrence', read().calendarBlocks.find((block) => block.id === projectBlock.id).cancelled === true && await page.evaluate(`!document.querySelector('[data-calendar-block-id="${projectBlock.id}"]')`))
   await createDialog()
-  await form('保存失敗でも残る予定', at(shift(thisWeek, 2), 14), at(shift(thisWeek, 2), 15))
+  await form('保存失敗でも残る予定', at(shift(fixtureWeek, 2), 14), at(shift(fixtureWeek, 2), 15))
   const before = read(), memoryBefore = await call('state:get')
   beginSaveFault('Calendar isolated write rejection', ['calendar:create'])
   try {
     await button('予定を保存', '[role="dialog"]')
     await until(() => page.evaluate('Boolean(document.querySelector(".calendar-editor [role=alert]"))'), 'calendar real filesystem save failure')
-    check('Real save failure retains title and start/end in an operable modal', await page.evaluate(`document.querySelector('[role=dialog] [aria-label="タイトル"]').value==='保存失敗でも残る予定' && document.querySelector('[aria-label="開始"]').value===${JSON.stringify(localDateTime(at(shift(thisWeek, 2), 14)))} && document.querySelector('[aria-label="終了"]').value===${JSON.stringify(localDateTime(at(shift(thisWeek, 2), 15)))} && !document.querySelector('[role=dialog] button[type=submit]').disabled`))
+    check('Real save failure retains title and start/end in an operable modal', await page.evaluate(`document.querySelector('[role=dialog] [aria-label="タイトル"]').value==='保存失敗でも残る予定' && document.querySelector('[aria-label="開始"]').value===${JSON.stringify(localDateTime(at(shift(fixtureWeek, 2), 14)))} && document.querySelector('[aria-label="終了"]').value===${JSON.stringify(localDateTime(at(shift(fixtureWeek, 2), 15)))} && !document.querySelector('[role=dialog] button[type=submit]').disabled`))
     await unchangedAfterFailure(before, 'Calendar save failure', memoryBefore)
     await key('2', 'Digit2', 2)
     check('Failed unsaved calendar input blocks navigation away', await page.evaluate('Boolean(document.querySelector(".week-workspace")) && Boolean(document.querySelector(".calendar-editor"))'))
     await screenshot('03-calendar-save-failure', '.calendar-editor [role="alert"]', 'center')
   } finally { endSaveFault() }
   await saveCalendar('保存失敗でも残る予定')
-  check('Retry after the actual filesystem failure saves exactly one block', read().calendarBlocks.filter((block) => block.title === '保存失敗でも残る予定').length === 1 && read().calendarBlocks.some((block) => block.title === '保存失敗でも残る予定' && block.startedAt === at(shift(thisWeek, 2), 14) && block.endedAt === at(shift(thisWeek, 2), 15)))
+  check('Retry after the actual filesystem failure saves exactly one block', read().calendarBlocks.filter((block) => block.title === '保存失敗でも残る予定').length === 1 && read().calendarBlocks.some((block) => block.title === '保存失敗でも残る予定' && block.startedAt === at(shift(fixtureWeek, 2), 14) && block.endedAt === at(shift(fixtureWeek, 2), 15)))
 }
 async function verifyPreciseCalendarTimes() {
-  const base = at(shift(thisWeek, 4), 9), startedAt = base + 12_345, endedAt = base + 32_345
+  const base = at(shift(fixtureWeek, 4), 9), startedAt = base + 12_345, endedAt = base + 32_345
   const input = { title: '秒とミリ秒を持つ20秒予定', category: 'work', taskId: null, projectId: null, startedAt, endedAt, repeat: 'none', weekdays: [], until: null }
   const original = await call('calendar:create', input)
   await editCalendar(original.id)
@@ -577,6 +636,8 @@ async function verifyPreciseFixedTime() {
   future.setSeconds(0, 0)
   const startedAt = future.getTime() + 12_345, endedAt = future.getTime() + 32_345
   const original = await call('fixedWork:create', { taskId: fixedTask.id, startedAt, endedAt, externalReason: '秒とミリ秒を持つ検証専用の固定予定' })
+  const probeWeek = weekStart(startedAt)
+  await selectWeek(probeWeek)
   await click('[data-calendar-block-id="' + original.id + '"]')
   await until(() => page.evaluate('Boolean(document.querySelector(".week-event-detail"))'), 'precise fixed event detail')
   await button('外部固定予定を編集', '.week-event-detail')
@@ -587,30 +648,58 @@ async function verifyPreciseFixedTime() {
   await until(() => page.evaluate('!document.querySelector("[role=dialog]")'), 'precise fixed reason edit closes')
   const reasonOnly = read().fixedWork.find((work) => work.id === original.id)
   check('A reason-only UI edit preserves both precise timestamps of a 20-second external fixed block', reasonOnly.externalReason === '理由だけを変更して精密日時を保持する' && reasonOnly.startedAt === startedAt && reasonOnly.endedAt === endedAt)
-  await call('fixedWork:update', { id: original.id, patch: { cancelled: true } })
+  await verifyFixedOverview(reasonOnly, probeWeek)
+  await selectWeek(fixtureWeek)
   check('The dedicated precise fixed probe changes no original session', isDeepStrictEqual(read().sessions, baselineSessions))
-  fs.writeFileSync(path.join(RUN, 'precise-fixed-times.json'), JSON.stringify({ original, reasonOnly, expected: { startedAt, endedAt, startISO: new Date(startedAt).toISOString(), endISO: new Date(endedAt).toISOString() } }, null, 2))
+  fs.writeFileSync(path.join(RUN, 'precise-fixed-times.json'), JSON.stringify({ original, reasonOnly, probeWeek, restoredWeek: fixtureWeek, expected: { startedAt, endedAt, startISO: new Date(startedAt).toISOString(), endISO: new Date(endedAt).toISOString() } }, null, 2))
+}
+async function verifyFixedOverview(work, probeWeek) {
+  const overview = '.week-secondary > .fixed-work-overview', row = overview + ' [data-fixed-work-id="' + work.id + '"]'
+  const beforeTaskOpen = read()
+  await scrollMainTo(overview + ' > details > summary')
+  await click(overview + ' > details > summary')
+  await button('タスクを開く', row)
+  await until(() => page.evaluate('document.querySelector(".detail-title")?.value === ' + JSON.stringify(fixedTask.title)), 'weekly fixed overview opens its existing task')
+  check('The weekly fixed overview opens the existing task without changing any persisted data or session', isDeepStrictEqual(read(), beforeTaskOpen) && isDeepStrictEqual(read().sessions, baselineSessions))
+  await click('.detail-close')
+  await until(() => page.evaluate('!document.querySelector(".detail-title")'), 'linked task detail closes')
+  await navigateWeek()
+  await selectWeek(probeWeek)
+  await call('fixedWork:update', { id: work.id, patch: { cancelled: true } })
+  const cancelled = read().fixedWork.find(item => item.id === work.id)
+  const afterCancellation = read()
+  await scrollMainTo(overview + ' > details > summary')
+  await click(overview + ' > details > summary')
+  check('The weekly fixed overview initially hides cancelled work while retaining its exact saved fields', !await page.evaluate('Boolean(document.querySelector(' + JSON.stringify(row) + '))') && cancelled.cancelled && isDeepStrictEqual({ ...cancelled, cancelled: false, updatedAt: work.updatedAt }, work), cancelled)
+  await click(overview + ' input[type="checkbox"]')
+  const shown = await page.evaluate('({text:document.querySelector(' + JSON.stringify(row) + ')?.innerText,calendarVisible:Boolean(document.querySelector(' + JSON.stringify('[data-calendar-block-id="' + work.id + '"]') + '))})')
+  check('The weekly cancelled-work control reveals the retained schedule and reason while its calendar occurrence stays hidden', shown.text?.includes('取消済み') && shown.text.includes(work.externalReason) && !shown.calendarVisible && isDeepStrictEqual(read().sessions, baselineSessions), shown)
+  await screenshot('07e-week-cancelled-fixed-overview', row, 'center')
+  await click(overview + ' input[type="checkbox"]')
+  check('Turning off cancelled-work display hides only the row and preserves the entire saved database', !await page.evaluate('Boolean(document.querySelector(' + JSON.stringify(row) + '))') && isDeepStrictEqual(read(), afterCancellation) && isDeepStrictEqual(read().sessions, baselineSessions))
+  await click(overview + ' > details > summary')
+  fs.writeFileSync(path.join(RUN, 'weekly-fixed-overview.json'), JSON.stringify({ work, probeWeek, cancelled, shown }, null, 2))
 }
 async function verifyRecurring() {
   await createDialog()
-  await form('UIから登録した夜跨ぎの定型時間', at(thisWeek, 22, 30), at(shift(thisWeek, 1), 6, 30), 'sleep')
+  await form('UIから登録した夜跨ぎの定型時間', at(fixtureWeek, 22, 30), at(shift(fixtureWeek, 1), 6, 30), 'sleep')
   await click('[role="dialog"] [aria-label="毎週繰り返す"]')
   for (const label of ['月', '火', '水', '木', '金', '土', '日']) {
     const selector = '[aria-label="' + label + '曜日に繰り返す"]'
     const pressed = await page.evaluate('document.querySelector(' + JSON.stringify(selector) + ').getAttribute("aria-pressed")==="true"')
     if (pressed !== ['月', '水', '金'].includes(label)) await click(selector)
   }
-  await nativeValue('[aria-label="繰り返しの終了日"]', shift(thisWeek, 9))
+  await nativeValue('[aria-label="繰り返しの終了日"]', shift(fixtureWeek, 9))
   recurringBlock = await saveCalendar('UIから登録した夜跨ぎの定型時間')
-  check('Recurring overnight time persists three weekdays and an inclusive end date', recurringBlock.repeat === 'weekly' && isDeepStrictEqual(recurringBlock.weekdays.slice().sort(), [1, 3, 5]) && recurringBlock.until === shift(thisWeek, 9) && recurringBlock.endedAt - recurringBlock.startedAt === 8 * 60 * MINUTE)
+  check('Recurring overnight time persists three weekdays and an inclusive end date', recurringBlock.repeat === 'weekly' && isDeepStrictEqual(recurringBlock.weekdays.slice().sort(), [1, 3, 5]) && recurringBlock.until === shift(fixtureWeek, 9) && recurringBlock.endedAt - recurringBlock.startedAt === 8 * 60 * MINUTE)
   await editCalendar(recurringBlock.id)
   check('Recurring editor explicitly explains that edits and cancellation apply to the whole schedule', await page.evaluate('document.querySelector(".calendar-editor").innerText.includes("定型予定全体に適用")'))
-  await nativeValue('[aria-label="終了"]', localDateTime(at(shift(thisWeek, 1), 7)))
+  await nativeValue('[aria-label="終了"]', localDateTime(at(shift(fixtureWeek, 1), 7)))
   recurringBlock = await saveCalendar('UIから登録した夜跨ぎの定型時間')
   check('Editing a recurring schedule changes the original block as a whole', read().calendarBlocks.filter((block) => block.id === recurringBlock.id).length === 1 && recurringBlock.endedAt - recurringBlock.startedAt === 8.5 * 60 * MINUTE)
   await screenshot('04-recurring-planned-time')
   await createDialog()
-  await form('取消を確認する定型食事', at(thisWeek, 18), at(thisWeek, 18, 30), 'meal')
+  await form('取消を確認する定型食事', at(fixtureWeek, 18), at(fixtureWeek, 18, 30), 'meal')
   await click('[aria-label="毎週繰り返す"]')
   await button('毎日', '[role="dialog"]')
   const cancelled = await saveCalendar('取消を確認する定型食事')
@@ -624,7 +713,7 @@ async function verifyRecurring() {
 async function verifyCancellationDraftScopes() {
   const observations = []
   for (const weekly of [true, false]) {
-    const original = await call('calendar:create', { title: weekly ? '未保存の繰り返し解除と定型取消' : '未保存の繰り返し追加と単発取消', category: 'meal', taskId: null, projectId: null, startedAt: at(thisWeek, weekly ? 14 : 15), endedAt: at(thisWeek, weekly ? 14 : 15, 30), repeat: weekly ? 'weekly' : 'none', weekdays: weekly ? [0, 1, 2, 3, 4, 5, 6] : [], until: weekly ? shift(thisWeek, 10) : null })
+    const original = await call('calendar:create', { title: weekly ? '未保存の繰り返し解除と定型取消' : '未保存の繰り返し追加と単発取消', category: 'meal', taskId: null, projectId: null, startedAt: at(fixtureWeek, weekly ? 14 : 15), endedAt: at(fixtureWeek, weekly ? 14 : 15, 30), repeat: weekly ? 'weekly' : 'none', weekdays: weekly ? [0, 1, 2, 3, 4, 5, 6] : [], until: weekly ? shift(fixtureWeek, 10) : null })
     const occurrenceSelector = '[data-calendar-block-id="' + original.id + '"]'
     const occurrenceCount = await page.evaluate('document.querySelectorAll(' + JSON.stringify(occurrenceSelector) + ').length')
     check('Cancellation scope probe begins with saved ' + (weekly ? 'weekly occurrences' : 'single occurrence'), weekly ? occurrenceCount > 1 : occurrenceCount === 1, occurrenceCount)
@@ -644,9 +733,9 @@ async function verifyCancellationDraftScopes() {
     const confirmed = read().calendarBlocks.find((block) => block.id === original.id)
     check('Confirmed ' + (weekly ? 'series' : 'single') + ' cancellation retains every original field without saving the draft repeat setting', confirmed.cancelled && isDeepStrictEqual({ ...confirmed, cancelled: false, updatedAt: original.updatedAt }, original) && await page.evaluate('!document.querySelector(' + JSON.stringify(occurrenceSelector) + ')'), confirmed)
     if (weekly) {
-      await nativeValue('[aria-label="表示する週の日付"]', nextWeek)
+      await nativeValue('[aria-label="表示する週の日付"]', nextFixtureWeek)
       check('Confirmed series cancellation also hides every occurrence in the following week', await page.evaluate('!document.querySelector(' + JSON.stringify(occurrenceSelector) + ')'))
-      await button('今週', '.week-workspace')
+      await selectWeek(fixtureWeek)
     }
     observations.push({ original, occurrenceCount, draft, beforeConfirmation, confirmation, confirmed })
   }
@@ -655,10 +744,10 @@ async function verifyCancellationDraftScopes() {
 }
 async function verifyDrag() {
   await button('24時間', '.week-workspace')
-  await click('[aria-label="' + shift(thisWeek, 3) + 'に予定を追加"]')
-  check('The date-header add button preselects that specific day', await page.evaluate('document.querySelector(' + JSON.stringify('[aria-label="開始"]') + ').value.slice(0,10)===' + JSON.stringify(shift(thisWeek, 3))))
+  await click('[aria-label="' + shift(fixtureWeek, 3) + 'に予定を追加"]')
+  check('The date-header add button preselects that specific day', await page.evaluate('document.querySelector(' + JSON.stringify('[aria-label="開始"]') + ').value.slice(0,10)===' + JSON.stringify(shift(fixtureWeek, 3))))
   await discardCalendar()
-  const points = await page.evaluate(`(() => { const day=document.querySelector('[data-calendar-column="${shift(thisWeek, 3)}"]'); if(!day) throw Error('Missing drag day'); let scroller=day.parentElement; while(scroller && !(scroller.scrollHeight>scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller=scroller.parentElement; if(scroller) scroller.scrollTop=day.offsetTop+day.offsetHeight*14/24; const rect=day.getBoundingClientRect(); return {start:{x:rect.x+rect.width*.6,y:rect.y+rect.height*(15*60+1)/1440},end:{x:rect.x+rect.width*.6,y:rect.y+rect.height*(16*60-1)/1440},innerHeight}; })()`)
+  const points = await page.evaluate(`(() => { const day=document.querySelector('[data-calendar-column="${shift(fixtureWeek, 3)}"]'); if(!day) throw Error('Missing drag day'); let scroller=day.parentElement; while(scroller && !(scroller.scrollHeight>scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller=scroller.parentElement; if(scroller) scroller.scrollTop=day.offsetTop+day.offsetHeight*14/24; const rect=day.getBoundingClientRect(); return {start:{x:rect.x+rect.width*.6,y:rect.y+rect.height*(15*60+1)/1440},end:{x:rect.x+rect.width*.6,y:rect.y+rect.height*(16*60-1)/1440},innerHeight}; })()`)
   check('Drag coordinates target visible empty calendar time', points.start.y > 0 && points.end.y < points.innerHeight && points.end.y > points.start.y, points)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...points.start })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...points.start, button: 'left', clickCount: 1 })
@@ -666,31 +755,34 @@ async function verifyDrag() {
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...points.end, button: 'left', clickCount: 1 })
   await until(() => page.evaluate('Boolean(document.querySelector(".calendar-editor"))'), 'drag opens planned editor')
   const selected = await page.evaluate('({start:document.querySelector("[aria-label=開始]").value,end:document.querySelector("[aria-label=終了]").value})')
-  check('Dragging creates a nonzero range on the selected calendar day', selected.start === localDateTime(at(shift(thisWeek, 3), 15)) && selected.end === localDateTime(at(shift(thisWeek, 3), 16)), selected)
+  check('Dragging creates a nonzero range on the selected calendar day', selected.start === localDateTime(at(shift(fixtureWeek, 3), 15)) && selected.end === localDateTime(at(shift(fixtureWeek, 3), 16)), selected)
   await fill('[role="dialog"] [aria-label="タイトル"]', 'ドラッグして作った予定')
   draggedBlock = await saveCalendar('ドラッグして作った予定')
   check('The dragged range persists exactly as selected in the UI', draggedBlock.startedAt === new Date(selected.start).getTime() && draggedBlock.endedAt === new Date(selected.end).getTime())
 }
 async function verifyNavigation() {
   await click('[aria-label="次の週"]')
-  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(nextWeek)}`), 'next calendar week')
+  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(nextFixtureWeek)}`), 'next calendar week')
   check('Next week includes recurring time but no previous actual records', await page.evaluate('document.querySelectorAll("[data-calendar-event=actual]").length===0 && document.querySelectorAll("[data-calendar-event=routine]").length>0'))
   await click('[aria-label="前の週"]')
-  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(thisWeek)}`), 'previous calendar week')
-  await nativeValue('[aria-label="表示する週の日付"]', shift(thisWeek, 30), shift(thisWeek, 28))
-  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(shift(thisWeek, 28))}`), 'date input selects its calendar week')
+  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(fixtureWeek)}`), 'previous calendar week')
+  await nativeValue('[aria-label="表示する週の日付"]', shift(fixtureWeek, 30), shift(fixtureWeek, 28))
+  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(shift(fixtureWeek, 28))}`), 'date input selects its calendar week')
   check('An empty future week shows all seven days without stale events', await page.evaluate('document.querySelectorAll(".calendar-day-header").length===7 && document.querySelectorAll("[data-calendar-event]").length===0'))
   await screenshot('05-empty-future-week')
-  await button('今週', '.week-workspace')
-  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(thisWeek)}`), 'return to current calendar week')
+  await returnToCurrentWeek()
+  const previousEmptyWeek = shift(weekStart(Math.min(at(fixtureWeek, 0), ...baselineSessions.map(session => session.startedAt))), -7)
+  await selectWeek(shift(previousEmptyWeek, 7))
   await click('[aria-label="前の週"]')
+  await until(() => page.evaluate(`document.querySelector('.calendar-day-header')?.dataset.calendarDay===${JSON.stringify(previousEmptyWeek)}`), 'previous empty week before all fixture sessions')
   check('The previous empty week starts before every recurring schedule', await page.evaluate('document.querySelectorAll("[data-calendar-event]").length===0'))
-  await button('今週', '.week-workspace')
+  await returnToCurrentWeek()
+  await selectWeek(fixtureWeek)
 }
 async function verifyUnsupportedWeekPicker() {
   const selector = '[aria-label="表示する週の日付"]'
   const database = read(), disk = fs.readFileSync(path.join(DATA, 'data.json'), 'utf8')
-  const inspect = () => page.evaluate(`(() => { const input=document.querySelector('[aria-label="表示する週の日付"]');const error=document.querySelector('#week-date-error');return {days:[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].map(el=>el.dataset.calendarDay),input:input ? {value:input.value,min:input.min,max:input.max,invalid:input.getAttribute('aria-invalid'),describedBy:input.getAttribute('aria-describedby'),rangeUnderflow:input.validity.rangeUnderflow,rangeOverflow:input.validity.rangeOverflow,badInput:input.validity.badInput} : null,error:error ? {id:error.id,role:error.getAttribute('role'),text:error.textContent} : null}; })()`)
+  const inspect = () => page.evaluate(`(() => { const input=document.querySelector('[aria-label="表示する週の日付"]');const error=document.querySelector('#week-date-error');return {now:Date.now(),days:[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].map(el=>el.dataset.calendarDay),input:input ? {value:input.value,min:input.min,max:input.max,invalid:input.getAttribute('aria-invalid'),describedBy:input.getAttribute('aria-describedby'),rangeUnderflow:input.validity.rangeUnderflow,rangeOverflow:input.validity.rangeOverflow,badInput:input.validity.badInput} : null,error:error ? {id:error.id,role:error.getAttribute('role'),text:error.textContent} : null}; })()`)
   const before = await inspect(), observations = []
   assert.equal(before.days.length, 7)
   for (const [name, value] of [['05a-unsupported-week-year-0002', '0002-01-01'], ['05b-unsupported-week-year-10000', '10000-01-01']]) {
@@ -722,14 +814,14 @@ async function verifyUnsupportedWeekPicker() {
   const empty = await inspect()
   check('An empty week picker keeps its input draft and the current seven days without an error', empty.input?.value === '' && isDeepStrictEqual(empty.days, validDays) && !empty.error && empty.input.invalid !== 'true' && errors.length === 0, empty)
   check('Unsupported, recovered and empty date picker changes preserve the complete database and exposed state', fs.readFileSync(path.join(DATA, 'data.json'), 'utf8') === disk && isDeepStrictEqual(read(), database) && stateMatchesDatabase(await call('state:get'), database))
-  await button('今週', '.week-workspace')
-  const restored = await inspect()
-  check('Today-week navigation clears the empty date draft and restores all seven current dates', restored.input?.value === thisWeek && isDeepStrictEqual(restored.days, Array.from({ length: 7 }, (_, index) => shift(thisWeek, index))) && !restored.error)
+  const restored = await returnToCurrentWeek(inspect), currentWeek = restored.currentWeek
+  check('Today-week navigation clears the empty date draft and restores all seven current dates', restored.input?.value === currentWeek && isDeepStrictEqual(restored.days, Array.from({ length: 7 }, (_, index) => shift(currentWeek, index))) && !restored.error)
+  await selectWeek(fixtureWeek)
   fs.writeFileSync(path.join(RUN, 'week-picker-unsupported-dates.json'), JSON.stringify({ before, observations, recovered, sameWeekRejected, sameWeekRecovered, empty, restored, rendererErrors: errors }, null, 2))
 }
 async function verifyWeekDateBoundaries() {
   const selector='[aria-label="表示する週の日付"]',database=read(),disk=fs.readFileSync(path.join(DATA,'data.json'),'utf8'),observations=[]
-  const inspect=()=>page.evaluate(`(()=>{const input=document.querySelector('[aria-label="表示する週の日付"]'),error=document.querySelector('#week-date-error');return {days:[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].map(el=>el.dataset.calendarDay),input:{value:input.value,min:input.min,max:input.max,invalid:input.getAttribute('aria-invalid'),describedBy:input.getAttribute('aria-describedby')},error:error?{text:error.textContent,role:error.getAttribute('role')}:null}})()`)
+  const inspect=()=>page.evaluate(`(()=>{const input=document.querySelector('[aria-label="表示する週の日付"]'),error=document.querySelector('#week-date-error');return {now:Date.now(),days:[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].map(el=>el.dataset.calendarDay),input:{value:input.value,min:input.min,max:input.max,invalid:input.getAttribute('aria-invalid'),describedBy:input.getAttribute('aria-describedby')},error:error?{text:error.textContent,role:error.getAttribute('role')}:null}})()`)
   for(const [label,week,arrow] of [['low','1000-01-13','前の週'],['high','9999-12-20','次の週']]){
     await nativeValue(selector,week)
     const expectedDays=Array.from({length:7},(_,index)=>shift(week,index)),selected=await inspect()
@@ -750,12 +842,15 @@ async function verifyWeekDateBoundaries() {
     observations.push({label,week,selected,rejected,trend})
   }
   check('Both date boundaries and expanded trends preserve the entire database and exposed state',fs.readFileSync(path.join(DATA,'data.json'),'utf8')===disk&&isDeepStrictEqual(read(),database)&&stateMatchesDatabase(await call('state:get'),database))
-  await button('今週','.week-workspace')
-  const restored=await inspect()
-  check('Returning from a boundary clears the local error and restores the seven current dates without renderer errors',restored.input.value===thisWeek&&isDeepStrictEqual(restored.days,Array.from({length:7},(_,index)=>shift(thisWeek,index)))&&!restored.error&&restored.input.invalid!=='true'&&errors.length===0,restored)
+  const restored=await returnToCurrentWeek(inspect),currentWeek=restored.currentWeek
+  check('Returning from a boundary clears the local error and restores the seven current dates without renderer errors',restored.input.value===currentWeek&&isDeepStrictEqual(restored.days,Array.from({length:7},(_,index)=>shift(currentWeek,index)))&&!restored.error&&restored.input.invalid!=='true'&&errors.length===0,restored)
+  await selectWeek(fixtureWeek)
   if(await page.evaluate('document.querySelector(".week-record-details").open'))await click('.week-record-details > summary')
   await page.evaluate('document.querySelector(".main-content").scrollTop=0;document.querySelector(".calendar-scroll").scrollTop=0')
   fs.writeFileSync(path.join(RUN,'week-date-boundary-trends.json'),JSON.stringify({observations,restored,rendererErrors:errors},null,2))
+}
+async function inspectBudgetDraft() {
+  return page.evaluate(`(() => { const dialog=document.querySelector('[role="dialog"][aria-labelledby="week-budget-title"]'),form=dialog?.querySelector('.weekly-budget form'); return {dialogPresent:Boolean(dialog),formPresent:Boolean(form),dialogCount:document.querySelectorAll('[role="dialog"]').length,rect:dialog?.getBoundingClientRect().toJSON()??null,draft:form?{week:form.closest('[data-week-budget]').dataset.weekBudget,life:['睡眠（週の合計時間）','食事（週の合計時間）','その他の固定時間（週の合計時間）'].map(label=>[...form.querySelectorAll('input')].find(input=>input.getAttribute('aria-label')===label)?.value??null),allocations:[...form.querySelectorAll('.weekly-allocation')].map(row=>({projectId:row.dataset.allocationProjectId,mode:row.querySelector('select').value,minimum:row.querySelector('input[aria-label^="最小時間:"]')?.value??'',maximum:row.querySelector('input[aria-label^="最大時間:"]')?.value??''})),reuseAsDefault:form.querySelector('input[type="checkbox"]').checked,saving:form.querySelector('button[type="submit"]').disabled}:null,errors:dialog?[...dialog.querySelectorAll('[role="alert"]')].map(element=>element.textContent):[]}; })()`)
 }
 async function editBudget() {
   const target=await scrollMainTo('[aria-label="時間予算を編集"]')
@@ -769,34 +864,53 @@ async function saveBudget(week) {
   await until(() => page.evaluate('!document.querySelector(".weekly-budget form")'), 'budget editor closes')
 }
 async function verifyBudget() {
-  await editBudget()
-  for (const [label, value] of [['睡眠（週の合計時間）', '56'], ['食事（週の合計時間）', '14'], ['その他の固定時間（週の合計時間）', '7']]) await fill(`[aria-label="${label}"]`, value)
-  for (let index = 0; index < 3; index++) {
-    await select('[aria-label="配分するプロジェクトを追加"]', projects[index].id)
-    await select(`[aria-label="配分の方式: ${labels[index]}"]`, ['minimum', 'maximum', 'range'][index])
-    if (index === 0 || index === 2) await fill(`[aria-label="最小時間: ${labels[index]}"]`, index === 0 ? '12' : '8')
-    if (index === 1 || index === 2) await fill(`[aria-label="最大時間: ${labels[index]}"]`, index === 1 ? '20' : '16')
+  const beforeBudget = read(), beforeBudgetDisk = fs.readFileSync(path.join(DATA, 'data.json'), 'utf8'), observations = []
+  const expectedDraft = { week: fixtureWeek, life: ['56', '14', '7'], allocations: [{ projectId: projects[0].id, mode: 'minimum', minimum: '12', maximum: '' }, { projectId: projects[1].id, mode: 'maximum', minimum: '', maximum: '20' }, { projectId: projects[2].id, mode: 'range', minimum: '8', maximum: '16' }], reuseAsDefault: true, saving: false }
+  await page.evaluate(`(() => { window.__weeklyBudgetCaptureEvents=[]; window.__weeklyBudgetCaptureObserver=event=>{if(event.type==='keydown'&&event.key!=='Escape')return;const target=event.target,dialog=document.querySelector('[role="dialog"][aria-labelledby="week-budget-title"]');window.__weeklyBudgetCaptureEvents.push({at:Date.now(),type:event.type,key:event.key??null,x:event.clientX??null,y:event.clientY??null,dialogPresent:Boolean(dialog),target:{tag:target?.tagName??null,className:target?.className??null,ariaLabel:target?.getAttribute?.('aria-label')??null,text:target?.textContent?.trim().slice(0,100)??null},insideDialog:Boolean(target instanceof Node&&dialog?.contains(target)),onBackdrop:Boolean(target?.closest?.('.modal-scrim')&&!target?.closest?.('[role="dialog"]'))});};for(const type of ['pointerdown','mousedown','mouseup','click','keydown'])window.addEventListener(type,window.__weeklyBudgetCaptureObserver,true);})()`)
+  async function assertDraft(stage, prepared) {
+    const memory = await call('state:get')
+    const observed = await until(async () => { const value = await inspectBudgetDraft(); return value.dialogPresent && value.formPresent && value.dialogCount === 1 && value.errors.length === 0 && isDeepStrictEqual(value.draft, expectedDraft) ? value : null }, 'exact unsaved budget draft ' + stage)
+    const databaseUnchanged = fs.readFileSync(path.join(DATA, 'data.json'), 'utf8') === beforeBudgetDisk && isDeepStrictEqual(read(), beforeBudget) && stateMatchesDatabase(memory, beforeBudget)
+    observations.push({ stage, ...observed, databaseUnchanged })
+    check('Budget capture ' + stage + ' retains its open dialog, every input and checked default without saving', observed.dialogPresent && observed.formPresent && observed.dialogCount === 1 && observed.errors.length === 0 && isDeepStrictEqual(observed.draft, expectedDraft) && (!prepared || isDeepStrictEqual(observed.draft, prepared.draft)) && databaseUnchanged, observations.at(-1))
+    return observed
   }
-  await click('.weekly-budget form input[type="checkbox"]')
-  await screenshot('06-week-budget-editor', '.weekly-budget form', 'center')
-  await saveBudget(thisWeek)
-  let budget = read().weeklyBudgets.find((item) => item.weekStart === thisWeek)
+  try {
+    await screenshot('06-week-budget-editor', '.weekly-budget form', 'center', async () => {
+      await editBudget()
+      for (const [label, value] of [['睡眠（週の合計時間）', '56'], ['食事（週の合計時間）', '14'], ['その他の固定時間（週の合計時間）', '7']]) await fill(`[aria-label="${label}"]`, value)
+      for (let index = 0; index < 3; index++) {
+        await select('[aria-label="配分するプロジェクトを追加"]', projects[index].id)
+        await select(`[aria-label="配分の方式: ${labels[index]}"]`, ['minimum', 'maximum', 'range'][index])
+        if (index === 0 || index === 2) await fill(`[aria-label="最小時間: ${labels[index]}"]`, index === 0 ? '12' : '8')
+        if (index === 1 || index === 2) await fill(`[aria-label="最大時間: ${labels[index]}"]`, index === 1 ? '20' : '16')
+      }
+      await click('.weekly-budget form input[type="checkbox"]')
+      const prepared = await assertDraft('after-input')
+      return () => assertDraft('before-capture', prepared)
+    })
+  } finally {
+    const events = await page.evaluate(`(() => {for(const type of ['pointerdown','mousedown','mouseup','click','keydown'])window.removeEventListener(type,window.__weeklyBudgetCaptureObserver,true);const events=window.__weeklyBudgetCaptureEvents;delete window.__weeklyBudgetCaptureObserver;delete window.__weeklyBudgetCaptureEvents;return events;})()`)
+    fs.writeFileSync(path.join(RUN, 'budget-capture-observations.json'), JSON.stringify({ expectedDraft, observations, events }, null, 2))
+  }
+  await saveBudget(fixtureWeek)
+  let budget = read().weeklyBudgets.find((item) => item.weekStart === fixtureWeek)
   check('Living totals and minimum, maximum and range allocations persist through the UI', budget.sleepMinutes === 3360 && budget.mealMinutes === 840 && budget.fixedMinutes === 420 && isDeepStrictEqual(budget.allocations, [{ projectId: projects[0].id, mode: 'minimum', minutes: 720 }, { projectId: projects[1].id, mode: 'maximum', minutes: 1200 }, { projectId: projects[2].id, mode: 'range', minimumMinutes: 480, maximumMinutes: 960 }]))
   await editBudget()
   await select(`[aria-label="配分の方式: ${labels[2]}"]`, 'unlimited')
   await click('.weekly-budget form input[type="checkbox"]')
-  await saveBudget(thisWeek)
-  budget = read().weeklyBudgets.find((item) => item.weekStart === thisWeek)
+  await saveBudget(fixtureWeek)
+  budget = read().weeklyBudgets.find((item) => item.weekStart === fixtureWeek)
   check('Unlimited allocation remains available alongside bounded allocations', budget.allocations[2].mode === 'unlimited' && isDeepStrictEqual(read().weeklyBudgetDefaults.allocations, budget.allocations))
   await click('[aria-label="次の週"]')
   await editBudget()
   await button('既定の配分を使う', '.weekly-budget')
   await until(() => page.evaluate('Boolean(document.querySelector(".weekly-budget form"))'), 'default budget opens as a draft')
-  check('Default reuse retains input without silently saving a new week', !read().weeklyBudgets.some((item) => item.weekStart === nextWeek) && await page.evaluate('document.querySelector("[aria-label=\\"睡眠（週の合計時間）\\"]").value==="56" && document.querySelectorAll(".weekly-allocation").length===3'))
-  await saveBudget(nextWeek)
-  const reused = read().weeklyBudgets.find((item) => item.weekStart === nextWeek)
+  check('Default reuse retains input without silently saving a new week', !read().weeklyBudgets.some((item) => item.weekStart === nextFixtureWeek) && await page.evaluate('document.querySelector("[aria-label=\\"睡眠（週の合計時間）\\"]").value==="56" && document.querySelectorAll(".weekly-allocation").length===3'))
+  await saveBudget(nextFixtureWeek)
+  const reused = read().weeklyBudgets.find((item) => item.weekStart === nextFixtureWeek)
   check('Reuse preserves all saved allocations and living totals', ['sleepMinutes', 'mealMinutes', 'fixedMinutes', 'allocations'].every((field) => isDeepStrictEqual(reused[field], budget[field])))
-  await button('今週', '.week-workspace')
+  await selectWeek(fixtureWeek)
   await screenshot('07-week-budget-summary')
 }
 async function verifyLayout(label, width, height, scale = 1) {
@@ -829,10 +943,10 @@ async function verifyLayout(label, width, height, scale = 1) {
   await screenshot(label+'-overview')
   await resetPrimary()
   await createDialog()
-  await form('狭い画面でも保持する入力 ' + label, at(thisWeek, 16), at(thisWeek, 17))
+  await form('狭い画面でも保持する入力 ' + label, at(fixtureWeek, 16), at(fixtureWeek, 17))
   await click('[aria-label="毎週繰り返す"]')
   await click('[aria-label="水曜日に繰り返す"]')
-  await nativeValue('[aria-label="繰り返しの終了日"]', shift(thisWeek, 30))
+  await nativeValue('[aria-label="繰り返しの終了日"]', shift(fixtureWeek, 30))
   const savePoint = await page.evaluate(`(() => { const save=document.querySelector('.calendar-editor button[type=submit]'); save.scrollIntoView({block:'center'}); const r=save.getBoundingClientRect(), m=document.querySelector('[role=dialog]').getBoundingClientRect(); return {save:{top:r.top,bottom:r.bottom,width:r.width,height:r.height},modal:{top:m.top,bottom:m.bottom,width:m.width},scroll:[...document.querySelectorAll('[role=dialog],.calendar-editor,[role=dialog] form')].map(el=>({className:el.className,scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,scrollTop:el.scrollTop}))}; })()`)
   check(label + ': the modal remains inside the viewport and its save control is reachable', savePoint.modal.top >= -1 && savePoint.modal.bottom <= height + 1 && savePoint.save.top >= 0 && savePoint.save.bottom <= height && savePoint.save.height >= 24, savePoint)
   await screenshot(label + '-calendar-modal')
@@ -861,7 +975,7 @@ async function verifyBudgetKeyboard() {
   await fill('[aria-label="睡眠（週の合計時間）"]', '57')
   await key('Escape', 'Escape')
   await until(() => page.evaluate('!document.querySelector("[role=dialog]")'), 'budget Escape closes the dialog')
-  check('Budget Escape restores trigger focus and preserves the saved budget', await page.evaluate('document.activeElement.getAttribute("aria-label")==="時間予算を編集"') && read().weeklyBudgets.find((budget) => budget.weekStart === thisWeek).sleepMinutes === 3360)
+  check('Budget Escape restores trigger focus and preserves the saved budget', await page.evaluate('document.activeElement.getAttribute("aria-label")==="時間予算を編集"') && read().weeklyBudgets.find((budget) => budget.weekStart === fixtureWeek).sleepMinutes === 3360)
   await editBudget()
   check('Reopening after Escape retains the unsaved budget input', await page.evaluate('document.querySelector(' + JSON.stringify('[aria-label="睡眠（週の合計時間）"]') + ').value==="57"'))
   await fill('[aria-label="睡眠（週の合計時間）"]', '56')
@@ -919,7 +1033,7 @@ async function verifyDemoScreenshots() {
   }
   await call('task:update', { id: fixedTask.id, patch: { title: '定例ミーティング' } })
   await call('calendar:update', { id: recurringBlock.id, patch: { cancelled: true } })
-  await call('weeklyBudget:set', { weekStart: thisWeek, plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 420, allocations: [{ projectId: projects[0].id, mode: 'range', minimumMinutes: 720, maximumMinutes: 1200 }, { projectId: projects[1].id, mode: 'minimum', minutes: 480 }, { projectId: projects[2].id, mode: 'range', minimumMinutes: 360, maximumMinutes: 720 }] } })
+  await call('weeklyBudget:set', { weekStart: fixtureWeek, plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 420, allocations: [{ projectId: projects[0].id, mode: 'range', minimumMinutes: 720, maximumMinutes: 1200 }, { projectId: projects[1].id, mode: 'minimum', minutes: 480 }, { projectId: projects[2].id, mode: 'range', minimumMinutes: 360, maximumMinutes: 720 }] } })
   check('Demo cancels only its added duplicate sleep and preserves the original schedule and all sessions', read().calendarBlocks.find((block) => block.id === recurringBlock.id).cancelled && read().calendarBlocks.some((block) => block.category === 'sleep' && block.id !== recurringBlock.id && !block.cancelled) && isDeepStrictEqual(read().sessions, baselineSessions))
   const plannedTitles = new Map([['先に置いた作業予定', '画面の設計を検討する'], [uiBlock.title, '週間カレンダーの実装'], ['保存失敗でも残る予定', '実装を振り返る'], [draggedBlock.title, '論文を読む'], [recurringBlock.title, '睡眠']])
   for (const block of read().calendarBlocks.filter((item) => !item.cancelled)) {
@@ -929,7 +1043,7 @@ async function verifyDemoScreenshots() {
   uiBlock = read().calendarBlocks.find((item) => item.id === uiBlock.id)
   recurringBlock = read().calendarBlocks.find((item) => item.id === recurringBlock.id)
   draggedBlock = read().calendarBlocks.find((item) => item.id === draggedBlock.id)
-  await button('今週', '.week-workspace')
+  await selectWeek(fixtureWeek)
   const inspect=async()=>{const surface=await calendarSurface();const projects=await page.evaluate("[...document.querySelectorAll('.week-project')].slice(0,3).map(el=>({name:el.querySelector('.week-project-name strong').textContent,allocation:el.querySelector('.week-project-allocation').textContent,contentBounds:[...el.querySelectorAll('.week-project-name,.week-project-numbers,.week-project-allocation')].map(el=>el.getBoundingClientRect().toJSON())}))");return {...surface,projects}}
   const comparisonsVisible=surface=>isDeepStrictEqual(surface.projects.map(item=>item.name),['White Box','Quri','研究・学習'])&&surface.projects.every(project=>project.contentBounds.length===3&&project.contentBounds.every(content=>content.top>=Math.max(surface.main.top,surface.budget.top)&&content.bottom<=Math.min(surface.height,surface.budget.bottom-1)))&&surface.projects[0].allocation.includes('12h〜20h')&&surface.projects[1].allocation.includes('最低 8h')&&surface.projects[2].allocation.includes('6h〜12h')
   await page.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false})
@@ -959,21 +1073,21 @@ async function verifyDetachedLinks() {
   const originalProject = await call('project:create', { name: '検証専用・予定の元プロジェクト' })
   const movedProject = await call('project:create', { name: '検証専用・タスクの移動先' })
   const linkedTask = await call('task:create', { title: '検証専用・関連先が変わるタスク', projectId: originalProject.id, status: 'todo' })
-  const linked = await call('calendar:create', { title: '移動前の関連付き予定', category: 'work', taskId: linkedTask.id, projectId: originalProject.id, startedAt: at(shift(thisWeek, 3), 19), endedAt: at(shift(thisWeek, 3), 20), repeat: 'none', weekdays: [], until: null })
+  const linked = await call('calendar:create', { title: '移動前の関連付き予定', category: 'work', taskId: linkedTask.id, projectId: originalProject.id, startedAt: at(shift(fixtureWeek, 3), 19), endedAt: at(shift(fixtureWeek, 3), 20), repeat: 'none', weekdays: [], until: null })
   await call('task:update', { id: linkedTask.id, patch: { projectId: movedProject.id } })
   await editCalendar(linked.id)
   await fill('[role="dialog"] [aria-label="タイトル"]', 'タスク移動後でも編集できる予定')
-  await nativeValue('[aria-label="開始"]', localDateTime(at(shift(thisWeek, 3), 19, 15)))
-  await nativeValue('[aria-label="終了"]', localDateTime(at(shift(thisWeek, 3), 20, 15)))
+  await nativeValue('[aria-label="開始"]', localDateTime(at(shift(fixtureWeek, 3), 19, 15)))
+  await nativeValue('[aria-label="終了"]', localDateTime(at(shift(fixtureWeek, 3), 20, 15)))
   let saved = await saveCalendar('タスク移動後でも編集できる予定')
-  check('Editing title and time retains links when the linked task has moved to another project', saved.id === linked.id && saved.taskId === linkedTask.id && saved.projectId === originalProject.id && saved.startedAt === at(shift(thisWeek, 3), 19, 15) && saved.endedAt === at(shift(thisWeek, 3), 20, 15))
+  check('Editing title and time retains links when the linked task has moved to another project', saved.id === linked.id && saved.taskId === linkedTask.id && saved.projectId === originalProject.id && saved.startedAt === at(shift(fixtureWeek, 3), 19, 15) && saved.endedAt === at(shift(fixtureWeek, 3), 20, 15))
   await call('task:delete', { id: linkedTask.id })
   await call('project:delete', { id: originalProject.id })
   check('Only newly created isolated test entities are removed', !read().tasks.some((item) => item.id === linkedTask.id) && !read().projects.some((item) => item.id === originalProject.id) && isDeepStrictEqual(read().tasks.filter((item) => [...tasks, fixedTask].some((task) => task.id === item.id)), untouchedTasks) && isDeepStrictEqual(read().projects.filter((item) => projects.some((project) => project.id === item.id)), untouchedProjects) && isDeepStrictEqual(read().sessions, baselineSessions))
   await editCalendar(linked.id)
   await fill('[role="dialog"] [aria-label="タイトル"]', '関連タスクとプロジェクトの削除後に編集した予定')
   saved = await saveCalendar('関連タスクとプロジェクトの削除後に編集した予定')
-  check('A title-only edit succeeds with deleted task and project references retained', saved.id === linked.id && saved.taskId === linkedTask.id && saved.projectId === originalProject.id && saved.startedAt === at(shift(thisWeek, 3), 19, 15))
+  check('A title-only edit succeeds with deleted task and project references retained', saved.id === linked.id && saved.taskId === linkedTask.id && saved.projectId === originalProject.id && saved.startedAt === at(shift(fixtureWeek, 3), 19, 15))
   await page.send('Page.reload')
   await until(() => page.evaluate('Boolean(document.querySelector(".rail-tabs"))'), 'reload after detached-link editing')
   await navigateWeek()
@@ -981,6 +1095,26 @@ async function verifyDetachedLinks() {
   check('Reload reads back title and time after task/project deletion', await page.evaluate('document.querySelector(' + JSON.stringify('[aria-label="タイトル"]') + ').value===' + JSON.stringify(saved.title) + ' && document.querySelector(' + JSON.stringify('[aria-label="開始"]') + ').value===' + JSON.stringify(localDateTime(saved.startedAt))))
   await screenshot('15-deleted-links-editable', '.calendar-editor', 'center')
   await discardCalendar()
+}
+
+async function recoverFailureWeekDate() {
+  if (!page || !intentionalWeekDateError) return
+  const inspect = () => page.evaluate(`(() => { const input=document.querySelector('[aria-label="表示する週の日付"]'),error=document.querySelector('#week-date-error'); return {input:input?{value:input.value,invalid:input.getAttribute('aria-invalid')}:null,days:[...document.querySelectorAll('.calendar-day-header[data-calendar-day]')].map(el=>el.dataset.calendarDay),error:error?{text:error.textContent,role:error.getAttribute('role')}:null,otherErrors:[...document.querySelectorAll('.task-command-error[role=alert]')].filter(el=>el.id!=='week-date-error').map(el=>el.textContent)}; })()`)
+  const before = await inspect()
+  if (!before.error) return
+  const expected = intentionalWeekDateError
+  assert.ok(before.error.role === 'alert' && before.error.text === expected.errorText && before.input?.invalid === 'true' && before.input.value === expected.inputValue && isDeepStrictEqual(before.days, expected.days), 'Failure recovery only handles the exact previously asserted intentional week-picker rejection')
+  const disk = fs.readFileSync(path.join(DATA, 'data.json'), 'utf8')
+  const recoveryInput = before.input.value === expected.normalDate ? expected.days[1] : expected.normalDate
+  const observation = { failureRemains: true, expected, before, recoveryInput, attempted: true, after: null }
+  fs.writeFileSync(path.join(RUN, 'failure-week-date-recovery.json'), JSON.stringify(observation, null, 2))
+  await nativeValue('[aria-label="表示する週の日付"]', recoveryInput, expected.normalDate)
+  const after = await inspect()
+  assert.ok(!after.error && after.input?.value === expected.normalDate && after.input.invalid !== 'true' && isDeepStrictEqual(after.days, before.days) && isDeepStrictEqual(after.otherErrors, before.otherErrors), 'Week-date failure recovery clears only the intentional local error and preserves the displayed week and other alerts')
+  assert.equal(fs.readFileSync(path.join(DATA, 'data.json'), 'utf8'), disk, 'Week-date failure recovery changes no saved data')
+  observation.after = after
+  observation.databaseBytesUnchanged = true
+  fs.writeFileSync(path.join(RUN, 'failure-week-date-recovery.json'), JSON.stringify(observation, null, 2))
 }
 
 async function closeFailureEditors() {
@@ -1072,17 +1206,17 @@ try {
   if (page) { try { await screenshot('failure'); fs.writeFileSync(path.join(RUN, 'failure-dom.txt'), await page.evaluate('document.body.innerText')) } catch {} }
 } finally {
   endSaveFault()
-  if (exitCode !== 0 && child && page) { try { await closeFailureEditors() } catch (error) { console.error(error) } }
+  if (exitCode !== 0 && child && page) { try { await closeFailureEditors() } catch (error) { console.error(error) }; try { await recoverFailureWeekDate() } catch (error) { console.error(error) } }
   if (child) { try { await stop('failure') } catch (error) { console.error(error); exitCode = 1 } }
   if (exitCode !== 0) {
+    const recoveryOwner = { pid: child?.pid ?? childIdentity?.ProcessId ?? null, creationDate: childIdentity?.CreationDate ?? null, nativeStartTime: childNativeStartTime ?? null, mainWindowHandle: childMainWindowHandle ?? null, cdpPort: port, data: DATA, profile: path.join(RUN, 'profile'), executable: electron, failure: path.join(RUN, 'failure.txt'), forcedCleanup: false }
+    fs.writeFileSync(path.join(RUN, 'failure-recovery-owner.json'), JSON.stringify(recoveryOwner, null, 2))
     const remaining = processSnapshot()
     fs.writeFileSync(path.join(RUN, 'failure-owned-processes.json'), JSON.stringify(processObservation, null, 2))
     if (remaining.length) {
-      fs.writeFileSync(path.join(RUN, 'forced-cleanup-processes.json'), JSON.stringify(remaining, null, 2))
-      for (const item of remaining.reverse()) {
-        const current = processSnapshot().find((process) => sameProcess(process, item))
-        if (current) try { process.kill(current.ProcessId, 'SIGKILL') } catch (error) { if (error.code !== 'ESRCH') throw error }
-      }
+      const unresolved = { remaining, reused: processObservation.reused, forcedCleanup: false, pid: child?.pid ?? null, creationDate: childIdentity?.CreationDate ?? null, nativeStartTime: childNativeStartTime ?? null, mainWindowHandle: childMainWindowHandle ?? null, cdpPort: port, data: DATA, profile: path.join(RUN, 'profile'), executable: electron, failure: path.join(RUN, 'failure.txt') }
+      fs.writeFileSync(path.join(RUN, 'unclosed-owned-processes.json'), JSON.stringify(unresolved, null, 2))
+      console.error('Owned QA processes remain for normal recovery: ' + path.join(RUN, 'unclosed-owned-processes.json'))
     }
   }
   for (const connection of pages) connection.close()

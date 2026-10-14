@@ -21,3 +21,10 @@ YYYYMMDD_adr_<短い英語スラッグ>.md        設計判断だけを残すと
 
 story を書く → まひろが受け入れ基準を確認 → ブランチを切る（1 story = 1 PR、[GIT_WORKFLOW.md](../../GIT_WORKFLOW.md)）→ UI があれば story 先行（Storybook）→ 契約 → 実装 → ゲート → PR。
 完了した story は受け入れ基準にチェックを入れて残す（消さない。何を約束して何を果たしたかの記録）。
+
+## 週間カレンダーの版
+
+前回の検証時点（[d18e596](https://github.com/menma22/white-box/commit/d18e596270410772faacf21e5ebc0d1f0c9d3310)）の本文を保持する。
+
+- [v2 — 第2回修正と現在の検証](20261011_story_weekly-calendar-v2.md)
+- [旧本文 — d18e596時点の履歴](20261011_story_weekly-calendar.md)

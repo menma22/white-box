@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { dayRange, shiftDay } from '@white-box/core/activity'
 import { formatClock, formatDuration } from '@white-box/core/engine'
+import { formatRecordDuration } from '@/lib/record-duration'
 import { layoutDayEvents, selectionMinutes, type CalendarEvent } from './calendar-layout'
 
 const KIND = { planned: '予定', actual: '実績', routine: '生活・固定', fixed: '外部固定', google: 'Google の予定' }
@@ -83,7 +84,7 @@ export function WeekCalendar({ start, today, now, events, actualByDay, zoom, onC
               const eventHeight = (endMinute - startMinute) / 1440 * height
               const narrow = (Math.max(560, viewportWidth) - 58) / 7 / lanes - 6 < 82
               const captionOffset = Math.min(Math.max(0, scrollTop - startMinute / 1440 * height), Math.max(0, eventHeight - CAPTION_HEIGHT))
-              const caption = KIND[event.kind] + (event.recurring ? '・毎週' : '') + ' · ' + event.title + ' · ' + new Date(event.startedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + formatClock(event.startedAt) + '–' + new Date(event.endedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + formatClock(event.endedAt) + ' · ' + formatDuration(event.endedAt - event.startedAt, 'compact')
+              const caption = KIND[event.kind] + (event.recurring ? '・毎週' : '') + ' · ' + event.title + ' · ' + new Date(event.startedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + formatClock(event.startedAt) + '–' + new Date(event.endedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + formatClock(event.endedAt) + ' · ' + formatRecordDuration(event.endedAt - event.startedAt)
               return <button type="button" key={event.key} data-calendar-event={event.kind} data-calendar-block-id={event.blockId}
                 className={'calendar-event is-' + event.kind + (eventHeight < CAPTION_HEIGHT ? ' is-short' : '') + (narrow ? ' is-narrow' : '') + (event.live ? ' is-live' : '')}
                 style={{ top: startMinute / 1440 * height, height: eventHeight, left: 'calc(' + lane / lanes * 100 + '% + 3px)', width: 'calc(' + 100 / lanes + '% - 6px)', '--event-color': event.color ?? 'var(--accent)' } as CSSProperties}
