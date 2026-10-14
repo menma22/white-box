@@ -37,6 +37,13 @@ describe('Google calendar display', () => {
 })
 
 describe('Google create retries', () => {
+  it('rejects invalid drafts before fixing the retry payload, allowing correction without discard', () => {
+    const request = new GoogleCreateRequest('request-id')
+    const input = { calendarId: event.calendarId, title: event.title, startedAt: event.startedAt, endedAt: event.startedAt + 91 * 86400000 }
+    expect(() => request.prepare(input)).toThrow()
+    const corrected = { ...input, endedAt: event.endedAt }
+    expect(request.prepare(corrected)).toEqual({ ...corrected, requestId: 'request-id' })
+  })
   it('reuses both request identity and the original write after an ambiguous failure', () => {
     const request = new GoogleCreateRequest('request-id')
     const input = { calendarId: event.calendarId, title: event.title, startedAt: event.startedAt, endedAt: event.endedAt }

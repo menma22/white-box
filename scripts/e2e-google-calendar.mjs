@@ -74,7 +74,11 @@ async function inspectorConnection(url) {
   socket.addEventListener('close', () => { resolveClosed(); for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('Owned main inspector closed')) } pending.clear() })
   await new Promise((resolve, reject) => { const timer = setTimeout(() => reject(new Error('Inspector open timeout')), 10000); socket.addEventListener('open', () => { clearTimeout(timer); resolve() }, { once: true }); socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('Inspector open failed')) }, { once: true }) })
   const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++sequence; const timer = setTimeout(() => { pending.delete(id); reject(new Error('Inspector timeout: ' + method)) }, 10000); pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params })) })
-  return { send, closed, events, scripts, selectContext(value) { contextId = value }, close: () => socket.close(), async evaluate(expression) { return (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, ...(contextId === undefined ? {} : { contextId }) })).result.value } }
+  return { send, closed, events, scripts, selectContext(value) { contextId = value }, close: () => socket.close(), async evaluate(expression) {
+    const lastPause = events.findLastIndex(event => event.method === 'Debugger.paused'), lastResume = events.findLastIndex(event => event.method === 'Debugger.resumed')
+    if (lastPause > lastResume) return (await send('Debugger.evaluateOnCallFrame', { callFrameId: events[lastPause].params.callFrames[0].callFrameId, expression, returnByValue: true })).result.value
+    return (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, ...(contextId === undefined ? {} : { contextId }) })).result.value
+  } }
 }
 
 async function pauseAtMainEntry(label) {
@@ -227,7 +231,7 @@ function checkSecrets() {
   fs.writeFileSync(path.join(RUN, 'encrypted-storage-proof.json'), JSON.stringify({ file: files[0], size: encrypted.length, sha256: createHash('sha256').update(encrypted).digest('hex'), plaintextCredentialsAbsent: true }, null, 2))
 }
 async function closeEditor() { if (await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(EDITOR)}))`)) { await button('閉じる', EDITOR); if (await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(EDITOR + ' .calendar-confirm')}))`)) await button('入力を破棄して閉じる', EDITOR) } }
-async function stop(label, deadlineMs = 20000) {
+async function stop(label, deadlineMs = 60000) {
   if (!child) return
   const current = child; processSnapshot()
   if (page) await closeEditor()
@@ -298,6 +302,11 @@ try {
     const zeroWeek = await observeTotals()
     check('All-day and overnight Google blocks have real weekly layout', await page.evaluate('Boolean(document.querySelector(".calendar-all-day-event[data-calendar-event=google]"))&&[...document.querySelectorAll("[data-calendar-event=google]")].some(e=>e.getAttribute("aria-label")?.includes("Google overnight fixture"))'))
     await screenshot('03-week-zero-sessions')
+    await button('24時間', '.week-zoom-switch')
+    const visibleGoogleWeek = await until(() => page.evaluate(`(()=>{const visible=e=>{const r=e.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;return r.width>0&&r.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&e.contains(document.elementFromPoint(x,y))};const allDay=document.querySelector('.calendar-all-day-event[data-calendar-event=google]'),timed=[...document.querySelectorAll('.calendar-event[data-calendar-event=google]')];return allDay&&visible(allDay)&&['Google overnight fixture','Google timed fixture','Google recurring occurrence'].every(title=>timed.some(e=>e.getAttribute('aria-label')?.includes(title)&&visible(e)))?{allDay:allDay.textContent,visibleTimed:timed.filter(visible).map(e=>e.getAttribute('aria-label')),scrollTop:document.querySelector('.calendar-scroll').scrollTop}:null})()`), '24-hour week visibly includes all-day, overnight and both overlapping Google events')
+    check('Real 24-hour week visibly renders all-day, overnight and timed overlap without local sessions', visibleGoogleWeek.scrollTop === 0 && (await state()).sessions.length === 0, visibleGoogleWeek)
+    await screenshot('03b-week-24-hour-all-day-overnight')
+    await button('拡大', '.week-zoom-switch')
     const project = await call('project:create', { name: 'Google isolation baseline' })
     const task = await call('task:create', { title: 'Local actual baseline', projectId: project.id, status: 'todo' })
     const session = await call('session:start', { taskId: task.id, mode: 'stopwatch' })
@@ -319,6 +328,15 @@ try {
     await button('Google カレンダーへ保存する', '.calendar-editor'); await until(() => page.evaluate(`Boolean(document.querySelector(${JSON.stringify(EDITOR)}))`), 'real Google event editor')
     check('Google editor only offers writable calendars', await page.evaluate(`document.querySelectorAll(${JSON.stringify(EDITOR + ' select option')}).length===1`))
     await fill(EDITOR + ' input:not([type])', 'Google created once fixture')
+    const originalEnd = await page.evaluate(`document.querySelectorAll(${JSON.stringify(EDITOR + ' input[type=datetime-local]')})[1].value`)
+    const longEnd = new Date(today); longEnd.setDate(longEnd.getDate() + 91); longEnd.setHours(10, 0, 0, 0)
+    const longEndValue = new Date(longEnd.getTime() - longEnd.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    async function setEnd(value) { await page.evaluate(`(()=>{const e=document.querySelectorAll(${JSON.stringify(EDITOR + ' input[type=datetime-local]')})[1];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))})()`); await wait(100) }
+    await setEnd(longEndValue)
+    const beforeInvalid = (await transport()).requests.filter(item => item.method === 'POST' && item.body).length
+    await button('Google に保存', EDITOR)
+    check('Invalid 91-day draft stays editable without sending or freezing retry identity', await page.evaluate(`document.querySelector(${JSON.stringify(EDITOR + ' .task-command-error')})?.textContent.includes('90日')&&Array.from(document.querySelectorAll(${JSON.stringify(EDITOR + ' input,' + EDITOR + ' select')})).every(e=>!e.disabled)`) && (await transport()).requests.filter(item => item.method === 'POST' && item.body).length === beforeInvalid)
+    await setEnd(originalEnd)
     const draft = await page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(EDITOR + ' input,' + EDITOR + ' select')}),e=>e.value)`)
     await button('閉じる', EDITOR); check('Dirty Google draft requires explicit discard and retains every field', await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(EDITOR + ' .calendar-confirm')}))`) && isDeepStrictEqual(await page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(EDITOR + ' input,' + EDITOR + ' select')}),e=>e.value)`), draft))
     await button('編集へ戻る', EDITOR)

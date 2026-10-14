@@ -1,4 +1,5 @@
 import type { AppState, TimeRange } from '@white-box/core/types'
+import { GOOGLE_CALENDAR_COMMANDS } from '@white-box/contracts'
 import type { CalendarEvent } from '../today/calendar-layout.js'
 
 export type GoogleCalendarState = NonNullable<AppState['googleCalendar']>
@@ -26,7 +27,7 @@ export class GoogleCreateRequest {
   private input: GoogleCreateInput | null = null
   constructor(private readonly requestId: string) {}
   prepare(input: Omit<GoogleCreateInput, 'requestId'>): GoogleCreateInput {
-    if (!this.input) this.input = { ...input, requestId: this.requestId }
+    if (!this.input) this.input = GOOGLE_CALENDAR_COMMANDS['googleCalendar:create'].args.parse({ ...input, requestId: this.requestId })
     return { ...this.input }
   }
 }

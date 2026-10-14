@@ -32,8 +32,11 @@ export function GoogleEventEditor({ calendars, startedAt, endedAt, onClose }: { 
     if (!input.title || !writable.some((calendar) => calendar.id === input.calendarId) || !Number.isFinite(input.startedAt) || !Number.isFinite(input.endedAt) || input.endedAt <= input.startedAt) {
       setError('書き込めるカレンダー、タイトル、開始より後の終了を指定して。'); return Promise.resolve(false)
     }
+    let payload
+    try { payload = request.current!.prepare(input) }
+    catch { setError('期間は90日以内で、カレンダー・タイトル・日時を確認してください。'); return Promise.resolve(false) }
     setSaving(true); setAttempted(true); setError(''); setDiscard(false)
-    running.current = invoke('googleCalendar:create', request.current!.prepare(input)).then(() => { onClose(); return true })
+    running.current = invoke('googleCalendar:create', payload).then(() => { onClose(); return true })
       .catch((cause) => { setError(String(cause).replace(/^(Error:\s*)+/, '')); return false })
       .finally(() => { running.current = null; setSaving(false) })
     return running.current
