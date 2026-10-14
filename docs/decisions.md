@@ -189,7 +189,9 @@
 
 ## 022. 今日・週・履歴は日境界で切った同じ実作業区間を使う
 
-**決定**: `packages/core/activity` が設定した日境界と月曜始まりの週で区間を切り、総時間・Project別・Task別・Session別・最近14日の値とTimelineへ同じ区間を返す。Sessionの先頭・末尾と満了上限は既存engineの `segmentRange` / `focusEndOrNow` を使う。翌日は暦で求め、24時間の固定加算にしない。
+**決定**: `packages/core/activity` が画面の対象期間で区間を切り、総時間・Project別・Task別・Session別・最近14日の値とTimelineへ同じ区間を返す。Sessionの先頭・末尾と満了上限は既存engineの `segmentRange` / `focusEndOrNow` を使う。翌日は暦で求め、24時間の固定加算にしない。
+
+2026-10-11の[週間カレンダー](stories/20261011_story_weekly-calendar.md)から、週画面は予定・時間予算・実績を月曜0:00〜翌月曜0:00で揃え、日別内訳と最近14日の実績も0:00で区切る。今日・履歴は引き続き設定の日境界を使う。境界は画面で明示する。
 
 編集でSession同士が重なる場合は、開始時刻・ID・区間順が先の実作業へ一度だけ帰属させる。別Sessionの実作業がある瞬間は実作業を優先し、残りの停止は除外・タスク整理・その他の順に重複を解消する。この方針は記録を変更せず集計に適用する。日・週のSession行には範囲内の時間とSession全体を区別して表示する。
 

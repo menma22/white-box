@@ -16,14 +16,17 @@ export function FixedWorkEditor({ work, taskId, onClose }: { work?: FixedWork; t
   const [reason, setReason] = useState(work?.externalReason ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [discard, setDiscard] = useState(false)
   const busy = useRef(false)
   const running = useRef<Promise<boolean> | null>(null)
   const chosen = state.tasks.find((task) => task.id === selectedTask)
+  const dirty = selectedTask !== (work?.taskId ?? taskId ?? '') || start !== localDateTime(work?.startedAt ?? null) || end !== localDateTime(work?.endedAt ?? null) || reason !== (work?.externalReason ?? '')
+  function close() { if (busy.current) return; if (dirty) setDiscard(true); else onClose() }
 
   function save(): Promise<boolean> {
     if (running.current) return running.current
-    const startedAt = new Date(start).getTime()
-    const endedAt = new Date(end).getTime()
+    const startedAt = work && start === localDateTime(work.startedAt) ? work.startedAt : new Date(start).getTime()
+    const endedAt = work && end === localDateTime(work.endedAt) ? work.endedAt : new Date(end).getTime()
     try {
       validateFixedWork({ startedAt, endedAt, externalReason: reason })
       if (startedAt <= now) throw new Error('外部の固定予定は開始前に登録してください')
@@ -38,9 +41,9 @@ export function FixedWorkEditor({ work, taskId, onClose }: { work?: FixedWork; t
       .finally(() => { running.current = null; busy.current = false; setSaving(false) })
     return running.current
   }
-  useDraftParticipant(() => selectedTask === (work?.taskId ?? taskId ?? '') && start === localDateTime(work?.startedAt ?? null) && end === localDateTime(work?.endedAt ?? null) && reason === (work?.externalReason ?? '') ? Promise.resolve(true) : save())
+  useDraftParticipant(() => running.current ?? (dirty ? save() : Promise.resolve(true)))
 
-  return <Modal open onClose={() => { if (!busy.current) onClose() }} labelledBy="fixed-work-editor-title" width={500}>
+  return <Modal open onClose={close} labelledBy="fixed-work-editor-title" width={500}>
     <h3 id="fixed-work-editor-title">{work ? '外部の固定予定を編集' : '外部の固定予定を登録'}</h3>
     <p className="modal-text">相手との会議や予約など、外部の理由で時刻が確定している仕事だけを登録する。</p>
     <form className="phase2-form" onSubmit={(event) => { event.preventDefault(); void save() }}>
@@ -49,7 +52,8 @@ export function FixedWorkEditor({ work, taskId, onClose }: { work?: FixedWork; t
       <label>外部の理由<input className="input" required aria-label="時刻が固定される外部の理由" placeholder="相手との定例会議、予約した相談など" value={reason} disabled={saving} onChange={(event) => setReason(event.target.value)} /></label>
       <p className="phase2-hint">日時はこの PC の現地時刻。計測は自分で開始する。登録だけでは実績時間を作らない。</p>
       {error && <p className="task-command-error" role="alert">保存できなかった。{error} 入力は残っている。</p>}
-      <div className="modal-actions"><button type="button" className="btn btn-ghost btn-md" disabled={saving} onClick={onClose}>閉じる</button><button type="submit" className="btn btn-primary btn-md" disabled={saving}>{saving ? '保存中…' : '固定予定を保存'}</button></div>
+      {discard && <div className="calendar-confirm" role="alert"><p>保存前の入力を破棄して閉じる？</p><div className="modal-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setDiscard(false)}>編集を続ける</button><button type="button" className="btn btn-danger btn-sm" disabled={saving} onClick={onClose}>入力を破棄して閉じる</button></div></div>}
+      <div className="modal-actions"><button type="button" className="btn btn-ghost btn-md" disabled={saving} onClick={close}>閉じる</button><button type="submit" className="btn btn-primary btn-md" disabled={saving}>{saving ? '保存中…' : '固定予定を保存'}</button></div>
     </form>
   </Modal>
 }

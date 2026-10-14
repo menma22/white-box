@@ -15,7 +15,7 @@ import { NoteSchema } from '@white-box/contracts'
 import { emptyGoalMap, parseGoalMap, validGoalDue } from '@white-box/core/goal-map'
 import { AgentRequestsSchema, TaskSuggestionSchema } from '@white-box/contracts'
 import { stallWarningDays, validateTaskPlanning } from '@white-box/core/task-priority'
-import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema, PrioritySchema } from '@white-box/contracts'
+import { CalendarBlockSchema, FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema, PrioritySchema } from '@white-box/contracts'
 import { DATABASE_VERSION, validateStoredDatabase } from './database-validation.js'
 import { validateTaskHierarchy } from '../domain/task-hierarchy.js'
 
@@ -90,6 +90,7 @@ export function normalizeDatabase(parsed: Partial<Database>): Database {
     ...(parsed.weeklyBudgets !== undefined ? { weeklyBudgets: parseWeeklyBudgets(parsed.weeklyBudgets) } : {}),
     ...(parsed.weeklyBudgetDefaults !== undefined ? { weeklyBudgetDefaults: WeeklyBudgetPlanSchema.parse(parsed.weeklyBudgetDefaults) } : {}),
     ...(parsed.fixedWork !== undefined ? { fixedWork: parseFixedWork(parsed.fixedWork) } : {}),
+    ...(parsed.calendarBlocks !== undefined ? { calendarBlocks: parseCalendarBlocks(parsed.calendarBlocks) } : {}),
   }
 }
 
@@ -103,6 +104,12 @@ function parseFixedWork(value: unknown): NonNullable<Database['fixedWork']> {
   const work = FixedWorkSchema.array().parse(value)
   if (new Set(work.map((item) => item.id)).size !== work.length) throw new Error('固定予定のIDが重複しています')
   return work
+}
+
+function parseCalendarBlocks(value: unknown): NonNullable<Database['calendarBlocks']> {
+  const blocks = CalendarBlockSchema.array().parse(value)
+  if (new Set(blocks.map((block) => block.id)).size !== blocks.length) throw new Error('予定のIDが重複しています')
+  return blocks
 }
 
 function hasBeenUsed(db: Database): boolean {

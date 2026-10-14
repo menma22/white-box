@@ -403,7 +403,7 @@ export function createHandlers(ctx: Ctx): Handlers {
       return null
     },
   }
-  const quitSaveCommands = new Set<CommandName>(['state:get', 'app:quit', 'task:update', 'project:update', 'note:update', 'fixedWork:create', 'fixedWork:update'])
+  const quitSaveCommands = new Set<CommandName>(['state:get', 'app:quit', 'task:update', 'project:update', 'note:update', 'fixedWork:create', 'fixedWork:update', 'calendar:create', 'calendar:update'])
   function guard<N extends CommandName>(name: N, reason?: 'end' | 'switch' | 'import') {
     const original = handlers[name] as (args: ArgsOf<N>) => ResultOf<N> | Promise<ResultOf<N>>
     const assertAvailable = () => {

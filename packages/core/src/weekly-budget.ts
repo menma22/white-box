@@ -1,6 +1,7 @@
 import type { Database, FixedWork, ProjectAllocation, TimeRange, WeeklyBudgetPlan } from './types.js'
 import { pausedMsWithin } from './engine.js'
 import { weekRange } from './activity.js'
+import { calendarOccurrences } from './calendar.js'
 
 export const WEEK_MINUTES = 7 * 24 * 60
 
@@ -63,22 +64,40 @@ export function allocationBounds(allocation: ProjectAllocation): { minimumMinute
 export interface WeeklyBudgetSummary {
   availableMinutes: number
   fixedWorkMinutes: number
+  sleepMinutes: number
+  mealMinutes: number
+  fixedMinutes: number
+  calendarRoutineMinutes: number
+  reservedMinutes: number
+  additionalLifeMinutes: number
   minimumMinutes: number
   maximumMinutes: number | null
   unallocatedMinutes: number
   overcommitted: boolean
 }
 
-export function weeklyBudgetSummary(db: Pick<Database, 'weeklyBudgets' | 'fixedWork'>, weekStart: string): WeeklyBudgetSummary | null {
-  weekBounds(weekStart)
+export function weeklyBudgetSummary(db: Pick<Database, 'weeklyBudgets' | 'fixedWork' | 'calendarBlocks'>, weekStart: string): WeeklyBudgetSummary | null {
+  const period = weekBounds(weekStart)
   const plan = db.weeklyBudgets?.find((budget) => budget.weekStart === weekStart)
   if (!plan) return null
   validateBudgetPlan(plan)
-  const fixedMinutes = fixedWorkMinutes(db.fixedWork ?? [], weekStart)
-  const availableMinutes = WEEK_MINUTES - plan.sleepMinutes - plan.mealMinutes - plan.fixedMinutes - fixedMinutes
+  const routine = calendarOccurrences(db.calendarBlocks ?? [], period).filter((item) => item.category !== 'work')
+  const unionMinutes = (ranges: TimeRange[]) => pausedMsWithin(ranges.map((range) => ({ ...range, reason: null })), period.startedAt, period.endedAt, period.endedAt) / 60_000
+  const categoryMinutes = (category: 'sleep' | 'meal' | 'fixed') => unionMinutes(routine.filter((item) => item.category === category))
+  const scheduledSleep = categoryMinutes('sleep')
+  const scheduledMeal = categoryMinutes('meal')
+  const scheduledFixed = categoryMinutes('fixed')
+  const sleepMinutes = Math.max(plan.sleepMinutes, scheduledSleep)
+  const mealMinutes = Math.max(plan.mealMinutes, scheduledMeal)
+  const fixedMinutes = Math.max(plan.fixedMinutes, scheduledFixed)
+  const calendarRoutineMinutes = unionMinutes(routine)
+  const fixed = (db.fixedWork ?? []).filter((work) => !work.cancelled)
+  const reservedMinutes = unionMinutes([...routine, ...fixed])
+  const additionalLifeMinutes = Math.max(0, plan.sleepMinutes - scheduledSleep) + Math.max(0, plan.mealMinutes - scheduledMeal) + Math.max(0, plan.fixedMinutes - scheduledFixed)
+  const availableMinutes = WEEK_MINUTES - reservedMinutes - additionalLifeMinutes
   const bounds = plan.allocations.map(allocationBounds)
   const minimumMinutes = bounds.reduce((sum, bound) => sum + bound.minimumMinutes, 0)
   const maximumMinutes = bounds.some((bound) => bound.maximumMinutes === null) ? null : bounds.reduce((sum, bound) => sum + bound.maximumMinutes!, 0)
-  return { availableMinutes, fixedWorkMinutes: fixedMinutes, minimumMinutes, maximumMinutes,
+  return { availableMinutes, fixedWorkMinutes: fixedWorkMinutes(fixed, weekStart), sleepMinutes, mealMinutes, fixedMinutes, calendarRoutineMinutes, reservedMinutes, additionalLifeMinutes, minimumMinutes, maximumMinutes,
     unallocatedMinutes: availableMinutes - minimumMinutes, overcommitted: minimumMinutes > availableMinutes }
 }
