@@ -10,6 +10,8 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
+import { readGoogleOAuthClient, writeGoogleOAuthClient } from '../dist-electron/infra/google-oauth-client.js'
+
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const OUT = path.join(ROOT, 'release', 'White Box')
 const EXE = path.join(OUT, 'White Box.exe')
@@ -28,6 +30,10 @@ for (const dir of need) {
   }
 }
 
+const googleOAuthFile = process.env.WHITEBOX_GOOGLE_OAUTH_CONFIG
+const googleOAuthClient = readGoogleOAuthClient(googleOAuthFile || path.join(ROOT, 'assets', 'google-oauth-client.json'), Boolean(googleOAuthFile))
+if (!googleOAuthClient) console.warn('Google 接続設定なし: この配布版では Google に接続できません。')
+
 fs.rmSync(OUT, { recursive: true, force: true })
 fs.mkdirSync(OUT, { recursive: true })
 
@@ -41,6 +47,7 @@ fs.mkdirSync(APP, { recursive: true })
 for (const dir of ['dist', 'dist-electron', 'assets']) {
   copyTree(path.join(ROOT, dir), path.join(APP, dir))
 }
+if (googleOAuthClient) writeGoogleOAuthClient(path.join(APP, 'assets', 'google-oauth-client.json'), googleOAuthClient)
 fs.mkdirSync(path.join(APP, 'apps', 'desktop', 'src', 'presentation'), { recursive: true })
 fs.copyFileSync(
   path.join(ROOT, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),

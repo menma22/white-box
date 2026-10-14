@@ -32,19 +32,11 @@ export function GoogleCalendarSettings({ period }: { period?: TimeRange }) {
   const disabled = saving || isBrowserPreview
   return <section className="set-block google-calendar-settings" aria-labelledby="google-settings-title">
     <h2 className="set-title" id="google-settings-title">Google カレンダー</h2>
-    <p className="set-note">選んだカレンダーの予定を今日・週に表示する。実作業の記録とは別に扱う。</p>
+    <p className="set-note">Google に接続して、選んだカレンダーの予定を今日・週に表示する。予定の追加もできる。実作業の記録とは別に扱う。</p>
     {isBrowserPreview && <p className="calendar-hint">ブラウザは表示確認用。接続・同期・Google への保存はデスクトップアプリで使える。</p>}
-    <div className="google-status" role="status"><strong>{google?.connected ? '接続中' : google?.configured ? '接続待ち' : '接続設定なし'}</strong>{google?.account && <span>{google.account}</span>}{google?.syncing ? <span>同期中…</span> : google?.lastSyncedAt && <span>最終同期 {new Date(google.lastSyncedAt).toLocaleString('ja-JP')}</span>}</div>
+    <div className="google-status" role="status"><strong>{google?.connected ? '接続中' : google?.configured ? '接続待ち' : '接続を利用できません'}</strong>{google?.account && <span>{google.account}</span>}{google?.syncing ? <span>同期中…</span> : google?.lastSyncedAt && <span>最終同期 {new Date(google.lastSyncedAt).toLocaleString('ja-JP')}</span>}</div>
     {(error || google?.error) && <p className="task-command-error" role="alert">{error || google?.error}</p>}
-    {!google?.connected && <details className="google-credentials" open={!google?.configured}>
-      <summary>接続設定 {google?.configured ? '（保存済み）' : ''}</summary><p className="calendar-hint">Google Cloud の「デスクトップ アプリ」OAuth クライアントを使う。保存済みの値は画面へ戻さない。</p>
-      <p className="calendar-hint"><a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noreferrer">Google Cloud で Calendar API を有効にする</a> → <a href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noreferrer">Auth Platform でデスクトップ アプリのクライアントを作る</a>。同意画面が Testing の場合は自分をテストユーザーに追加する。External / Testing の接続は<a href="https://developers.google.com/identity/protocols/oauth2#expiration" target="_blank" rel="noreferrer">7日で再認証が必要</a>。<a href="https://developers.google.com/identity/protocols/oauth2/native-app" target="_blank" rel="noreferrer">Google の設定手順</a></p>
-      <form onSubmit={(event) => { event.preventDefault(); void perform(async () => { await invoke('googleCalendar:configure', credentials); setCredentials({ clientId: '', clientSecret: '' }) }) }}>
-        <label className="calendar-field">Client ID<input className="input" required autoComplete="off" value={credentials.clientId} disabled={disabled} onChange={(event) => setCredentials({ ...credentials, clientId: event.target.value })} /></label>
-        <label className="calendar-field">Client secret<input className="input" type="password" required autoComplete="new-password" value={credentials.clientSecret} disabled={disabled} onChange={(event) => setCredentials({ ...credentials, clientSecret: event.target.value })} /></label>
-        <div className="google-actions"><button type="submit" className="btn btn-primary btn-sm" disabled={disabled}>接続設定を保存</button>{(credentials.clientId || credentials.clientSecret) && <button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => { setCredentials({ clientId: '', clientSecret: '' }); setError('') }}>入力をクリア</button>}</div>
-      </form>
-    </details>}
+    {!google?.connected && <p className="calendar-hint">ブラウザで Google アカウントを選び、カレンダーへのアクセスを許可する。Google のパスワードを White Box に入力する必要はない。</p>}
     {google?.connected ? <>
       <fieldset className="google-calendar-selection" disabled={disabled}><legend>表示するカレンダー</legend>{google.calendars.map((calendar) => <label key={calendar.id}><input type="checkbox" checked={google.selectedCalendarIds.includes(calendar.id)} onChange={(event) => {
         const calendarIds = event.target.checked ? [...google.selectedCalendarIds, calendar.id] : google.selectedCalendarIds.filter((id) => id !== calendar.id)
@@ -56,5 +48,13 @@ export function GoogleCalendarSettings({ period }: { period?: TimeRange }) {
       setConnecting(true)
       void perform(() => invoke('googleCalendar:connect')).finally(() => setConnecting(false))
     }}>{connecting ? '接続中…' : 'Google に接続'}</button>{connecting && <button type="button" className="btn btn-ghost btn-sm" onClick={() => void invoke('googleCalendar:cancelConnect').catch((cause) => setError(String(cause).replace(/^(Error:\s*)+/, '')))}>ログインを中止</button>}</div>}
+    {!google?.connected && <details className="google-credentials">
+      <summary>詳細設定（自分の OAuth クライアントを使う）</summary><p className="calendar-hint">通常は入力不要。自分で用意したデスクトップ アプリ用の Client ID と Client secret に切り替える場合だけ使う。保存済みの値は画面へ戻さない。</p>
+      <form onSubmit={(event) => { event.preventDefault(); void perform(async () => { await invoke('googleCalendar:configure', credentials); setCredentials({ clientId: '', clientSecret: '' }) }) }}>
+        <label className="calendar-field">Client ID<input className="input" required autoComplete="off" value={credentials.clientId} disabled={disabled} onChange={(event) => setCredentials({ ...credentials, clientId: event.target.value })} /></label>
+        <label className="calendar-field">Client secret<input className="input" type="password" required autoComplete="new-password" value={credentials.clientSecret} disabled={disabled} onChange={(event) => setCredentials({ ...credentials, clientSecret: event.target.value })} /></label>
+        <div className="google-actions"><button type="submit" className="btn btn-primary btn-sm" disabled={disabled}>接続設定を保存</button>{(credentials.clientId || credentials.clientSecret) && <button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={() => { setCredentials({ clientId: '', clientSecret: '' }); setError('') }}>入力をクリア</button>}</div>
+      </form>
+    </details>}
   </section>
 }

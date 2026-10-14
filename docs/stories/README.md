@@ -28,3 +28,8 @@ story を書く → まひろが受け入れ基準を確認 → ブランチを�
 
 - [v2 — 第2回修正と現在の検証](20261011_story_weekly-calendar-v2.md)
 - [旧本文 — d18e596時点の履歴](20261011_story_weekly-calendar.md)
+
+## Googleカレンダーの接続
+
+- [Googleへの簡単な接続 v1](20261014_story_google-simple-login-v1.md) — 通常ログインと配布元のOAuth設定。
+- [Googleカレンダー連携 v1](20261012_story_google-calendar-v1.md) — 予定表示・同期・追加の先行要件。

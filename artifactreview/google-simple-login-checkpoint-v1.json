@@ -1,0 +1,427 @@
+{
+  "version": 1,
+  "at": "2026-10-14T04:46:21.710Z",
+  "base": "eeb645e4362754bc4768ad7f0ccf899f25d659a8",
+  "status": "draft-checkpoint-not-release",
+  "commandEvidence": {
+    "typecheck": {
+      "status": "passed",
+      "exitCode": 0,
+      "logSha256": "481c610b704153fe79536dd69716d635e3eabcb0d0b6d249568ddc719cb8b636"
+    },
+    "lint": {
+      "status": "passed",
+      "exitCode": 0,
+      "logSha256": "9e331fc82c402d745eef7690a6f59b5745fd04bb51ca176067d144ee557d1280"
+    },
+    "test": {
+      "status": "passed",
+      "exitCode": 0,
+      "logSha256": "d9efc24f164c3b58fd05271026618ca13583849155790df8060beb7ca19b7ae3",
+      "fileCount": 72,
+      "testCount": 729
+    },
+    "build": {
+      "status": "passed",
+      "exitCode": 0,
+      "logSha256": "2adb26aaeb5ded5ff459d89c973812e1e2803b4fcde4dbefb79cfa105b22d28e"
+    },
+    "sourceGoogle": {
+      "status": "failed",
+      "exitCode": 1,
+      "logSha256": "3263d0925f2815add155037d0828d53d49f578206f5e21396c210dce8f4a8acb",
+      "failure": "natural process exit timed out"
+    },
+    "packagedBasic": {
+      "status": "failed",
+      "exitCode": 1,
+      "logSha256": "9090d86899969b1b523b2bf77f5a7e160b5ba336181e0756b1acf1838f8e3111",
+      "failure": "natural process exit timed out"
+    },
+    "packagedGoogle": {
+      "status": "failed",
+      "exitCode": 1,
+      "logSha256": "11a12064655616e2841122c93f2186c6df3f064ac385e4fefd0597bde4dc0ecf",
+      "failure": "natural process exit timed out"
+    },
+    "sourceBasic": {
+      "status": "failed",
+      "exitCode": 1,
+      "logSha256": "5e9626b2a2222b98e6af39678e2f9ef42e8cec3a277735d60665de64407f0015"
+    }
+  },
+  "observations": {
+    "sourceGoogle": {
+      "exitCode": 1,
+      "realAccountOAuth": false,
+      "simulatedApi": true,
+      "checks": [
+        {
+          "name": "first: actual main entry frame has owned Node process before service startup",
+          "passed": true
+        },
+        {
+          "name": "first: fixture transport installed in exact owned ESM main before service startup",
+          "passed": true
+        },
+        {
+          "name": "first: real owned native window visible",
+          "passed": true
+        },
+        {
+          "name": "first: real OS encryption is available in isolated profile",
+          "passed": true
+        },
+        {
+          "name": "Fresh isolated database has no local sessions or Google account",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects extra configuration field before transport",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects unexpected connect args",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid sync interval",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects unexpected create field",
+          "passed": true
+        },
+        {
+          "name": "Fresh app client enables ordinary login without opening or completing manual credentials",
+          "passed": true
+        },
+        {
+          "name": "App client startup does not write encrypted user credentials",
+          "passed": true
+        },
+        {
+          "name": "00-ready-for-google-login: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Real OAuth loopback rejects invalid state then accepts actual state with matching PKCE",
+          "passed": true
+        },
+        {
+          "name": "Paginated calendar list and recurring-expanded events reached actual state",
+          "passed": true
+        },
+        {
+          "name": "Actual event normalization preserves local all-day exclusive end and overnight timestamps",
+          "passed": true
+        },
+        {
+          "name": "One real profile-specific encrypted credential file exists",
+          "passed": true
+        },
+        {
+          "name": "Credential bytes and data.json contain no plaintext token or client secret",
+          "passed": true
+        },
+        {
+          "name": "01-connected-settings: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Today shows timed and all-day Google events while local session empty state remains",
+          "passed": true
+        },
+        {
+          "name": "Overlapping timed and recurring occurrences occupy distinct day lanes",
+          "passed": true
+        },
+        {
+          "name": "02-today-zero-sessions: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "All-day and overnight Google blocks have real weekly layout",
+          "passed": true
+        },
+        {
+          "name": "03-week-zero-sessions: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Real 24-hour week visibly renders all-day, overnight and timed overlap without local sessions",
+          "passed": true
+        },
+        {
+          "name": "03b-week-24-hour-all-day-overnight: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Actual baseline contains one independent 30-minute session and changes actual totals",
+          "passed": true
+        },
+        {
+          "name": "Actual handler rejects read-only calendar without POST",
+          "passed": true
+        },
+        {
+          "name": "Google editor only offers writable calendars",
+          "passed": true
+        },
+        {
+          "name": "Invalid 91-day draft stays editable without sending or freezing retry identity",
+          "passed": true
+        },
+        {
+          "name": "Dirty Google draft requires explicit discard and retains every field",
+          "passed": true
+        },
+        {
+          "name": "Dirty native close preserves Google editor fields and owned visible window",
+          "passed": true
+        },
+        {
+          "name": "Ambiguous create failure retains and freezes the original draft",
+          "passed": true
+        },
+        {
+          "name": "04-create-response-lost: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "UI retry sends same stable event ID and identical body, reconciles one Google event",
+          "passed": true
+        },
+        {
+          "name": "Offline sync preserves previous in-memory cache and exposes a useful error",
+          "passed": true
+        },
+        {
+          "name": "05-offline-cache-preserved: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Google changes leave today actual total unchanged",
+          "passed": true
+        },
+        {
+          "name": "Google changes leave week and daily actual totals unchanged",
+          "passed": true
+        },
+        {
+          "name": "Google operations change no local session, task, plan or budget field",
+          "passed": true
+        },
+        {
+          "name": "One real profile-specific encrypted credential file exists",
+          "passed": true
+        },
+        {
+          "name": "Credential bytes and data.json contain no plaintext token or client secret",
+          "passed": true
+        }
+      ],
+      "rendererErrorCount": 0,
+      "rawResultSha256": "d69e7f79bc0c263d9295eec9e8562e8b88c10f9641d41fe14a22d2053c96746c"
+    },
+    "packagedGoogle": {
+      "exitCode": 1,
+      "realAccountOAuth": false,
+      "simulatedApi": true,
+      "checks": [
+        {
+          "name": "first: actual main entry frame has owned Node process before service startup",
+          "passed": true
+        },
+        {
+          "name": "first: fixture transport installed in exact owned ESM main before service startup",
+          "passed": true
+        },
+        {
+          "name": "first: real owned native window visible",
+          "passed": true
+        },
+        {
+          "name": "first: real OS encryption is available in isolated profile",
+          "passed": true
+        },
+        {
+          "name": "Fresh isolated database has no local sessions or Google account",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects extra configuration field before transport",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects unexpected connect args",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid sync interval",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects unexpected create field",
+          "passed": true
+        },
+        {
+          "name": "Fresh app client enables ordinary login without opening or completing manual credentials",
+          "passed": true
+        },
+        {
+          "name": "App client startup does not write encrypted user credentials",
+          "passed": true
+        },
+        {
+          "name": "00-ready-for-google-login: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Real OAuth loopback rejects invalid state then accepts actual state with matching PKCE",
+          "passed": true
+        },
+        {
+          "name": "Paginated calendar list and recurring-expanded events reached actual state",
+          "passed": true
+        },
+        {
+          "name": "Actual event normalization preserves local all-day exclusive end and overnight timestamps",
+          "passed": true
+        },
+        {
+          "name": "One real profile-specific encrypted credential file exists",
+          "passed": true
+        },
+        {
+          "name": "Credential bytes and data.json contain no plaintext token or client secret",
+          "passed": true
+        },
+        {
+          "name": "01-connected-settings: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Today shows timed and all-day Google events while local session empty state remains",
+          "passed": true
+        },
+        {
+          "name": "Overlapping timed and recurring occurrences occupy distinct day lanes",
+          "passed": true
+        },
+        {
+          "name": "02-today-zero-sessions: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "All-day and overnight Google blocks have real weekly layout",
+          "passed": true
+        },
+        {
+          "name": "03-week-zero-sessions: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Real 24-hour week visibly renders all-day, overnight and timed overlap without local sessions",
+          "passed": true
+        },
+        {
+          "name": "03b-week-24-hour-all-day-overnight: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Actual baseline contains one independent 30-minute session and changes actual totals",
+          "passed": true
+        },
+        {
+          "name": "Actual handler rejects read-only calendar without POST",
+          "passed": true
+        },
+        {
+          "name": "Google editor only offers writable calendars",
+          "passed": true
+        },
+        {
+          "name": "Invalid 91-day draft stays editable without sending or freezing retry identity",
+          "passed": true
+        },
+        {
+          "name": "Dirty Google draft requires explicit discard and retains every field",
+          "passed": true
+        },
+        {
+          "name": "Dirty native close preserves Google editor fields and owned visible window",
+          "passed": true
+        },
+        {
+          "name": "Ambiguous create failure retains and freezes the original draft",
+          "passed": true
+        },
+        {
+          "name": "04-create-response-lost: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "UI retry sends same stable event ID and identical body, reconciles one Google event",
+          "passed": true
+        },
+        {
+          "name": "Offline sync preserves previous in-memory cache and exposes a useful error",
+          "passed": true
+        },
+        {
+          "name": "05-offline-cache-preserved: screenshot measures live owned window",
+          "passed": true
+        },
+        {
+          "name": "Google changes leave today actual total unchanged",
+          "passed": true
+        },
+        {
+          "name": "Google changes leave week and daily actual totals unchanged",
+          "passed": true
+        },
+        {
+          "name": "Google operations change no local session, task, plan or budget field",
+          "passed": true
+        },
+        {
+          "name": "One real profile-specific encrypted credential file exists",
+          "passed": true
+        },
+        {
+          "name": "Credential bytes and data.json contain no plaintext token or client secret",
+          "passed": true
+        }
+      ],
+      "rendererErrorCount": 0,
+      "rawResultSha256": "42eb7296bdbfede84d7f07285741a166599cd321d14d1f31353d709307e52f5b"
+    }
+  },
+  "sourceFiles": {
+    ".gitignore": "39b182351c234d58f2b24391a1485ec843dea81c6da00e897bf87384c6616ea5",
+    "apps/desktop/src/app/google-calendar-service.ts": "79737a0a92b197d0eaba6ddf4906c4f4c8f9125f8d03c3d6403f9ee1baad4d93",
+    "apps/desktop/src/presentation/main.ts": "aeea887c5f885c26cb1440e0f30d901e9c3030bbd5ca7dc25e87fad2f54ddcc9",
+    "apps/desktop/tests/google-calendar-service.test.ts": "b684692e3203615a5b58e6048e5c58456f1f5ac8f339b9515665d7139422fb8a",
+    "apps/renderer/src/features/google-calendar/GoogleCalendarSettings.tsx": "ed9d5bab1c9ff8ec98bef2abf4948e2229d255b9323b18e0b91699e3c69d84bb",
+    "docs/README.md": "f6dd8c8cc3832bd57ce8559dc562b40165a76039555e553032e637f4c1be7343",
+    "docs/stories/README.md": "7ef345816f4acd590b5ced254d1b5dd750d1c6eae5377da9dccf5ce2551edb07",
+    "packages/contracts/src/google-calendar-provider.ts": "01e337a90a8d20d78e568fd04d6d298d827ac04054bdc648bba881d99dcebe22",
+    "scripts/e2e-google-calendar.mjs": "bce9a2f00c0b8583b54beacf8c19c0eeaf6b78543f547cb6f1a2c34faeec4809",
+    "scripts/pack.mjs": "efab582626d31c051b0c5fb066b5320e3254cbfb9313a15578d1f14b33a3e810",
+    "apps/desktop/src/infra/google-oauth-client.ts": "3fc989cb8a092c41714d28087e6accbdaa3eb93e1663bcd9b27a839fb8cc6f69",
+    "apps/desktop/tests/google-oauth-client.test.ts": "92504085ff4d6e8f0e134269e7638c7cb311e67eeb2abc338186c5bc5d8e1222",
+    "docs/google-calendar-v3.md": "26355e4114971b1fd3b1641c2ca30659a90c00f6f2816007f10f0cb136bf1023",
+    "docs/stories/20261014_story_google-simple-login-v1.md": "928f76ba0f47168af9715a4a83916850f7917cecd6f5b27500a4c97cf1a6f938"
+  },
+  "realWhiteBoxClientConfigured": false,
+  "realAccountOAuth": false,
+  "productionInstalled": false,
+  "releaseBlockers": [
+    "Real White Box Desktop OAuth client has not been prepared",
+    "Real Google account login, reads and event creation remain unverified",
+    "Required natural process exit checks failed"
+  ],
+  "qaPackage": "worktree release/White Box; simulated client only; never installed to production",
+  "reviewPipeline": "Implementation checkpoint only; corrective loop, semantic, final and walkthrough pending"
+}

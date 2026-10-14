@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+export const GoogleOAuthClientSchema = z.strictObject({
+  clientId: z.string().max(512).regex(/^[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/),
+  clientSecret: z.string().min(1).max(512).regex(/^\S+$/),
+})
+export type GoogleOAuthClient = ReturnType<typeof GoogleOAuthClientSchema.parse>
+
 export const GoogleCalendarProfileSchema = z.strictObject({
   clientId: z.string().min(1), clientSecret: z.string().min(1),
   refreshToken: z.string().min(1).optional(), account: z.string().optional(),

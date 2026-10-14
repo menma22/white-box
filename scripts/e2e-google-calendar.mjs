@@ -11,7 +11,7 @@ import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-proce
 import { connectOwnedPage } from './owned-cdp.mjs'
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const OUTPUT = path.join(ROOT, '.e2e')
+const OUTPUT = process.env.WHITEBOX_E2E_OUTPUT ? path.resolve(process.env.WHITEBOX_E2E_OUTPUT) : path.join(ROOT, '.e2e')
 fs.mkdirSync(OUTPUT, { recursive: true })
 const RUN = fs.mkdtempSync(path.join(OUTPUT, 'google-calendar-run-'))
 const DATA = path.join(RUN, 'data'), PROFILE = path.join(RUN, 'profile')
@@ -22,7 +22,10 @@ const startedAt = new Date().toISOString(), checks = [], errors = [], expectedEr
 const ownedProcesses = new OwnedProcesses()
 let child, childIdentity, page, inspector, port, appLog, processObservation
 const SETTINGS = '.google-calendar-settings', EDITOR = '[aria-labelledby="google-editor-title"]'
-const CLIENT = 'fixture-desktop.apps.googleusercontent.com', SECRET = 'fixture-client-secret-only'
+const clientConfig = process.env.WHITEBOX_EXE ? JSON.parse(fs.readFileSync(path.join(buildRoot, 'assets', 'google-oauth-client.json'), 'utf8')) : { clientId: 'fixture-desktop.apps.googleusercontent.com', clientSecret: 'fixture-client-secret-only' }
+const CLIENT = clientConfig.clientId, SECRET = clientConfig.clientSecret
+const CLIENT_FILE = path.join(RUN, 'fixture-google-oauth-client.json')
+if (!process.env.WHITEBOX_EXE) fs.writeFileSync(CLIENT_FILE, JSON.stringify(clientConfig))
 const ACCESS = 'fixture-access-token-only', REFRESH = 'fixture-refresh-token-only'
 const calendar = (at) => { const d = new Date(at); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -45,7 +48,7 @@ const FIXTURE = {
   },
 }
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex')
-const files = ['dist-electron/presentation/main.js', 'dist-electron/app/google-calendar-service.js', 'dist-electron/app/google-calendar-handlers.js', 'dist-electron/infra/google-calendar-oauth.js', 'dist-electron/infra/google-calendar-secrets.js', 'apps/desktop/src/presentation/preload.cjs', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist/assets')).filter(file => /\.(?:js|css)$/.test(file)).map(file => 'dist/assets/' + file)]
+const files = ['dist-electron/presentation/main.js', 'dist-electron/app/google-calendar-service.js', 'dist-electron/app/google-calendar-handlers.js', 'dist-electron/infra/google-calendar-oauth.js', 'dist-electron/infra/google-calendar-secrets.js', 'dist-electron/infra/google-oauth-client.js', 'apps/desktop/src/presentation/preload.cjs', 'dist/index.html', ...fs.readdirSync(path.join(buildRoot, 'dist/assets')).filter(file => /\.(?:js|css)$/.test(file)).map(file => 'dist/assets/' + file)]
 fs.writeFileSync(path.join(RUN, 'runtime-manifest.json'), JSON.stringify({ startedAt, mode: 'simulated-google-api-real-electron-ipc-ui-loopback-and-os-encryption', realAccountOAuth: false, externalGoogleTraffic: false, executable: electron, executableSha256: sha256(electron), harnessSha256: sha256(fileURLToPath(import.meta.url)), ownedCdpSha256: sha256(path.join(ROOT, 'scripts/owned-cdp.mjs')), ownedProcessesSha256: sha256(path.join(ROOT, 'scripts/owned-processes.mjs')), buildRoot, files: files.map(file => ({ file, sha256: sha256(path.join(buildRoot, file)) })) }, null, 2))
 fs.writeFileSync(path.join(RUN, 'google-fixtures.json'), JSON.stringify(FIXTURE, null, 2))
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -176,7 +179,7 @@ function installTransport(fixture, packageFile, profile) {
 
 async function launch(label) {
   port = await freePort(); const inspectorPort = await freePort(); assert.notEqual(port, inspectorPort)
-  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }; delete env.VITE_DEV_SERVER_URL; delete env.ELECTRON_RUN_AS_NODE
+  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA, ...(!process.env.WHITEBOX_EXE ? { WHITEBOX_GOOGLE_OAUTH_CONFIG: CLIENT_FILE } : {}) }; delete env.VITE_DEV_SERVER_URL; delete env.ELECTRON_RUN_AS_NODE
   appLog = path.join(RUN, label + '-app.log'); const descriptor = fs.openSync(appLog, 'a')
   const args = [`--inspect-brk=127.0.0.1:${inspectorPort}`, '--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${PROFILE}`]
   if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
@@ -283,8 +286,9 @@ try {
     await expectRejection('googleCalendar:sync', { startedAt: today.getTime(), endedAt: today.getTime() }, 'Strict IPC rejects invalid sync interval')
     await expectRejection('googleCalendar:create', { calendarId: 'primary@example.test', title: 'invalid', startedAt: today.getTime(), endedAt: today.getTime() + 1000, requestId: 'fixture', extra: true }, 'Strict IPC rejects unexpected create field')
     await tab('設定', SETTINGS)
-    await fill(SETTINGS + ' input:not([type=password])', CLIENT); await fill(SETTINGS + ' input[type=password]', SECRET); await button('接続設定を保存', SETTINGS)
-    await until(async () => (await google()).configured && await page.evaluate(`document.querySelector(${JSON.stringify(SETTINGS + ' input[type=password]')})?.value===''`), 'real configure saved and draft cleared')
+    check('Fresh app client enables ordinary login without opening or completing manual credentials', (await google()).configured && await page.evaluate(`!document.querySelector(${JSON.stringify(SETTINGS + ' .google-credentials')})?.open && !document.querySelector(${JSON.stringify(SETTINGS + ' input[type=password]')})?.value && ![...document.querySelectorAll(${JSON.stringify(SETTINGS + ' button')})].find(e=>e.textContent==='Google に接続')?.disabled`))
+    check('App client startup does not write encrypted user credentials', !fs.existsSync(path.join(PROFILE, 'google-calendar')))
+    await screenshot('00-ready-for-google-login')
     await button('Google に接続', SETTINGS)
     await until(async () => { const value = await google(); return value.connected && !value.syncing && value.events.length === 4 }, 'actual OAuth exchange and initial paginated sync')
     const connected = await google(), trace = await transport()

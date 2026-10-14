@@ -13,3 +13,4 @@ shots*/
 storybook-static/
 *.log
 release/
+assets/google-oauth-client.json

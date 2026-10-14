@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto'
 import type { GoogleCalendarEvent, GoogleCalendarInfo, GoogleCalendarState } from '@white-box/core/types'
-import { GoogleCalendarEventSchema, GoogleCalendarProfileSchema, GoogleCalendarTokenSchema as TokenSchema, GoogleCalendarListPageSchema as CalendarPage, GoogleCalendarApiEventSchema as ApiEvent, GoogleCalendarEventPageSchema as EventPage, GoogleCalendarAccountSchema, type GoogleCalendarProfile } from '@white-box/contracts'
+import { GoogleCalendarEventSchema, GoogleCalendarProfileSchema, GoogleCalendarTokenSchema as TokenSchema, GoogleCalendarListPageSchema as CalendarPage, GoogleCalendarApiEventSchema as ApiEvent, GoogleCalendarEventPageSchema as EventPage, GoogleCalendarAccountSchema, type GoogleCalendarProfile, GoogleOAuthClientSchema, type GoogleOAuthClient } from '@white-box/contracts'
 export { GoogleCalendarProfileSchema, type GoogleCalendarProfile } from '@white-box/contracts'
 
 export interface GoogleCalendarPorts {
+  appClient?(): GoogleOAuthClient | null
   fetch: typeof fetch
   secrets: { load(): GoogleCalendarProfile | null; save(profile: GoogleCalendarProfile): void }
   authorize(clientId: string, signal: AbortSignal): Promise<{ code: string; verifier: string; redirectUri: string }>
@@ -32,7 +33,16 @@ function eventValue(raw: ReturnType<typeof ApiEvent.parse>, calendarId: string):
 function initialState(): GoogleCalendarState {
   return { configured: false, connected: false, account: null, calendars: [], selectedCalendarIds: [], events: [], syncing: false, lastSyncedAt: null, error: null }
 }
-class HttpFailure extends Error { constructor(readonly status: number) { super(`Google Calendar に接続できません (HTTP ${status})`) } }
+class HttpFailure extends Error {
+  constructor(readonly status: number, category?: string) {
+    const messages: Record<string, string> = {
+      invalid_client: 'Google のアプリ接続設定が無効です。配布元へ確認してください',
+      invalid_grant: 'Google の接続許可が失効しました。接続を解除して Google に接続し直してください',
+      access_denied: 'Google のログインが許可されませんでした',
+    }
+    super(category && messages[category] || (status === 403 ? 'Google カレンダーへのアクセスが許可されません。アカウントとカレンダーの権限を確認してください (HTTP 403)' : `Google Calendar に接続できません (HTTP ${status})`))
+  }
+}
 
 export class GoogleCalendarService {
   private profile: GoogleCalendarProfile | null = null
@@ -55,9 +65,10 @@ export class GoogleCalendarService {
   start(): void {
     try {
       const profile = this.ports.secrets.load()
-      this.profile = profile ? GoogleCalendarProfileSchema.parse(profile) : null
-      this.emit({ ...initialState(), configured: Boolean(this.profile), connected: Boolean(this.profile?.refreshToken), account: this.profile?.account ?? null, selectedCalendarIds: this.profile?.selectedCalendarIds ?? [] })
-    } catch { this.emit({ ...initialState(), error: 'Google の接続設定を読み込めません。再設定してください' }) }
+      const client = !profile ? this.ports.appClient?.() : null
+      this.profile = profile ? GoogleCalendarProfileSchema.parse(profile) : client ? { ...GoogleOAuthClientSchema.parse(client), selectedCalendarIds: null } : null
+      this.emit({ ...initialState(), configured: Boolean(this.profile), connected: Boolean(this.profile?.refreshToken), account: this.profile?.account ?? null, selectedCalendarIds: this.profile?.selectedCalendarIds ?? [], error: this.profile ? null : 'この配布版には Google 接続設定がありません。配布元へ確認してください' })
+    } catch { this.emit({ ...initialState(), error: 'Google の接続設定を読み込めません。保存済み接続または配布元の設定を確認してください' }) }
     if (!this.timer) this.timer = setInterval(() => this.resume(), 180_000)
     this.resume()
   }
@@ -87,14 +98,32 @@ export class GoogleCalendarService {
   private assertCurrent(generation: number): void { if (this.stopped || generation !== this.generation) throw new Error('Google の接続操作を取り消しました') }
   private async response(url: string, init: RequestInit, signal: AbortSignal): Promise<unknown> {
     const response = await this.ports.fetch(url, { ...init, signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]) })
-    if (!response.ok) throw new HttpFailure(response.status)
+    if (!response.ok) {
+      let category: string | undefined
+      if (url === 'https://oauth2.googleapis.com/token') {
+        const reader = response.body?.getReader()
+        if (reader) {
+          try {
+            let body = ''
+            while (body.length <= 4096) {
+              const { done, value } = await reader.read()
+              if (done) { const error: unknown = JSON.parse(body).error; if (typeof error === 'string' && ['invalid_client', 'invalid_grant', 'access_denied'].includes(error)) category = error; break }
+              if (Buffer.byteLength(body) + value.byteLength > 4096) break
+              body += Buffer.from(value).toString('utf8')
+            }
+          } catch { /* Provider details are never exposed. */ }
+          finally { void reader.cancel().catch(() => {}) }
+        }
+      }
+      throw new HttpFailure(response.status, category)
+    }
     return response.json()
   }
   private async exchange(fields: Record<string, string>, signal: AbortSignal) {
     return TokenSchema.parse(await this.response('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(fields) }, signal))
   }
   async connect(): Promise<void> {
-    if (!this.profile) throw new Error('Desktop OAuth クライアントを設定してください')
+    if (!this.profile) throw new Error(this.state.error ?? 'この配布版には Google 接続設定がありません。配布元へ確認してください')
     const profile = this.profile
     const previous = structuredClone(this.state)
     this.invalidate(); const generation = this.generation; const controller = this.controller()
