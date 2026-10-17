@@ -202,6 +202,8 @@ async function stop() {
   let quitError = null
   let forcedKill = false
   let killAccepted = null
+  let shutdownError = null
+  let cleanupError = null
   let observer
   let native = null
   let requestedAt = null
@@ -242,18 +244,25 @@ async function stop() {
       return
     }
     if (!pidAlive()) throw new Error('Electron PID is absent but native natural exit was not confirmed: ' + JSON.stringify(native))
-    forcedKill = true
-    console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
-    killAccepted = owned.kill('SIGKILL')
-    const cleanupDeadline = Date.now() + 5000
-    while (pidAlive() && Date.now() < cleanupDeadline) await wait(100)
-    if (pidAlive()) throw new Error('Owned Electron did not exit after cleanup')
-    throw new Error('Owned Electron required forced cleanup instead of exiting after app:quit: ' + JSON.stringify(native))
+    throw new Error('Owned Electron did not exit naturally after app:quit: ' + JSON.stringify(native))
+  } catch (error) {
+    shutdownError = error.message
+    try {
+      if (pidAlive()) {
+        forcedKill = true
+        console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after shutdown failure`)
+        killAccepted = owned.kill('SIGKILL')
+        const cleanupDeadline = Date.now() + 5000
+        while (pidAlive() && Date.now() < cleanupDeadline) await wait(100)
+        if (pidAlive()) throw new Error('Owned Electron did not exit after cleanup')
+      }
+    } catch (cleanupFailure) { cleanupError = cleanupFailure.message }
+    throw error
   } finally {
     page?.close()
     owned.off('exit', onExit)
     const alive = pidAlive()
-    const observation = { pid: owned.pid, quitRequested, quitError, forcedKill, killAccepted, requestedAt,
+    const observation = { pid: owned.pid, quitRequested, quitError, shutdownError, forcedKill, killAccepted, cleanupError, requestedAt,
       nativeIdentity: observer?.ready ?? null, nativeExit: native,
       exitEventObserved, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: alive,
       confirmedBy: native?.hasExited ? 'native process handle' : exited() ? 'child exit state' : !alive ? 'PID absent only' : null }
