@@ -168,7 +168,7 @@ export function parseGoalMap(value: unknown): GoalMap {
     const id = goalId(event.id)
     if (historyIds.has(id)) throw new Error('履歴の ID が重複しています')
     historyIds.add(id)
-    if (!['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote'].includes(goalString(event.type))) throw new Error('履歴の種類が不正です')
+    if (!['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote', 'reparent', 'insert'].includes(goalString(event.type))) throw new Error('履歴の種類が不正です')
     return { id, at: goalTime(event.at), type: event.type as GoalHistory['type'], nodeId: ref(event.nodeId), parentId: event.parentId == null ? null : ref(event.parentId), note: goalString(event.note ?? ''), withIds: list(event.withIds ?? []).map(ref) }
   })
   map.ui = parseGoalUi(raw.ui ?? {})

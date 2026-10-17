@@ -16,6 +16,7 @@ fs.mkdirSync(DATA)
 const require = createRequire(import.meta.url)
 const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : path.join(path.dirname(require.resolve('electron')), 'dist', 'electron.exe')
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const QUIT_TIMEOUT_MS = 60000
 const checks = []
 const errors = []
 let child
@@ -129,6 +130,63 @@ async function launch(label) {
   await page.send('Page.bringToFront')
 }
 
+async function nativeExitObserver(owned) {
+  const prefix = path.join(RUN, `native-exit-${owned.pid}`)
+  const readyPath = `${prefix}-ready.json`
+  const requestPath = `${prefix}-request.txt`
+  const resultPath = `${prefix}-result.json`
+  const quote = (value) => "'" + String(value).replaceAll("'", "''") + "'"
+  const script = `$ErrorActionPreference='Stop'
+$qaProcess=$null
+try {
+  $qaProcess=Get-Process -Id ${owned.pid}
+  $qaHandle=$qaProcess.Handle
+  $qaIdentity=Get-CimInstance Win32_Process -Filter 'ProcessId=${owned.pid}'
+  $qaStarted=$qaProcess.StartTime.ToUniversalTime()
+  [IO.File]::WriteAllText(${quote(readyPath)},([pscustomobject]@{pid=$qaProcess.Id;parentPid=$qaIdentity.ParentProcessId;creationDate=$qaStarted.ToString('o');name=$qaProcess.ProcessName;handle=$qaHandle.ToInt64()}|ConvertTo-Json -Compress))
+  $qaRequestDeadline=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()+10000
+  while(-not [IO.File]::Exists(${quote(requestPath)})) {
+    if([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -ge $qaRequestDeadline) { throw 'Quit request was not received by the native observer' }
+    Start-Sleep -Milliseconds 20
+  }
+  $qaDeadline=[long][IO.File]::ReadAllText(${quote(requestPath)})+${QUIT_TIMEOUT_MS}
+  $qaTimeout=[Math]::Max(0,$qaDeadline-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())
+  $qaExited=$qaProcess.WaitForExit([int]$qaTimeout)
+  $qaResult=[pscustomobject]@{pid=$qaProcess.Id;creationDate=$qaStarted.ToString('o');hasExited=$qaExited;exitCode=$(if($qaExited){$qaProcess.ExitCode}else{$null});exitedAt=$(if($qaExited){([DateTimeOffset]$qaProcess.ExitTime.ToUniversalTime()).ToUnixTimeMilliseconds()}else{$null});deadline=$qaDeadline}
+  [IO.File]::WriteAllText(${quote(resultPath)},($qaResult|ConvertTo-Json -Compress))
+} catch {
+  [IO.File]::WriteAllText(${quote(resultPath)},([pscustomobject]@{error=$_.Exception.Message}|ConvertTo-Json -Compress))
+  exit 1
+} finally {
+  if($null -ne $qaProcess) { $qaProcess.Dispose() }
+}`
+  fs.writeFileSync(`${prefix}.ps1`, '\ufeff' + script)
+  const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', `${prefix}.ps1`], { stdio: 'ignore', windowsHide: true })
+  let helperError
+  helper.once('error', (error) => { helperError = error })
+  const result = () => fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : null
+  const ready = await until(() => {
+    if (helperError) throw helperError
+    const observation = result()
+    if (observation?.error) throw new Error(observation.error)
+    return fs.existsSync(readyPath) ? JSON.parse(fs.readFileSync(readyPath, 'utf8')) : null
+  }, 'native process handle ready', 10000)
+  assert.equal(ready.pid, owned.pid, 'Native observer pins the launched PID')
+  assert.equal(ready.parentPid, process.pid, 'Native observer pins this harness child')
+  assert.equal(ready.name.toLowerCase(), path.basename(electron, '.exe').toLowerCase(), 'Native observer pins the launched executable')
+  assert.ok(ready.handle > 0 && Number.isFinite(Date.parse(ready.creationDate)), 'Native observer retains a valid process handle and creation time')
+  return { ready, result, request: (at) => fs.writeFileSync(requestPath, String(at)) }
+}
+
+function requireNaturalExit(native, ready, requestedAt) {
+  assert.ok(native && !native.error, 'Native process exit must be observed: ' + JSON.stringify(native))
+  assert.equal(native.pid, ready.pid, 'Native exit belongs to the pinned PID')
+  assert.equal(native.creationDate, ready.creationDate, 'Native exit belongs to the pinned process lifetime')
+  assert.equal(native.hasExited, true, 'Owned Electron must exit within the quit deadline')
+  assert.equal(native.exitCode, 0, 'Owned Electron must exit naturally with code 0')
+  assert.ok(native.exitedAt >= requestedAt && native.exitedAt <= requestedAt + QUIT_TIMEOUT_MS, 'Native exit occurs after app:quit and within the observation deadline')
+}
+
 async function stop() {
   const owned = child
   if (!owned) { page?.close(); page = undefined; return }
@@ -137,6 +195,9 @@ async function stop() {
   let quitError = null
   let forcedKill = false
   let killAccepted = null
+  let observer
+  let native = null
+  let requestedAt = null
   const onExit = () => { exitEventObserved = true }
   owned.on('exit', onExit)
   const pidAlive = () => {
@@ -147,37 +208,51 @@ async function stop() {
     }
   }
   const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null
-  const waitForExit = async (timeout) => {
-    const deadline = Date.now() + timeout
-    while (!exited()) {
-      if (Date.now() >= deadline) return false
-      await wait(100)
-    }
-    return true
-  }
   try {
-    if (exited()) return
-    quitRequested = Boolean(page)
-    try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
-    if (await waitForExit(15000)) {
-      if (owned.exitCode !== 0 || owned.signalCode !== null) throw new Error('Owned Electron did not exit naturally with code 0: ' + JSON.stringify({ exitCode: owned.exitCode, signalCode: owned.signalCode }))
+    if (exited()) {
+      assert.equal(owned.exitCode, 0, 'Previously exited Electron must have code 0')
+      assert.equal(owned.signalCode, null, 'Previously exited Electron must not be killed')
       return
     }
+    observer = await nativeExitObserver(owned)
+    requestedAt = Date.now()
+    observer.request(requestedAt)
+    quitRequested = Boolean(page)
+    assert.ok(quitRequested, 'Quit requires the owned renderer connection')
+    try { await page.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
+    const deadline = requestedAt + QUIT_TIMEOUT_MS
+    while (Date.now() < deadline) {
+      native = observer.result()
+      if (native) break
+      await wait(50)
+    }
+    native ??= observer.result()
+    if (native?.hasExited) {
+      requireNaturalExit(native, observer.ready, requestedAt)
+      assert.equal(pidAlive(), false, 'Owned Electron PID must be absent after native exit')
+      assert.equal(owned.signalCode, null, 'Owned Electron must not have a kill signal')
+      if (owned.exitCode !== null) assert.equal(owned.exitCode, native.exitCode, 'Node and native exit codes agree')
+      return
+    }
+    if (!pidAlive()) throw new Error('Electron PID is absent but native natural exit was not confirmed: ' + JSON.stringify(native))
     forcedKill = true
     console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
     killAccepted = owned.kill('SIGKILL')
-    if (!await waitForExit(5000)) throw new Error('Owned Electron did not exit after cleanup')
-    throw new Error('Owned Electron required forced cleanup instead of exiting after app:quit')
+    const cleanupDeadline = Date.now() + 5000
+    while (pidAlive() && Date.now() < cleanupDeadline) await wait(100)
+    if (pidAlive()) throw new Error('Owned Electron did not exit after cleanup')
+    throw new Error('Owned Electron required forced cleanup instead of exiting after app:quit: ' + JSON.stringify(native))
   } finally {
     page?.close()
     owned.off('exit', onExit)
     const alive = pidAlive()
-    const observation = { pid: owned.pid, quitRequested, quitError, forcedKill, killAccepted,
+    const observation = { pid: owned.pid, quitRequested, quitError, forcedKill, killAccepted, requestedAt,
+      nativeIdentity: observer?.ready ?? null, nativeExit: native,
       exitEventObserved, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: alive,
-      confirmedBy: exitEventObserved || owned.exitCode !== null || owned.signalCode !== null ? 'child exit state' : !alive ? 'PID absent' : null }
+      confirmedBy: native?.hasExited ? 'native process handle' : exited() ? 'child exit state' : !alive ? 'PID absent only' : null }
     fs.writeFileSync(path.join(RUN, `shutdown-${owned.pid ?? 'unspawned'}.json`), JSON.stringify(observation, null, 2))
     console.log(`Cleanup: ${JSON.stringify(observation)}`)
-    if (exited()) { child = undefined; page = undefined }
+    if (exited() || !alive) { child = undefined; page = undefined }
   }
 }
 
@@ -557,6 +632,66 @@ async function verifyUi() {
   check('Confirmed issue deletion removes only the selected issue', read().goalMap.issues.some((i) => i.id === issue.id) && isDeepStrictEqual(read().sessions, sessionsBeforeDelete))
 }
 
+async function verifyBranchEditing() {
+  const a = await call('goal:create', { goal: '道筋を組み替える' })
+  const b = await call('goal:create', { goal: '別の最上位目標' })
+  const branch = await call('goal:create', { goal: '移動する枝', parentId: a.id })
+  const leaf = await call('goal:create', { goal: '枝と一緒に残る子', parentId: branch.id })
+  const target = await call('goal:create', { goal: '新しい付け先', parentId: a.id })
+  const task = await call('task:create', { title: '枝に結びついたタスク', goalNodeId: branch.id })
+  const issue = await call('issue:create', { kind: 'question', text: '枝に残す問い', nodeId: leaf.id })
+  await call('goal:ui', { activeHeadId: a.id, patch: { view: 'map', headsOpen: true, showHidden: false } })
+  await key('5', 'Digit5', 2)
+  await button('全体を表示')
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  const unchanged = JSON.stringify(read())
+  await button('枝を切り取る', '.gm-detail')
+  check('Cut previews the entire branch without saving a detached tree', JSON.stringify(read()) === unchanged && await page.evaluate(`Boolean(document.querySelector('[data-node-id="${branch.id}"].gm-node-cut'))`))
+  check('Cut disables self, descendant and current parent targets', await page.evaluate(`['${a.id}','${branch.id}','${leaf.id}'].every(id=>document.querySelector('[data-node-id="'+id+'"] .gm-node-body').disabled)`))
+  await screenshot('13-cut-and-attach')
+  await button('キャンセル', '.gm-attach-bar')
+  check('Cancel retains the original complete database', JSON.stringify(read()) === unchanged)
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await page.evaluate('document.querySelector("[aria-label=枝の付け先]").focus()')
+  await key('Escape', 'Escape')
+  check('Escape from the target selector cancels without changing data', JSON.stringify(read()) === unchanged && !await page.evaluate('Boolean(document.querySelector(".gm-attach-bar"))'))
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await click(`[data-node-id="${target.id}"] .gm-node-body`)
+  await until(() => read().goalMap.nodes[branch.id].parentId === target.id, 'branch attached by card click')
+  check('Card click moves the complete branch and keeps task and issue references', read().goalMap.nodes[leaf.id].parentId === branch.id && read().tasks.find(t=>t.id===task.id).goalNodeId === branch.id && read().goalMap.issues.find(i=>i.id===issue.id).nodeId === leaf.id && !read().goalMap.nodes[a.id].children.includes(branch.id))
+  await until(() => page.evaluate('Boolean(document.querySelector(".gm-detail"))'), 'moved branch selected')
+  await button('枝を切り取る', '.gm-detail')
+  await select('[aria-label="枝の付け先"]', b.id)
+  await until(() => read().goalMap.nodes[branch.id].parentId === b.id && read().goalMap.activeHeadId === b.id, 'cross-head branch attached and followed')
+  check('Target selector can move across heads and follow the moved card', await page.evaluate(`Boolean(document.querySelector('[data-node-id="${branch.id}"].gm-node-selected'))`))
+  await button('全体を表示')
+  const original = read().goalMap.nodes[branch.id]
+  await click(`[data-node-id="${branch.id}"] .gm-node-insert`)
+  await fill('[aria-label="新しい目標"]', '途中で確かめる成果')
+  await button('作成する', '[role="dialog"]')
+  const inserted = await until(() => Object.values(read().goalMap.nodes).find(n=>n.goal==='途中で確かめる成果'), 'intermediate inserted')
+  check('Edge insert links parent to intermediate to original branch and preserves its content', inserted.parentId === b.id && inserted.children[0] === branch.id && read().goalMap.nodes[b.id].children[0] === inserted.id && isDeepStrictEqual(read().goalMap.nodes[branch.id], { ...original, parentId: inserted.id }))
+  await button('全体を表示')
+  await screenshot('14-intermediate-goal')
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
+  const size = await page.evaluate('({overflow:document.documentElement.scrollWidth-innerWidth,bar:document.querySelector(".gm-attach-bar").getBoundingClientRect().bottom,canvas:document.querySelector(".gm-canvas").getBoundingClientRect().height,bottom:document.querySelector(".gm-zoom").getBoundingClientRect().bottom,height:innerHeight})')
+  check('Minimum viewport keeps the attachment toolbar and map usable', size.overflow <= 1 && size.bar < 500 && size.canvas >= 150 && size.bottom <= size.height, size)
+  await screenshot('15-minimum-attach')
+  await page.send('Emulation.clearDeviceMetricsOverride')
+  await button('最上位にする', '.gm-attach-bar')
+  await until(() => read().goalMap.nodes[branch.id].parentId === null, 'branch detached to head')
+  check('Detach to head keeps the child and records both operations', read().goalMap.heads.includes(branch.id) && read().goalMap.nodes[leaf.id].parentId === branch.id && read().goalMap.history.some(h=>h.type==='reparent' && h.nodeId===branch.id) && read().goalMap.history.some(h=>h.type==='insert' && h.nodeId===inserted.id))
+  const beforeInvalid = JSON.stringify(read())
+  for (const args of [{ id: branch.id, parentId: branch.id }, { id: branch.id, parentId: leaf.id }]) {
+    const response = await raw('goal:reparent', args)
+    check('Cyclic branch attachment is rejected without a partial save', !response.ok && JSON.stringify(read()) === beforeInvalid, args)
+  }
+}
+
 let exitCode = 1
 try {
   console.log(`Evidence: ${RUN}`)
@@ -564,6 +699,7 @@ try {
   await verifyIpc()
   await verifyImport()
   await verifyUi()
+  await verifyBranchEditing()
   const persisted = read()
   fs.writeFileSync(path.join(RUN, 'before-restart.json'), JSON.stringify(persisted, null, 2))
   await stop()

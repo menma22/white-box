@@ -94,6 +94,16 @@ export function createHandlers(ctx: Ctx): Handlers {
       commitChanges(ctx, { goalMap: r.goalMap })
       return r.goal
     },
+    'goal:reparent': (a) => {
+      const r = goalOps.reparentGoal(db(), a)
+      if (r.goalMap !== db().goalMap) commitChanges(ctx, { goalMap: r.goalMap })
+      return r.goal
+    },
+    'goal:insert': (a) => {
+      const r = goalOps.insertGoal(db(), a)
+      commitChanges(ctx, { goalMap: r.goalMap })
+      return r.goal
+    },
     'goal:hide': (a) => {
       commitChanges(ctx, { goalMap: goalOps.hideGoal(db(), a.id, a.reason ?? '') })
       return null

@@ -4,7 +4,8 @@ import { isGoalHidden, layoutGoals, NODE_HEIGHT, NODE_WIDTH } from '@white-box/c
 import { Button, Empty } from '@/components/ui'
 import { summarizeGoalCriteria } from '@white-box/core/goal-criteria'
 
-export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
+export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd, cut, attaching, canAttach, onCut, onInsert }: {
+  cut: string | null; attaching: boolean; canAttach: (id: string) => boolean; onCut: (id: string) => void; onInsert: (id: string) => void
   map: GoalMap; selected: string | null; focusRequest: number; onSelect: (id: string | null) => void; onAdd: (id: string) => void
 }) {
   const canvas = useRef<HTMLDivElement>(null)
@@ -69,6 +70,7 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
   useEffect(() => () => { if (tipTimer.current) clearTimeout(tipTimer.current) }, [])
 
   function showTip(id: string, element: HTMLElement) {
+    if (cut) return
     if (tipTimer.current) clearTimeout(tipTimer.current)
     const rect = element.getBoundingClientRect()
     tipTimer.current = setTimeout(() => setTip({ id, x: Math.max(12, Math.min(window.innerWidth - 352, rect.left)), y: Math.max(12, Math.min(window.innerHeight - Math.min(420, window.innerHeight * .7) - 12, rect.bottom + 10)) }), 180)
@@ -129,15 +131,17 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
       </svg>
       {Object.entries(positions).map(([id, position]) => {
         const goal = map.nodes[id]!, hidden = isGoalHidden(map, id)
-        return <div key={id} className={`gm-node ${selected === id ? 'gm-node-selected' : ''} ${hidden ? 'gm-node-hidden' : ''} ${!goal.parentId ? 'gm-node-head' : ''}`}
+        return <div key={id} className={`gm-node ${selected === id ? 'gm-node-selected' : ''} ${hidden ? 'gm-node-hidden' : ''} ${!goal.parentId ? 'gm-node-head' : ''} ${cut === id ? 'gm-node-cut' : ''} ${cut && canAttach(id) ? 'gm-node-target' : ''} ${cut && !canAttach(id) && cut !== id ? 'gm-node-unavailable' : ''}`}
           data-node-id={id} style={{ left: position.x, top: position.y, width: NODE_WIDTH, height: NODE_HEIGHT }}>
-          <button type="button" className="gm-node-body" aria-label={`目標：${goal.goal || '未入力の目標'}`} aria-pressed={selected === id}
+          <button type="button" className="gm-node-body" aria-label={`目標：${goal.goal || '未入力の目標'}`} aria-pressed={selected === id} disabled={Boolean(cut) && (attaching || !canAttach(id))}
             onClick={() => { if (tipTimer.current) clearTimeout(tipTimer.current); onSelect(id); setTip(null) }} onMouseEnter={(event) => showTip(id, event.currentTarget)} onMouseLeave={hideTip}
             onFocus={(event) => showTip(id, event.currentTarget)} onBlur={hideTip}>
             <span className="gm-node-meta">{!goal.parentId ? '最上位の目標' : '目標'}{goal.outcome?.status === 'achieved' ? ' · 達成' : goal.outcome?.status === 'not-achieved' ? ' · 非達成' : ''}{hidden ? ' · 非表示' : ''}<span className={!goal.criteria?.length ? 'gm-criteria-missing' : ''}> · {goal.criteria?.length ? `条件 ${goal.criteria.length}` : '条件 未設定'}</span></span>
             <strong>{goal.goal || '未入力の目標'}</strong><span className="gm-node-reason">{goal.reason || '理由を添える'}</span>
           </button>
-          {!hidden && <button type="button" className="gm-node-add" aria-label={`${goal.goal}に子目標を追加`} onClick={() => onAdd(id)}>＋</button>}
+          {!hidden && !cut && <button type="button" className="gm-node-cut-action" aria-label={`${goal.goal}の枝を切り取る`} title="枝を切り取る → 付け先をクリック" onClick={() => { setTip(null); onCut(id) }}>✂</button>}
+          {!hidden && !cut && goal.parentId && <button type="button" className="gm-node-insert" aria-label={`${goal.goal}の親との間に目標を追加`} title="間に目標を追加" onClick={() => { setTip(null); onInsert(id) }}>＋</button>}
+          {!hidden && !cut && <button type="button" className="gm-node-add" aria-label={`${goal.goal}に子目標を追加`} onClick={() => onAdd(id)}>＋</button>}
         </div>
       })}
     </div>
@@ -151,7 +155,7 @@ export function GoalCanvas({ map, selected, focusRequest, onSelect, onAdd }: {
       <Button size="sm" title="拡大" onClick={() => zoom(1.2)}>＋</Button>
       <span className="gm-muted">ドラッグで移動 · ホイールで拡大</span>
     </div>
-    {node && tip && <div className="gm-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}
+    {!cut && node && tip && <div className="gm-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}
       onMouseEnter={() => { if (tipTimer.current) clearTimeout(tipTimer.current) }} onMouseLeave={hideTip}><strong>{node.goal || '未入力の目標'}</strong>
       {node.reason && <p>{node.reason}</p>}<p className="gm-muted">{summarizeGoalCriteria(node.criteria).count ? `成功条件 ${node.criteria!.length} 件` : '成功条件がまだない。詳細で具体的な条件を追加できる。'}</p><span className="gm-muted">第{depth}層 · 子 {node.children.length} · 配下 {descendants}{isGoalHidden(map, node.id) ? ' · 非表示の枝' : ''}</span></div>}
   </div>

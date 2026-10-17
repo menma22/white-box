@@ -179,6 +179,13 @@ function seedSession(ctx: FakeCtx, ended = false): string {
 }
 
 const probes: { name: CommandName; setup(ctx: FakeCtx): ArgsOf<CommandName> }[] = [
+  { name: 'goal:reparent', setup: (ctx) => ({ id: seedGoal(ctx), parentId: seedGoal(ctx) }) },
+  { name: 'goal:insert', setup: (ctx) => {
+    const parentId = seedGoal(ctx)
+    const result = createGoal(ctx.store.data, { goal: 'Child', parentId })
+    ctx.store.data.goalMap = result.goalMap
+    return { id: result.goal.id, goal: 'Intermediate' }
+  } },
   { name: 'goal:hide', setup: (ctx) => ({ id: seedGoal(ctx) }) },
   { name: 'goal:merge', setup: (ctx) => ({ ids: [seedGoal(ctx), seedGoal(ctx)], goal: 'Merged' }) },
   { name: 'goal:restore', setup: (ctx) => { const id = seedGoal(ctx); ctx.store.data.goalMap = hideGoal(ctx.store.data, id, 'Hidden'); return { id } } },

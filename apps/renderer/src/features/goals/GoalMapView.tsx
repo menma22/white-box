@@ -12,7 +12,7 @@ import { GoalImport } from './GoalImport'
 import { GoalOutcome } from './GoalOutcome'
 import { GoalCriteria } from './GoalCriteria'
 
-type GoalDialog = { type: 'head' | 'child' | 'merge' | 'promote' | 'hide'; ids: string[] }
+type GoalDialog = { type: 'head' | 'child' | 'merge' | 'promote' | 'insert' | 'hide'; ids: string[] }
 
 export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandled }: {
   onGoTasks: (taskId?: string) => void; onGoIssues: () => void; initialNodeId?: string | null; onJumpHandled?: () => void
@@ -23,6 +23,9 @@ export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandle
   const [merge, setMerge] = useState<string[] | null>(null)
   const [dialog, setDialog] = useState<GoalDialog | null>(null)
   const [error, setError] = useState('')
+  const [cut, setCut] = useState<string | null>(null)
+  const [attaching, setAttaching] = useState(false)
+  const attachLock = useRef(false)
   const initialRoute = useRef(true)
   const node = selected ? map.nodes[selected] : null
   const run: GoalRun = useCallback(async (command, args) => {
@@ -57,16 +60,17 @@ export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandle
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (dialog || document.querySelector('[role="dialog"]')) return
+      if (event.key === 'Escape' && cut && !attachLock.current) { event.preventDefault(); setCut(null); return }
       const element = event.target as HTMLElement
       if (element.closest('input, textarea, select, [contenteditable="true"]')) return
-      if (event.key === 'Escape') { setMerge(null); setSelected(null) }
-      if (event.key === 'Delete' && node && map.ui.view !== 'history' && !isGoalHidden(map, node.id)) {
+      if (event.key === 'Escape' && !attachLock.current) { setCut(null); setMerge(null); setSelected(null) }
+      if (event.key === 'Delete' && !cut && node && map.ui.view !== 'history' && !isGoalHidden(map, node.id)) {
         event.preventDefault(); setDialog({ type: 'hide', ids: [node.id] })
       }
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
-  }, [dialog, node, map])
+  }, [dialog, node, map, cut])
 
   function chooseHead(id: string) {
     if (merge) { setMerge(merge.includes(id) ? merge.filter((picked) => picked !== id) : [...merge, id]); return }
@@ -74,10 +78,40 @@ export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandle
     setSelected(null)
   }
 
+  function startCut(id: string) {
+    setCut(id); setSelected(null); setMerge(null); setError('')
+  }
+
+  function canAttach(id: string): boolean {
+    if (!cut || !map.nodes[cut] || isGoalHidden(map, cut) || isGoalHidden(map, id) || map.nodes[cut]!.parentId === id) return false
+    let ancestor: string | null = id
+    while (ancestor) {
+      if (ancestor === cut) return false
+      ancestor = map.nodes[ancestor]?.parentId ?? null
+    }
+    return Boolean(map.nodes[id])
+  }
+
+  async function attach(parentId: string | null) {
+    if (!cut || attachLock.current || (parentId !== null && !canAttach(parentId))) return
+    attachLock.current = true; setAttaching(true)
+    const id = cut
+    try {
+      if (await run('goal:reparent', { id, parentId })) {
+        setCut(null)
+        await jump(id)
+      }
+    } finally { attachLock.current = false; setAttaching(false) }
+  }
+
+  useEffect(() => {
+    if (cut && (!map.nodes[cut] || isGoalHidden(map, cut))) setCut(null)
+  }, [cut, map])
+
   const heads = map.heads.filter((id) => map.nodes[id] && (map.ui.showHidden || !isGoalHidden(map, id)))
   return <div className="gm-root">
     <header className="gm-header"><div><h1>道標</h1><p>目標から、今日の一歩へ。</p></div>
-      <div className="gm-header-actions"><Button variant="solid" size="sm" onClick={() => setDialog({ type: 'head', ids: [] })}>目標を追加</Button>
+      <div className="gm-header-actions"><Button variant="solid" size="sm" disabled={Boolean(cut)} onClick={() => setDialog({ type: 'head', ids: [] })}>目標を追加</Button>
         <details className="gm-more"><summary aria-label="その他の操作">その他</summary><div className="gm-more-panel"><GoalImport /></div></details>
       </div>
     </header>
@@ -99,12 +133,22 @@ export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandle
         {merge ? (merge.includes(id) ? '☑ ' : '☐ ') : '↗ '}{map.nodes[id]!.goal || '未入力の目標'}
       </button>)}</div>
         <div className="gm-head-actions">{merge ? <><span className="gm-muted">{merge.length} 件選択</span><Button size="sm" onClick={() => setMerge(null)}>キャンセル</Button><Button size="sm" variant="solid" disabled={merge.length < 2}
-          onClick={() => setDialog({ type: 'merge', ids: merge })}>選んだ目標を統合</Button></> : <Button size="sm" disabled={map.heads.filter((id) => !isGoalHidden(map, id)).length < 2} onClick={() => setMerge([])}>目標を統合</Button>}</div>
+          onClick={() => setDialog({ type: 'merge', ids: merge })}>選んだ目標を統合</Button></> : <Button size="sm" disabled={Boolean(cut) || map.heads.filter((id) => !isGoalHidden(map, id)).length < 2} onClick={() => setMerge([])}>目標を統合</Button>}</div>
       </div>}</section>
+    {cut && map.nodes[cut] && <section className="gm-attach-bar" aria-label="枝の付け替え" aria-busy={attaching}>
+      <div role="status"><strong>「{map.nodes[cut]!.goal || '未入力の目標'}」を付け替え</strong><span>子目標も一緒に移動。付け先のカードをクリック。</span></div>
+      <select className="input" aria-label="枝の付け先" value="" disabled={attaching} onChange={(event) => { if (event.target.value) void attach(event.target.value) }}>
+        <option value="">一覧から付け先を選ぶ…</option>
+        {Object.values(map.nodes).filter((item) => canAttach(item.id)).map((item) => <option key={item.id} value={item.id}>{map.nodes[goalHead(map, item.id) ?? '']?.goal} / {item.goal || '未入力の目標'}</option>)}
+      </select>
+      {map.nodes[cut]!.parentId && <Button size="sm" disabled={attaching} onClick={() => void attach(null)}>最上位にする</Button>}
+      <Button size="sm" disabled={attaching} onClick={() => setCut(null)}>キャンセル</Button>
+    </section>}
     {map.ui.view !== 'history' && <>
       <div className={`gm-workspace ${node ? 'gm-with-detail' : ''}`}>
-        <GoalCanvas map={map} selected={selected} focusRequest={focusRequest} onSelect={setSelected} onAdd={(id) => setDialog({ type: 'child', ids: [id] })} />
-        {node && <GoalDetail key={node.id} node={node} run={run} onJump={jump} onClose={() => setSelected(null)} onDialog={setDialog} onGoTasks={onGoTasks} onGoIssues={onGoIssues} />}
+        <GoalCanvas map={map} selected={selected} focusRequest={focusRequest} onSelect={(id) => { if (cut) { if (id && !attaching) void attach(id) } else setSelected(id) }} onAdd={(id) => setDialog({ type: 'child', ids: [id] })}
+          cut={cut} attaching={attaching} canAttach={canAttach} onCut={startCut} onInsert={(id) => setDialog({ type: 'insert', ids: [id] })} />
+        {node && <GoalDetail key={node.id} node={node} run={run} onJump={jump} onClose={() => setSelected(null)} onDialog={setDialog} onGoTasks={onGoTasks} onGoIssues={onGoIssues} onCut={startCut} />}
       </div>
     </>}
     {map.ui.view === 'history' && <GoalHistory onJump={jump} />}
@@ -112,8 +156,8 @@ export function GoalMapView({ onGoTasks, onGoIssues, initialNodeId, onJumpHandle
   </div>
 }
 
-function GoalDetail({ node, run, onJump, onClose, onDialog, onGoTasks, onGoIssues }: {
-  node: GoalNode; run: GoalRun; onJump: (id: string) => void; onClose: () => void; onDialog: (dialog: GoalDialog) => void; onGoTasks: (taskId?: string) => void; onGoIssues: () => void
+function GoalDetail({ node, run, onJump, onClose, onDialog, onGoTasks, onGoIssues, onCut }: {
+  onCut: (id: string) => void; node: GoalNode; run: GoalRun; onJump: (id: string) => void; onClose: () => void; onDialog: (dialog: GoalDialog) => void; onGoTasks: (taskId?: string) => void; onGoIssues: () => void
 }) {
   const state = useData(), map = state.goalMap, hidden = isGoalHidden(map, node.id)
   const [taskTitle, setTaskTitle] = useState('')
@@ -133,7 +177,9 @@ function GoalDetail({ node, run, onJump, onClose, onDialog, onGoTasks, onGoIssue
     </>}<Button size="sm" onClick={() => void run('goal:restore', { id: node.id })}>表示に戻す</Button></div>}
     <div className="gm-detail-actions">
       {!hidden && <Button variant="solid" size="sm" onClick={() => onDialog({ type: 'child', ids: [node.id] })}>＋ 子目標</Button>}
+      {!hidden && <Button size="sm" onClick={() => onCut(node.id)}>枝を切り取る</Button>}
       {!hidden && <details className="gm-more"><summary>目標の操作</summary><div className="gm-more-panel">
+      {node.parentId && <Button size="sm" onClick={() => onDialog({ type: 'insert', ids: [node.id] })}>親との間に目標を追加</Button>}
       {!node.parentId && !hidden && <Button size="sm" onClick={() => onDialog({ type: 'promote', ids: [node.id] })}>この上に上位目標を作る</Button>}
       {!hidden && <Button variant="quiet" size="sm" onClick={() => onDialog({ type: 'hide', ids: [node.id] })}>枝を隠す</Button>}
       </div></details>}
@@ -163,13 +209,15 @@ function GoalCreateDialog({ dialog, onClose, onSuccess, onError }: {
   const [goal, setGoal] = useState(''), [reason, setReason] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('')
   const map = useData().goalMap
   const isHide = dialog.type === 'hide'
-  const title = { head: '最上位の目標を作る', child: '子目標を追加', merge: '目標を統合', promote: '上位目標を作る', hide: 'この枝を隠す？' }[dialog.type]
+  const title = { head: '最上位の目標を作る', child: '子目標を追加', merge: '目標を統合', promote: '上位目標を作る', insert: '間に目標を追加', hide: 'この枝を隠す？' }[dialog.type]
   async function submit() {
     if (busy || (!isHide && !goal.trim())) return
     setBusy(true)
     try {
       if (isHide) { await invoke('goal:hide', { id: dialog.ids[0]!, reason }); onSuccess(); return }
-      const result = dialog.type === 'merge' || dialog.type === 'promote'
+      const result = dialog.type === 'insert'
+        ? await invoke('goal:insert', { id: dialog.ids[0]!, goal: goal.trim(), reason })
+        : dialog.type === 'merge' || dialog.type === 'promote'
         ? await invoke('goal:merge', { goal: goal.trim(), reason, ids: dialog.ids })
         : await invoke('goal:create', { goal: goal.trim(), reason, ...(dialog.type === 'child' ? { parentId: dialog.ids[0] } : {}) })
       onSuccess(result.id)
@@ -178,6 +226,7 @@ function GoalCreateDialog({ dialog, onClose, onSuccess, onError }: {
   return <Modal open onClose={() => { if (!busy) onClose() }} labelledBy="gm-dialog-title"><form className="gm-dialog" onSubmit={(event) => { event.preventDefault(); void submit() }}>
     <h2 id="gm-dialog-title">{title}</h2>
     {dialog.ids.length > 0 && <p className="gm-dialog-targets">{dialog.ids.map((id) => map.nodes[id]?.goal || '未入力の目標').join(' / ')}</p>}
+    {dialog.type === 'insert' && <p className="gm-muted">親目標とこの目標の間につなぐ。子目標や関連する記録はそのまま残る。</p>}
     {isHide ? <p className="gm-muted">子目標も一緒に隠れる。目標と親子関係は残り、いつでも戻せる。</p> : <Field label="目標"><input autoFocus className="input" aria-label="新しい目標" value={goal} onChange={(event) => setGoal(event.target.value)}
       onKeyDown={(event) => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} /></Field>}
     <Field label={isHide ? '隠す理由（任意）' : '理由（任意）'}><textarea autoFocus={isHide} className="input" aria-label={isHide ? '隠す理由' : '新しい目標の理由'} rows={3} value={reason} onChange={(event) => setReason(event.target.value)} /></Field>
