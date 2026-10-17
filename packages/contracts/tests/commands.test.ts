@@ -3,8 +3,8 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 67 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(67)
+  it('コマンドは 69 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(69)
   })
 
   it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
@@ -113,6 +113,8 @@ describe('コマンド契約', () => {
     'goal:create': { goal: '目標', reason: '理由', parentId: null },
     'goal:update': { id: 'g1', patch: { goal: '目標', outcome: { status: 'achieved', result: '決まった' } } },
     'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+    'goal:reparent': { id: 'g1', parentId: null },
+    'goal:insert': { id: 'g1', goal: '中継' },
     'goal:hide': { id: 'g1', reason: '休止' },
     'goal:restore': { id: 'g1' },
     'goal:ui': { patch: { view: 'map', showHidden: true }, activeHeadId: 'g1' },

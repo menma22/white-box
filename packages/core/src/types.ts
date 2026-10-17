@@ -102,7 +102,7 @@ export interface GoalIssue {
 export interface GoalHistory {
   id: ID
   at: number
-  type: 'create-head' | 'create-child' | 'hide' | 'unhide' | 'merge' | 'promote'
+  type: 'create-head' | 'create-child' | 'hide' | 'unhide' | 'merge' | 'promote' | 'reparent' | 'insert'
   nodeId: ID
   parentId: ID | null
   note: string

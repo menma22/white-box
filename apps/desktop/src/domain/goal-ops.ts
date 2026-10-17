@@ -64,6 +64,43 @@ export function mergeGoals(db: Database, input: { ids: ID[]; goal: string; reaso
   return { goalMap: map, goal: created }
 }
 
+export function reparentGoal(db: Database, input: { id: ID; parentId: ID | null }): { goalMap: GoalMap; goal: GoalNode } {
+  const map = structuredClone(db.goalMap)
+  const target = requireGoal({ goalMap: map }, input.id)
+  const parent = input.parentId === null ? null : requireGoal({ goalMap: map }, input.parentId)
+  if (isGoalHidden(map, target.id) || parent && isGoalHidden(map, parent.id)) throw new Error('隠した枝は移動できません。先に表示へ戻してください')
+  let ancestor = parent
+  while (ancestor) {
+    if (ancestor.id === target.id) throw new Error('自分自身や子孫を親にはできません')
+    ancestor = ancestor.parentId === null ? null : map.nodes[ancestor.parentId]!
+  }
+  if (target.parentId === input.parentId) return { goalMap: db.goalMap, goal: requireGoal(db, input.id) }
+  const oldParentId = target.parentId
+  const siblings = oldParentId === null ? map.heads : map.nodes[oldParentId]!.children
+  siblings.splice(siblings.indexOf(target.id), 1)
+  target.parentId = input.parentId
+  if (parent) parent.children.push(target.id)
+  else map.heads.push(target.id)
+  if (map.activeHeadId === target.id || map.activeHeadId === null) map.activeHeadId = goalHead(map, target.id)
+  history(map, 'reparent', target.id, { parentId: input.parentId, withIds: oldParentId === null ? [] : [oldParentId] })
+  return { goalMap: map, goal: target }
+}
+
+export function insertGoal(db: Database, input: { id: ID; goal: string; reason?: string }): { goalMap: GoalMap; goal: GoalNode } {
+  const map = structuredClone(db.goalMap)
+  const target = requireGoal({ goalMap: map }, input.id)
+  if (target.parentId === null) throw new Error('中継目標は親子の間に追加してください')
+  if (isGoalHidden(map, target.id)) throw new Error('隠した枝には中継目標を追加できません。先に表示へ戻してください')
+  const parent = requireGoal({ goalMap: map }, target.parentId)
+  const created = node(input.goal, input.reason ?? '', parent.id)
+  created.children = [target.id]
+  parent.children.splice(parent.children.indexOf(target.id), 1, created.id)
+  target.parentId = created.id
+  map.nodes[created.id] = created
+  history(map, 'insert', created.id, { parentId: parent.id, withIds: [target.id] })
+  return { goalMap: map, goal: created }
+}
+
 export function hideGoal(db: Database, id: ID, reason: string): GoalMap {
   const map = structuredClone(db.goalMap)
   const target = requireGoal({ goalMap: map }, id)

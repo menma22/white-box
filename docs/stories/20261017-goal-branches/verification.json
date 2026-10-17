@@ -1,0 +1,682 @@
+{
+  "productCommit": "8d3f981d300dadfb31652e37f9f5e4703809fc79",
+  "staticChecks": {
+    "typecheck": {
+      "command": "pnpm run typecheck",
+      "exitCode": 0
+    },
+    "lint": {
+      "command": "pnpm run lint",
+      "exitCode": 0
+    },
+    "unit": {
+      "command": "pnpm run test",
+      "files": 72,
+      "tests": 726,
+      "exitCode": 0
+    },
+    "build": {
+      "command": "pnpm run build",
+      "exitCode": 0
+    },
+    "pack": {
+      "command": "node scripts/pack.mjs",
+      "exitCode": 0
+    }
+  },
+  "source": {
+    "exitCode": 0,
+    "checks": [
+      {
+        "name": "first: CDP is attached to this build",
+        "passed": true
+      },
+      {
+        "name": "Old database gets an empty goal map and retains tasks",
+        "passed": true
+      },
+      {
+        "name": "Editing content preserves the structural history",
+        "passed": true
+      },
+      {
+        "name": "Hide preserves descendants, links, reason and timestamp",
+        "passed": true
+      },
+      {
+        "name": "History records hidden branch and its reason",
+        "passed": true
+      },
+      {
+        "name": "Restoring a descendant restores hidden ancestors",
+        "passed": true
+      },
+      {
+        "name": "Merge and promote preserve complete subtrees",
+        "passed": true
+      },
+      {
+        "name": "Issue edit and resolution are saved",
+        "passed": true
+      },
+      {
+        "name": "Linked task uses the shared task collection",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:merge is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:merge is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:hide is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:ui is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Import preserves source node content and hierarchy",
+        "passed": true
+      },
+      {
+        "name": "Import remaps issue and history references",
+        "passed": true
+      },
+      {
+        "name": "Import keeps task completion, priority, due and creation time",
+        "passed": true
+      },
+      {
+        "name": "Import retains all existing White Box records",
+        "passed": true
+      },
+      {
+        "name": "Import retains disclosure preferences and opens the map",
+        "passed": true
+      },
+      {
+        "name": "Duplicate import does not duplicate records",
+        "passed": true
+      },
+      {
+        "name": "Broken import leaves the database unchanged",
+        "passed": true
+      },
+      {
+        "name": "Ctrl+5 opens the goal map",
+        "passed": true
+      },
+      {
+        "name": "UI rejects achievement without a recorded result",
+        "passed": true
+      },
+      {
+        "name": "A head with no tasks can be achieved with a result",
+        "passed": true
+      },
+      {
+        "name": "UI creates a head and a linked child",
+        "passed": true
+      },
+      {
+        "name": "A goal without criteria is explicitly unconfigured",
+        "passed": true
+      },
+      {
+        "name": "Unmeasured numerical criteria retain null instead of inventing zero",
+        "passed": true
+      },
+      {
+        "name": "Reaching a numerical condition does not declare the whole goal achieved",
+        "passed": true
+      },
+      {
+        "name": "UI goal editing autosaves without structural history",
+        "passed": true
+      },
+      {
+        "name": "UI issue is linked to the selected goal",
+        "passed": true
+      },
+      {
+        "name": "UI edits and resolves the same issue",
+        "passed": true
+      },
+      {
+        "name": "Blank issue edit restores the saved text",
+        "passed": true
+      },
+      {
+        "name": "UI creates a shared task linked to the goal",
+        "passed": true
+      },
+      {
+        "name": "Goal task link opens the common task detail",
+        "passed": true
+      },
+      {
+        "name": "Goal task starts real timing and saves its session",
+        "passed": true
+      },
+      {
+        "name": "Hidden branch disappears from the visible map",
+        "passed": true
+      },
+      {
+        "name": "Ctrl+6 opens the independent issues page",
+        "passed": true
+      },
+      {
+        "name": "Issue jump exposes the hidden branch without restoring it",
+        "passed": true
+      },
+      {
+        "name": "UI restore preserves the reason in history",
+        "passed": true
+      },
+      {
+        "name": "Mouse drag pans the map",
+        "passed": true
+      },
+      {
+        "name": "UI merge links both selected heads",
+        "passed": true
+      },
+      {
+        "name": "Tooltip remains full size and preserves its content when zoomed out",
+        "passed": true
+      },
+      {
+        "name": "Returning to the board does not reopen a closed task detail",
+        "passed": true
+      },
+      {
+        "name": "Blank task edit restores the saved title",
+        "passed": true
+      },
+      {
+        "name": "Open task detail synchronizes list edits and does not overwrite on blur",
+        "passed": true
+      },
+      {
+        "name": "UI updates shared task title, priority, due and status",
+        "passed": true
+      },
+      {
+        "name": "Board displays the exact task created in goals",
+        "passed": true
+      },
+      {
+        "name": "History UI displays the hidden reason",
+        "passed": true
+      },
+      {
+        "name": "Structural history opens the recorded goal on the map",
+        "passed": true
+      },
+      {
+        "name": "940x620 viewport retains visible map and scrollable detail",
+        "passed": true
+      },
+      {
+        "name": "Cancelling task deletion preserves parent and child",
+        "passed": true
+      },
+      {
+        "name": "Confirmed task deletion removes descendants and retains timing records",
+        "passed": true
+      },
+      {
+        "name": "Cancelling issue deletion preserves the issue",
+        "passed": true
+      },
+      {
+        "name": "Confirmed issue deletion removes only the selected issue",
+        "passed": true
+      },
+      {
+        "name": "Cut previews the entire branch without saving a detached tree",
+        "passed": true
+      },
+      {
+        "name": "Cut disables self, descendant and current parent targets",
+        "passed": true
+      },
+      {
+        "name": "Cancel retains the original complete database",
+        "passed": true
+      },
+      {
+        "name": "Escape from the target selector cancels without changing data",
+        "passed": true
+      },
+      {
+        "name": "Card click moves the complete branch and keeps task and issue references",
+        "passed": true
+      },
+      {
+        "name": "Target selector can move across heads and follow the moved card",
+        "passed": true
+      },
+      {
+        "name": "Edge insert links parent to intermediate to original branch and preserves its content",
+        "passed": true
+      },
+      {
+        "name": "Minimum viewport keeps the attachment toolbar and map usable",
+        "passed": true
+      },
+      {
+        "name": "Detach to head keeps the child and records both operations",
+        "passed": true
+      },
+      {
+        "name": "Cyclic branch attachment is rejected without a partial save",
+        "passed": true
+      },
+      {
+        "name": "Cyclic branch attachment is rejected without a partial save",
+        "passed": true
+      },
+      {
+        "name": "restart: CDP is attached to this build",
+        "passed": true
+      },
+      {
+        "name": "Restart retains complete goal map, shared tasks and timing records",
+        "passed": true
+      },
+      {
+        "name": "Renderer has no console errors or uncaught exceptions",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "shutdowns": [
+      {
+        "forcedKill": false,
+        "pidAlive": false,
+        "exitCode": 0,
+        "durationMs": 7048
+      },
+      {
+        "forcedKill": false,
+        "pidAlive": false,
+        "exitCode": 0,
+        "durationMs": 569
+      }
+    ]
+  },
+  "packaged": {
+    "exitCode": 0,
+    "checks": [
+      {
+        "name": "first: CDP is attached to this build",
+        "passed": true
+      },
+      {
+        "name": "Old database gets an empty goal map and retains tasks",
+        "passed": true
+      },
+      {
+        "name": "Editing content preserves the structural history",
+        "passed": true
+      },
+      {
+        "name": "Hide preserves descendants, links, reason and timestamp",
+        "passed": true
+      },
+      {
+        "name": "History records hidden branch and its reason",
+        "passed": true
+      },
+      {
+        "name": "Restoring a descendant restores hidden ancestors",
+        "passed": true
+      },
+      {
+        "name": "Merge and promote preserve complete subtrees",
+        "passed": true
+      },
+      {
+        "name": "Issue edit and resolution are saved",
+        "passed": true
+      },
+      {
+        "name": "Linked task uses the shared task collection",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:merge is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:merge is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:hide is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:create is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid issue:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid task:update is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Invalid goal:ui is rejected atomically",
+        "passed": true
+      },
+      {
+        "name": "Import preserves source node content and hierarchy",
+        "passed": true
+      },
+      {
+        "name": "Import remaps issue and history references",
+        "passed": true
+      },
+      {
+        "name": "Import keeps task completion, priority, due and creation time",
+        "passed": true
+      },
+      {
+        "name": "Import retains all existing White Box records",
+        "passed": true
+      },
+      {
+        "name": "Import retains disclosure preferences and opens the map",
+        "passed": true
+      },
+      {
+        "name": "Duplicate import does not duplicate records",
+        "passed": true
+      },
+      {
+        "name": "Broken import leaves the database unchanged",
+        "passed": true
+      },
+      {
+        "name": "Ctrl+5 opens the goal map",
+        "passed": true
+      },
+      {
+        "name": "UI rejects achievement without a recorded result",
+        "passed": true
+      },
+      {
+        "name": "A head with no tasks can be achieved with a result",
+        "passed": true
+      },
+      {
+        "name": "UI creates a head and a linked child",
+        "passed": true
+      },
+      {
+        "name": "A goal without criteria is explicitly unconfigured",
+        "passed": true
+      },
+      {
+        "name": "Unmeasured numerical criteria retain null instead of inventing zero",
+        "passed": true
+      },
+      {
+        "name": "Reaching a numerical condition does not declare the whole goal achieved",
+        "passed": true
+      },
+      {
+        "name": "UI goal editing autosaves without structural history",
+        "passed": true
+      },
+      {
+        "name": "UI issue is linked to the selected goal",
+        "passed": true
+      },
+      {
+        "name": "UI edits and resolves the same issue",
+        "passed": true
+      },
+      {
+        "name": "Blank issue edit restores the saved text",
+        "passed": true
+      },
+      {
+        "name": "UI creates a shared task linked to the goal",
+        "passed": true
+      },
+      {
+        "name": "Goal task link opens the common task detail",
+        "passed": true
+      },
+      {
+        "name": "Goal task starts real timing and saves its session",
+        "passed": true
+      },
+      {
+        "name": "Hidden branch disappears from the visible map",
+        "passed": true
+      },
+      {
+        "name": "Ctrl+6 opens the independent issues page",
+        "passed": true
+      },
+      {
+        "name": "Issue jump exposes the hidden branch without restoring it",
+        "passed": true
+      },
+      {
+        "name": "UI restore preserves the reason in history",
+        "passed": true
+      },
+      {
+        "name": "Mouse drag pans the map",
+        "passed": true
+      },
+      {
+        "name": "UI merge links both selected heads",
+        "passed": true
+      },
+      {
+        "name": "Tooltip remains full size and preserves its content when zoomed out",
+        "passed": true
+      },
+      {
+        "name": "Returning to the board does not reopen a closed task detail",
+        "passed": true
+      },
+      {
+        "name": "Blank task edit restores the saved title",
+        "passed": true
+      },
+      {
+        "name": "Open task detail synchronizes list edits and does not overwrite on blur",
+        "passed": true
+      },
+      {
+        "name": "UI updates shared task title, priority, due and status",
+        "passed": true
+      },
+      {
+        "name": "Board displays the exact task created in goals",
+        "passed": true
+      },
+      {
+        "name": "History UI displays the hidden reason",
+        "passed": true
+      },
+      {
+        "name": "Structural history opens the recorded goal on the map",
+        "passed": true
+      },
+      {
+        "name": "940x620 viewport retains visible map and scrollable detail",
+        "passed": true
+      },
+      {
+        "name": "Cancelling task deletion preserves parent and child",
+        "passed": true
+      },
+      {
+        "name": "Confirmed task deletion removes descendants and retains timing records",
+        "passed": true
+      },
+      {
+        "name": "Cancelling issue deletion preserves the issue",
+        "passed": true
+      },
+      {
+        "name": "Confirmed issue deletion removes only the selected issue",
+        "passed": true
+      },
+      {
+        "name": "Cut previews the entire branch without saving a detached tree",
+        "passed": true
+      },
+      {
+        "name": "Cut disables self, descendant and current parent targets",
+        "passed": true
+      },
+      {
+        "name": "Cancel retains the original complete database",
+        "passed": true
+      },
+      {
+        "name": "Escape from the target selector cancels without changing data",
+        "passed": true
+      },
+      {
+        "name": "Card click moves the complete branch and keeps task and issue references",
+        "passed": true
+      },
+      {
+        "name": "Target selector can move across heads and follow the moved card",
+        "passed": true
+      },
+      {
+        "name": "Edge insert links parent to intermediate to original branch and preserves its content",
+        "passed": true
+      },
+      {
+        "name": "Minimum viewport keeps the attachment toolbar and map usable",
+        "passed": true
+      },
+      {
+        "name": "Detach to head keeps the child and records both operations",
+        "passed": true
+      },
+      {
+        "name": "Cyclic branch attachment is rejected without a partial save",
+        "passed": true
+      },
+      {
+        "name": "Cyclic branch attachment is rejected without a partial save",
+        "passed": true
+      },
+      {
+        "name": "restart: CDP is attached to this build",
+        "passed": true
+      },
+      {
+        "name": "Restart retains complete goal map, shared tasks and timing records",
+        "passed": true
+      },
+      {
+        "name": "Renderer has no console errors or uncaught exceptions",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "shutdowns": [
+      {
+        "forcedKill": false,
+        "pidAlive": false,
+        "exitCode": 0,
+        "durationMs": 1905
+      },
+      {
+        "forcedKill": false,
+        "pidAlive": false,
+        "exitCode": 0,
+        "durationMs": 4109
+      }
+    ]
+  },
+  "exportPolicy": "Synthetic QA data only. Result details containing machine-local URLs omitted; condition names and outcomes retained. Raw runs remain in the local delivery artifact.",
+  "nativeTiming": {
+    "requestAt": 1792248293892,
+    "appExitEventAfterMs": 34,
+    "nativeExitAfterMs": 24044,
+    "rawKernelWaitAt15Seconds": 258,
+    "rawExitCodeAt15Seconds": 259,
+    "rawFinalWait": 0,
+    "rawFinalExitCode": 0,
+    "forcedKill": false,
+    "limitMs": 60000,
+    "rootCause": "OS teardown delay producer unconfirmed"
+  },
+  "buildPackageCompared": 165,
+  "candidatePackageCompared": 958
+}

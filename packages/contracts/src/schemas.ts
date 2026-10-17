@@ -121,7 +121,7 @@ export const GoalIssueSchema = z.object({
 export const GoalHistorySchema = z.object({
   id: IdSchema,
   at: z.number(),
-  type: z.enum(['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote']),
+  type: z.enum(['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote', 'reparent', 'insert']),
   nodeId: IdSchema,
   parentId: IdSchema.nullable(),
   note: z.string(),

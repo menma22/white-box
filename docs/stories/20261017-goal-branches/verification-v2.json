@@ -1,0 +1,181 @@
+{
+  "version": 2,
+  "productCommit": "8d3f981d300dadfb31652e37f9f5e4703809fc79",
+  "productUnchangedSince": "a3ab572e819dafa9971486408f072d498c05656d",
+  "identity": {
+    "compiledPairs": 165,
+    "packagePairs": 958,
+    "rehashedAllEqual": true,
+    "manifestSha256": "e9440eff478ac364197dae7b32a9cada4b3642ae856e78f65ea735fb5d845ff5"
+  },
+  "runs": [
+    {
+      "run": "run-kl3HlB",
+      "harnessHead": "a3ab572e819dafa9971486408f072d498c05656d",
+      "harness": "Native handle observer,15-to60s quit budget; direct IPC file publication;10s startup",
+      "exitCode": 0,
+      "checks": 75,
+      "passedChecks": 75,
+      "rendererErrors": 0,
+      "shutdowns": [
+        {
+          "pid": 19672,
+          "quitRequested": true,
+          "quitError": null,
+          "forcedKill": false,
+          "killAccepted": null,
+          "requestedAt": 1792248440692,
+          "nativeIdentity": {
+            "pid": 19672,
+            "parentPid": 62260,
+            "creationDate": "2026-10-17T14:47:17.7000416Z",
+            "name": "White Box",
+            "handle": 2464
+          },
+          "nativeExit": {
+            "pid": 19672,
+            "creationDate": "2026-10-17T14:47:17.7000416Z",
+            "hasExited": true,
+            "exitCode": 0,
+            "exitedAt": 1792248442597,
+            "deadline": 1792248500692
+          },
+          "exitEventObserved": true,
+          "exitCode": 0,
+          "signalCode": null,
+          "pidAlive": false,
+          "confirmedBy": "native process handle"
+        },
+        {
+          "pid": 61752,
+          "quitRequested": true,
+          "quitError": null,
+          "forcedKill": false,
+          "killAccepted": null,
+          "requestedAt": 1792248433520,
+          "nativeIdentity": {
+            "pid": 61752,
+            "parentPid": 62260,
+            "creationDate": "2026-10-17T14:46:42.8121340Z",
+            "name": "White Box",
+            "handle": 2440
+          },
+          "nativeExit": {
+            "pid": 61752,
+            "creationDate": "2026-10-17T14:46:42.8121340Z",
+            "hasExited": true,
+            "exitCode": 0,
+            "exitedAt": 1792248437629,
+            "deadline": 1792248493520
+          },
+          "exitEventObserved": true,
+          "exitCode": 0,
+          "signalCode": null,
+          "pidAlive": false,
+          "confirmedBy": "native process handle"
+        }
+      ]
+    },
+    {
+      "run": "run-otWQ1z",
+      "harnessHead": "22b8d88b02cfcd236125460c36ee4ad0983fa869",
+      "harness": "Atomic IPC publication and public window restoration;10s startup",
+      "exitCode": 1,
+      "checks": 75,
+      "passedChecks": 75,
+      "rendererErrors": 0,
+      "shutdowns": [
+        {
+          "pid": 37208,
+          "quitRequested": false,
+          "quitError": null,
+          "forcedKill": false,
+          "killAccepted": null,
+          "requestedAt": null,
+          "nativeIdentity": null,
+          "nativeExit": null,
+          "exitEventObserved": false,
+          "exitCode": null,
+          "signalCode": null,
+          "pidAlive": true,
+          "confirmedBy": null
+        },
+        {
+          "pid": 55132,
+          "quitRequested": true,
+          "quitError": null,
+          "forcedKill": false,
+          "killAccepted": null,
+          "requestedAt": 1792250670008,
+          "nativeIdentity": {
+            "pid": 55132,
+            "parentPid": 3272,
+            "creationDate": "2026-10-17T15:23:56.8246533Z",
+            "name": "White Box",
+            "handle": 2600
+          },
+          "nativeExit": {
+            "pid": 55132,
+            "creationDate": "2026-10-17T15:23:56.8246533Z",
+            "hasExited": true,
+            "exitCode": 0,
+            "exitedAt": 1792250689769,
+            "deadline": 1792250730008
+          },
+          "exitEventObserved": true,
+          "exitCode": 0,
+          "signalCode": null,
+          "pidAlive": false,
+          "confirmedBy": "native process handle"
+        }
+      ]
+    },
+    {
+      "run": "run-AJTou6",
+      "harnessHead": "560f4667508474b827033aa8c56ce97d310873e6",
+      "harness": "Atomic IPC, public window restoration,60s startup,helper log;quit60s unchanged",
+      "exitCode": 1,
+      "checks": 72,
+      "passedChecks": 72,
+      "rendererErrors": 0,
+      "shutdowns": [
+        {
+          "pid": 53212,
+          "quitRequested": true,
+          "quitError": null,
+          "forcedKill": false,
+          "killAccepted": null,
+          "requestedAt": 1792250938667,
+          "nativeIdentity": {
+            "pid": 53212,
+            "parentPid": 71032,
+            "creationDate": "2026-10-17T15:28:21.8212941Z",
+            "name": "White Box",
+            "handle": 2436
+          },
+          "nativeExit": null,
+          "exitEventObserved": false,
+          "exitCode": null,
+          "signalCode": null,
+          "pidAlive": false,
+          "confirmedBy": "PID absent only"
+        }
+      ]
+    }
+  ],
+  "currentHelperQualification": {
+    "run": "native-exit-atomic-selftest-GrS3GW",
+    "harnessHead": "560f4667508474b827033aa8c56ce97d310873e6",
+    "actual0Accepted": true,
+    "actual7Rejected": true
+  },
+  "captureQualification": {
+    "run": "run-q5LFiv",
+    "forcedNativeMinimizeBaseline": true,
+    "publicWindowOpenRestored": true,
+    "captureInspected": true,
+    "nativeExitCode": 0
+  },
+  "scope": "75 means assertions including UI,storage,restart,renderer monitoring; it is not75 distinct user actions. Reuse complete run-kl3HlB for unchanged product behavior; qualify changed QA producer by current actual native0/7, actual app atomic exit observation and minimized-window restore/capture. Later failures are not complete successes. No app lifecycle changes.",
+  "unresolved": "Intermittent OS native process finalization delay. run-AJTou6 did not return native handle exit within60s; PID absence alone did not pass. run-otWQ1z final observer startup timed out before a quit request. Neither is counted as full E2E success."
+}

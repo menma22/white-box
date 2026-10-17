@@ -154,3 +154,23 @@ textarea.gm-text, .gm-dialog textarea { resize: vertical; line-height: 1.65; min
 .gm-criterion-check { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--text-2); line-height: 1.5; }
 .gm-criteria-review { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
 .gm-criteria-review summary { color: var(--text-2); font-size: 11px; cursor: pointer; margin-bottom: 6px; }
+.gm-attach-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 24px; background: var(--accent-soft); border-bottom: 1px solid var(--accent-line); }
+.gm-attach-bar > div { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.gm-attach-bar strong, .gm-attach-bar span { display: block; font-size: 12px; }
+.gm-attach-bar span { margin-top: 4px; color: var(--text-2); font-size: 11px; }
+.gm-attach-bar select { flex: 0 1 280px; min-width: 160px; }
+.gm-node-cut { border: 2px dashed var(--accent); opacity: .65; }
+.gm-node-target { outline: 2px solid var(--accent-line); outline-offset: 3px; }
+.gm-node-target:hover { outline-color: var(--accent); }
+.gm-node-target .gm-node-body { cursor: copy; }
+.gm-node-unavailable { opacity: .4; }
+.gm-node-body:disabled { cursor: default; }
+.gm-node-cut-action, .gm-node-insert { position: absolute; width: 28px; height: 28px; padding: 0; border: 1px solid var(--accent-line); border-radius: var(--r-pill); background: var(--panel); color: var(--accent); cursor: pointer; }
+.gm-node-cut-action { right: 5px; top: -15px; opacity: 0; }
+.gm-node:hover .gm-node-cut-action, .gm-node:focus-within .gm-node-cut-action { opacity: 1; }
+.gm-node-insert { left: -37px; top: 30px; }
+.gm-node-cut-action:hover, .gm-node-insert:hover { background: var(--accent-soft); }
+.gm-detail-actions { flex-wrap: wrap; }
+.gm-detail-actions > .gm-more { flex: 1 0 100%; }
+.gm-detail-actions .gm-more-panel { position: static; min-width: 0; box-shadow: none; }
+.gm-root:has(.gm-attach-bar) .gm-workspace, .gm-root:has(.gm-attach-bar) .gm-canvas { min-height: 0; }

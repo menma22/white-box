@@ -128,6 +128,14 @@ export const COMMANDS = {
     args: z.strictObject({ ids: z.array(IdSchema), goal: z.string(), reason: z.string().optional() }),
     result: GoalNodeSchema,
   },
+  'goal:reparent': {
+    args: z.strictObject({ id: IdSchema, parentId: IdSchema.nullable() }),
+    result: GoalNodeSchema,
+  },
+  'goal:insert': {
+    args: z.strictObject({ id: IdSchema, goal: z.string(), reason: z.string().optional() }),
+    result: GoalNodeSchema,
+  },
   'goal:hide': { args: z.strictObject({ id: IdSchema, reason: z.string().optional() }), result: z.null() },
   'goal:restore': { args: z.strictObject({ id: IdSchema }), result: z.null() },
   'goal:ui': {

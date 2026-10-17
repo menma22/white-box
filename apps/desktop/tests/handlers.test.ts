@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（67 コマンド）', () => {
+describe('ユースケースの網羅（69 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -76,6 +76,8 @@ describe('ユースケースの網羅（67 コマンド）', () => {
       'goal:create': { goal: '新しい目標' },
       'goal:update': { id: 'g1', patch: { reason: '理由', outcome: { result: '決まった' } } },
       'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+      'goal:reparent': { id: 'g1', parentId: 'g2' },
+      'goal:insert': { id: 'g1', goal: '中継' },
       'goal:hide': { id: 'g1', reason: '休止' },
       'goal:restore': { id: 'g1' },
       'goal:ui': { patch: { view: 'map' } },

@@ -4,20 +4,20 @@ import type { GoalHistory as HistoryEntry } from '@white-box/core/types'
 
 const LABELS: Record<HistoryEntry['type'], string> = {
   'create-head': '最上位の目標を作った', 'create-child': '子目標を追加した',
-  hide: '枝を隠した', unhide: '表示に戻した', merge: '目標を統合した', promote: '上位目標を作った',
+  hide: '枝を隠した', unhide: '表示に戻した', merge: '目標を統合した', promote: '上位目標を作った', reparent: '枝を付け替えた', insert: '間に目標を追加した',
 }
 
 export function GoalHistory({ onJump }: { onJump: (id: string) => void }) {
   const map = useData().goalMap
   return <section className="gm-list-page" aria-label="構造の履歴">
     <div className="gm-section-heading"><h2>構造の履歴</h2><span className="gm-muted">{map.history.length} 件</span></div>
-    <p className="gm-muted">目標の追加・統合・非表示・復元を残す。目標文と理由の編集は記録しない。</p>
+    <p className="gm-muted">目標の追加・付け替え・挿入・統合・非表示・復元を残す。目標文と理由の編集は記録しない。</p>
     {!map.history.length && <Empty title="ここから、道筋が残っていく。" />}
     {[...map.history].sort((a, b) => b.at - a.at).map((entry) => <article className="gm-history-row" key={entry.id}>
       <div className="gm-history-content"><time className="gm-muted">{new Date(entry.at).toLocaleString('ja-JP')}</time>
         <strong>{LABELS[entry.type]}</strong><p>{map.nodes[entry.nodeId]?.goal || '未入力の目標'}</p>
         {entry.parentId && <small className="gm-muted">分岐元：{map.nodes[entry.parentId]?.goal || '未入力の目標'}</small>}
-        {entry.withIds?.length > 0 && <small className="gm-muted">まとめた目標：{entry.withIds.map((id) => map.nodes[id]?.goal || '未入力の目標').join(' / ')}</small>}
+        {entry.withIds?.length > 0 && <small className="gm-muted">{entry.type === 'reparent' ? '以前の親：' : entry.type === 'insert' ? '挿入先の子：' : 'まとめた目標：'}{entry.withIds.map((id) => map.nodes[id]?.goal || '未入力の目標').join(' / ')}</small>}
         {entry.note && <blockquote>{entry.note}</blockquote>}
       </div>
       <Button size="sm" onClick={() => onJump(entry.nodeId)}>見る</Button>
