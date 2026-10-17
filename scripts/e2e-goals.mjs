@@ -261,6 +261,8 @@ async function stop() {
 }
 
 async function screenshot(name) {
+  await call('window:open', { kind: 'main' })
+  await until(() => page.evaluate('document.visibilityState === "visible" && document.hasFocus()'), 'visible main window before capture')
   await page.send('Page.bringToFront')
   await wait(350)
   const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, 30000)
