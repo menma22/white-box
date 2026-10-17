@@ -138,12 +138,16 @@ async function nativeExitObserver(owned) {
   const quote = (value) => "'" + String(value).replaceAll("'", "''") + "'"
   const script = `$ErrorActionPreference='Stop'
 $qaProcess=$null
+function Publish-Observation([string]$Path,[string]$Value) {
+  [IO.File]::WriteAllText($Path+'.tmp',$Value)
+  [IO.File]::Move($Path+'.tmp',$Path)
+}
 try {
   $qaProcess=Get-Process -Id ${owned.pid}
   $qaHandle=$qaProcess.Handle
   $qaIdentity=Get-CimInstance Win32_Process -Filter 'ProcessId=${owned.pid}'
   $qaStarted=$qaProcess.StartTime.ToUniversalTime()
-  [IO.File]::WriteAllText(${quote(readyPath)},([pscustomobject]@{pid=$qaProcess.Id;parentPid=$qaIdentity.ParentProcessId;creationDate=$qaStarted.ToString('o');name=$qaProcess.ProcessName;handle=$qaHandle.ToInt64()}|ConvertTo-Json -Compress))
+  Publish-Observation ${quote(readyPath)} ([pscustomobject]@{pid=$qaProcess.Id;parentPid=$qaIdentity.ParentProcessId;creationDate=$qaStarted.ToString('o');name=$qaProcess.ProcessName;handle=$qaHandle.ToInt64()}|ConvertTo-Json -Compress)
   $qaRequestDeadline=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()+10000
   while(-not [IO.File]::Exists(${quote(requestPath)})) {
     if([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -ge $qaRequestDeadline) { throw 'Quit request was not received by the native observer' }
@@ -153,9 +157,9 @@ try {
   $qaTimeout=[Math]::Max(0,$qaDeadline-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())
   $qaExited=$qaProcess.WaitForExit([int]$qaTimeout)
   $qaResult=[pscustomobject]@{pid=$qaProcess.Id;creationDate=$qaStarted.ToString('o');hasExited=$qaExited;exitCode=$(if($qaExited){$qaProcess.ExitCode}else{$null});exitedAt=$(if($qaExited){([DateTimeOffset]$qaProcess.ExitTime.ToUniversalTime()).ToUnixTimeMilliseconds()}else{$null});deadline=$qaDeadline}
-  [IO.File]::WriteAllText(${quote(resultPath)},($qaResult|ConvertTo-Json -Compress))
+  Publish-Observation ${quote(resultPath)} ($qaResult|ConvertTo-Json -Compress)
 } catch {
-  [IO.File]::WriteAllText(${quote(resultPath)},([pscustomobject]@{error=$_.Exception.Message}|ConvertTo-Json -Compress))
+  Publish-Observation ${quote(resultPath)} ([pscustomobject]@{error=$_.Exception.Message}|ConvertTo-Json -Compress)
   exit 1
 } finally {
   if($null -ne $qaProcess) { $qaProcess.Dispose() }
@@ -175,7 +179,7 @@ try {
   assert.equal(ready.parentPid, process.pid, 'Native observer pins this harness child')
   assert.equal(ready.name.toLowerCase(), path.basename(electron, '.exe').toLowerCase(), 'Native observer pins the launched executable')
   assert.ok(ready.handle > 0 && Number.isFinite(Date.parse(ready.creationDate)), 'Native observer retains a valid process handle and creation time')
-  return { ready, result, request: (at) => fs.writeFileSync(requestPath, String(at)) }
+  return { ready, result, request: (at) => { fs.writeFileSync(requestPath + '.tmp', String(at), { flag: 'wx' }); fs.renameSync(requestPath + '.tmp', requestPath) } }
 }
 
 function requireNaturalExit(native, ready, requestedAt) {
