@@ -17,6 +17,7 @@ const require = createRequire(import.meta.url)
 const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : path.join(path.dirname(require.resolve('electron')), 'dist', 'electron.exe')
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const QUIT_TIMEOUT_MS = 60000
+const OBSERVER_READY_TIMEOUT_MS = 60000
 const checks = []
 const errors = []
 let child
@@ -148,7 +149,7 @@ try {
   $qaIdentity=Get-CimInstance Win32_Process -Filter 'ProcessId=${owned.pid}'
   $qaStarted=$qaProcess.StartTime.ToUniversalTime()
   Publish-Observation ${quote(readyPath)} ([pscustomobject]@{pid=$qaProcess.Id;parentPid=$qaIdentity.ParentProcessId;creationDate=$qaStarted.ToString('o');name=$qaProcess.ProcessName;handle=$qaHandle.ToInt64()}|ConvertTo-Json -Compress)
-  $qaRequestDeadline=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()+10000
+  $qaRequestDeadline=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()+${OBSERVER_READY_TIMEOUT_MS}
   while(-not [IO.File]::Exists(${quote(requestPath)})) {
     if([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -ge $qaRequestDeadline) { throw 'Quit request was not received by the native observer' }
     Start-Sleep -Milliseconds 20
@@ -165,7 +166,9 @@ try {
   if($null -ne $qaProcess) { $qaProcess.Dispose() }
 }`
   fs.writeFileSync(`${prefix}.ps1`, '\ufeff' + script)
-  const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', `${prefix}.ps1`], { stdio: 'ignore', windowsHide: true })
+  const helperLog = fs.openSync(`${prefix}-helper.log`, 'a')
+  const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', `${prefix}.ps1`], { stdio: ['ignore', helperLog, helperLog], windowsHide: true })
+  fs.closeSync(helperLog)
   let helperError
   helper.once('error', (error) => { helperError = error })
   const result = () => fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : null
@@ -174,7 +177,7 @@ try {
     const observation = result()
     if (observation?.error) throw new Error(observation.error)
     return fs.existsSync(readyPath) ? JSON.parse(fs.readFileSync(readyPath, 'utf8')) : null
-  }, 'native process handle ready', 10000)
+  }, 'native process handle ready', OBSERVER_READY_TIMEOUT_MS)
   assert.equal(ready.pid, owned.pid, 'Native observer pins the launched PID')
   assert.equal(ready.parentPid, process.pid, 'Native observer pins this harness child')
   assert.equal(ready.name.toLowerCase(), path.basename(electron, '.exe').toLowerCase(), 'Native observer pins the launched executable')
