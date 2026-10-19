@@ -35,3 +35,7 @@ story を書く → まひろが受け入れ基準を確認 → ブランチを�
 - [v3 — 終了観測の上限を訂正](20261017_story_goal-branches-v3.md)
 - [v2 — 操作・保存の検証と先行する終了観測](20261017_story_goal-branches-v2.md)
 - [v1 — 実装前の受け入れ基準](20261017_story_goal-branches-v1.md)
+
+## ミニカードのコンパクト表示
+
+- [v1 — 数字・オレンジの残量ゲージ・定位置と退避](20261019_story_compact-hud-v1.md)
