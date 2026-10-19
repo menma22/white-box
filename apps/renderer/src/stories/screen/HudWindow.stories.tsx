@@ -34,8 +34,8 @@ const meta: Meta<typeof HudWindow> = {
     (Story) => (
       <div
         style={{
-          width: 248,
-          height: 88,
+          width: 96,
+          height: 36,
           backgroundImage: 'repeating-linear-gradient(135deg, #8a8f98 0 11px, #6b707a 11px 22px)',
         }}
       >

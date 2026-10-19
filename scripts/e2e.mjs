@@ -229,8 +229,8 @@ try {
   check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
   check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
   await wait(250)
-  const breakHud = await hud.evaluate('({ labels: [...document.querySelectorAll(".hud-slot-label")].map((x) => x.textContent), body: document.body.innerText })')
-  check('ミニカードが休憩タイマーを表示する', breakHud.labels.includes('休憩') && !breakHud.body.includes('停止中'), breakHud)
+  const breakHud = await hud.evaluate('({ values: [...document.querySelectorAll(".hud-slot-value")].map((x) => x.textContent), body: document.body.innerText.trim(), gauge: document.querySelector(".hud-gauge-fill")?.getAttribute("stroke-dasharray") })')
+  check('ミニカードは経過の数字だけを表示し、ゲージは休憩の残り時間を示す', breakHud.values.length === 1 && /^\d+:\d{2}$/.test(breakHud.body) && Number(breakHud.gauge?.split(' ')[0]) > 0 && Number(breakHud.gauge?.split(' ')[0]) < 1, breakHud)
 
   const breakTarget = await findTarget('#expire')
   const breakWindow = await connect(breakTarget.webSocketDebuggerUrl)
