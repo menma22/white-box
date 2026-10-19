@@ -238,8 +238,13 @@ try {
   const onBreak = await hud.evaluate('window.whitebox.call("state:get")')
   check('休憩を始めると paused になる', onBreak.data.live.state === 'paused')
   check('休憩終了時刻が状態に入る', Boolean(onBreak.data.breakTimer && onBreak.data.breakTimer.endsAt))
-  await wait(250)
-  const breakHud = await hud.evaluate('({ values: [...document.querySelectorAll(".hud-slot-value")].map((x) => x.textContent), body: document.body.innerText.trim(), gauge: document.querySelector(".hud-gauge-fill")?.getAttribute("stroke-dasharray") })')
+  let breakHud
+  const breakHudDeadline = Date.now() + 1500
+  do {
+    breakHud = await hud.evaluate('({ values: [...document.querySelectorAll(".hud-slot-value")].map((x) => x.textContent), body: document.body.innerText.trim(), gauge: document.querySelector(".hud-gauge-fill")?.getAttribute("stroke-dasharray") })')
+    if (Number(breakHud.gauge?.split(' ')[0]) < 1) break
+    await wait(50)
+  } while (Date.now() < breakHudDeadline)
   check('ミニカードは経過の数字だけを表示し、ゲージは休憩の残り時間を示す', breakHud.values.length === 1 && /^\d+:\d{2}$/.test(breakHud.body) && Number(breakHud.gauge?.split(' ')[0]) > 0 && Number(breakHud.gauge?.split(' ')[0]) < 1, breakHud)
 
   const breakTarget = await findTarget('#expire')
@@ -342,10 +347,12 @@ try {
     await waitReady(main)
     let quitResponseError = null
     void main.evaluate('void window.whitebox.call("app:quit")').catch((cause) => { quitResponseError = String(cause) })
-    const deadline = Date.now() + 15_000
+    // この Windows 環境では正常終了まで44秒を実測した。終了コード0の条件は維持する。
+    const quitStartedAt = Date.now()
+    const deadline = quitStartedAt + 120_000
     while (child.exitCode === null && child.signalCode === null && Date.now() < deadline) await wait(100)
     if (child.exitCode !== 0 || child.signalCode !== null) throw new Error('検証アプリが自然終了しなかった')
-    console.log('Quit response observation:', JSON.stringify({ error: quitResponseError, exitCode: child.exitCode, signalCode: child.signalCode }))
+    console.log('Quit response observation:', JSON.stringify({ error: quitResponseError, exitCode: child.exitCode, signalCode: child.signalCode, elapsedMs: Date.now() - quitStartedAt }))
     check('保存した検証アプリが自然終了する', true)
   } catch (cause) {
     console.error('E2E の終了に失敗:', cause)
