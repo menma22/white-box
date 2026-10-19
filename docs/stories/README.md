@@ -38,5 +38,6 @@ story を書く → まひろが受け入れ基準を確認 → ブランチを�
 
 ## ミニカードのコンパクト表示
 
-- [v2 — 現行の受け入れ基準と説明の明確化](20261019_story_compact-hud-v2.md)
+- [v3 — 現行の受け入れ基準と検証の参照](20261019_story_compact-hud-v3.md)
+- [v2 — 説明の明確化](20261019_story_compact-hud-v2.md)
 - [v1 — 初版](20261019_story_compact-hud-v1.md)

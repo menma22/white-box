@@ -1,0 +1,146 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "name": "full",
+      "text": "00:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 1,
+      "offset": 0,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "75",
+      "text": "12:30",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0.75,
+      "offset": -0.25,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "50",
+      "text": "25:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0.5,
+      "offset": -0.5,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "paused",
+      "text": "25:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0.5,
+      "offset": -0.5,
+      "clipped": false,
+      "paused": true,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "over",
+      "text": "51:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0,
+      "offset": -1,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "stopwatch",
+      "text": "10:00:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0,
+      "offset": -1,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    },
+    {
+      "name": "break",
+      "text": "01:00",
+      "width": 88,
+      "height": 26,
+      "radius": "9px",
+      "stroke": "rgb(255, 149, 0)",
+      "strokeWidth": "2.5px",
+      "fraction": 0.49433333333333335,
+      "offset": -0.5056666666666667,
+      "clipped": false,
+      "paused": false,
+      "labels": 0,
+      "window": {
+        "x": 1176,
+        "y": 708,
+        "width": 96,
+        "height": 36
+      }
+    }
+  ],
+  "errors": []
+}
