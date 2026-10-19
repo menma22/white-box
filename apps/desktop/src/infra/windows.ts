@@ -46,7 +46,8 @@ const TRANSPARENT_PAGE_CSS =
   'html,body,.boot{background:transparent!important}body::before{content:none!important}'
 
 const HUD_MARGIN = 8
-const HUD_FLEE_GAP = 24
+const HUD_PADDING = 4
+const HUD_CARD_HEIGHT = 26
 const HUD_FLEE_POLL_MS = 90
 const HUD_FLEE_MS = 220
 const HUD_FLEE_FRAME_MS = 16
@@ -78,8 +79,8 @@ const SPECS: Record<WindowKind, Spec> = {
   },
   start: { width: 660, height: 590, frame: false, alwaysOnTop: true, resizable: false, skipTaskbar: true },
   hud: {
-    width: 248,
-    height: 88,
+    width: 96,
+    height: 36,
     frame: false,
     alwaysOnTop: true,
     resizable: false,
@@ -92,14 +93,14 @@ const SPECS: Record<WindowKind, Spec> = {
 }
 
 function place(kind: WindowKind, win: BrowserWindow): void {
+  if (kind === 'hud') {
+    const home = hudHome()
+    moveHud(win, home.x, home.y)
+    return
+  }
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
   const area = display.workArea
   const [w, h] = win.getSize() as [number, number]
-  if (kind === 'hud') {
-    const [x, y] = hudCorners(win, area)[0]!
-    win.setPosition(x, y)
-    return
-  }
   if (kind === 'start' || kind === 'expire') {
     win.setPosition(Math.round(area.x + (area.width - w) / 2), Math.round(area.y + (area.height - h) / 2.6))
     return
@@ -107,27 +108,37 @@ function place(kind: WindowKind, win: BrowserWindow): void {
   win.setPosition(Math.round(area.x + (area.width - w) / 2), Math.round(area.y + (area.height - h) / 2))
 }
 
-/** カードが座れる四隅。先頭が定位置（右下）で、以降は逃げ先の候補 */
-function hudCorners(win: BrowserWindow, area: Electron.Rectangle): Array<[number, number]> {
-  const [w, h] = win.getSize() as [number, number]
-  const left = area.x + HUD_MARGIN
-  const right = area.x + area.width - w - HUD_MARGIN
-  const top = area.y + HUD_MARGIN
-  const bottom = area.y + area.height - h - HUD_MARGIN
-  return [
-    [right, bottom],
-    [left, bottom],
-    [right, top],
-    [left, top],
-  ]
+function hudHome(): Electron.Rectangle {
+  const area = screen.getPrimaryDisplay().workArea
+  const { width, height } = SPECS.hud
+  return {
+    x: area.x + area.width - width - HUD_MARGIN,
+    y: area.y + area.height - height - HUD_MARGIN,
+    width,
+    height,
+  }
 }
 
-// クリックを受け取らない窓なので、カーソルとの近さはメインプロセスで測るしかない
+// HUD を setPosition で移動すると高さが増える環境があるため、寸法も毎回固定する。
+function moveHud(win: BrowserWindow, x: number, y: number): void {
+  const { width, height } = SPECS.hud
+  win.setBounds({ x, y, width, height })
+}
+
+// クリックを素通りさせる窓なので、元のカード領域への出入りをメインプロセスで測る。
 function fleeFromCursor(win: BrowserWindow): void {
   let sliding: NodeJS.Timeout | null = null
+  let target: { x: number; y: number } | null = null
 
   const slideTo = (toX: number, toY: number): void => {
+    if (target?.x === toX && target.y === toY) return
+    target = { x: toX, y: toY }
+    if (sliding) clearInterval(sliding)
     const from = win.getBounds()
+    if (from.x === toX && from.y === toY) {
+      sliding = null
+      return
+    }
     const startedAt = Date.now()
     sliding = setInterval(() => {
       if (win.isDestroyed()) {
@@ -137,7 +148,7 @@ function fleeFromCursor(win: BrowserWindow): void {
       }
       const p = Math.min(1, (Date.now() - startedAt) / HUD_FLEE_MS)
       const eased = 1 - Math.pow(1 - p, 3)
-      win.setPosition(Math.round(from.x + (toX - from.x) * eased), Math.round(from.y + (toY - from.y) * eased))
+      moveHud(win, Math.round(from.x + (toX - from.x) * eased), Math.round(from.y + (toY - from.y) * eased))
       if (p < 1) return
       if (sliding) clearInterval(sliding)
       sliding = null
@@ -145,20 +156,15 @@ function fleeFromCursor(win: BrowserWindow): void {
   }
 
   const watch = setInterval(() => {
-    if (win.isDestroyed() || sliding || !win.isVisible()) return
+    if (win.isDestroyed() || !win.isVisible()) return
     const cursor = screen.getCursorScreenPoint()
-    const b = win.getBounds()
-    const near =
-      cursor.x >= b.x - HUD_FLEE_GAP &&
-      cursor.x <= b.x + b.width + HUD_FLEE_GAP &&
-      cursor.y >= b.y - HUD_FLEE_GAP &&
-      cursor.y <= b.y + b.height + HUD_FLEE_GAP
-    if (!near) return
-    const corners = hudCorners(win, screen.getDisplayMatching(b).workArea)
-    const far = corners.reduce((best, c) =>
-      Math.hypot(c[0] - cursor.x, c[1] - cursor.y) > Math.hypot(best[0] - cursor.x, best[1] - cursor.y) ? c : best,
-    )
-    slideTo(far[0], far[1])
+    const home = hudHome()
+    const inside =
+      cursor.x >= home.x + HUD_PADDING &&
+      cursor.x < home.x + home.width - HUD_PADDING &&
+      cursor.y >= home.y + HUD_PADDING &&
+      cursor.y < home.y + HUD_PADDING + HUD_CARD_HEIGHT
+    slideTo(home.x, inside ? home.y - HUD_CARD_HEIGHT : home.y)
   }, HUD_FLEE_POLL_MS)
 
   win.on('closed', () => {

@@ -64,8 +64,8 @@ const SHOTS = [
   { kind: 'main', w: 1240, h: 820, tab: 3, live: false, name: '04-settings' },
   { kind: 'main', w: 1240, h: 820, tab: 0, live: false, welcome: true, name: '05-welcome' },
   { kind: 'start', w: 660, h: 500, live: false, name: '06-start' },
-  { kind: 'hud', w: 248, h: 88, live: true, name: '07-hud' },
-  { kind: 'hud', w: 248, h: 88, live: true, breakActive: true, name: '07b-hud-break' },
+  { kind: 'hud', w: 96, h: 36, live: true, name: '07-hud' },
+  { kind: 'hud', w: 96, h: 36, live: true, breakActive: true, name: '07b-hud-break' },
   {
     kind: 'expire',
     w: 500,
