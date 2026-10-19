@@ -2,18 +2,22 @@
  * Database と実行時状態から、配信する AppState / LiveTick を導く。
  * ここは electron を知らない（テストは素の Database で回せる）。
  */
-import type { AppState, Database, ID, LiveTick, Session } from '@white-box/core/types'
+import type { AppState, Database, GoogleCalendarState, ID, LiveTick, Session } from '@white-box/core/types'
 import { activeTaskId, focusMs, isPaused, remainingMs } from '@white-box/core/engine'
 
 export interface RuntimeState {
+  googleCalendar?: GoogleCalendarState
   pendingReview: { sessionId: ID; thenStart: boolean } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
   /** 配信のたびに増える通し番号。 */
   revision: number
+  currentWorkOpen: boolean
+  preparingQuit: boolean
+  quitting: boolean
 }
 
 export function newRuntime(): RuntimeState {
-  return { pendingReview: null, recovery: null, revision: 0 }
+  return { pendingReview: null, recovery: null, revision: 0, currentWorkOpen: false, preparingQuit: false, quitting: false }
 }
 
 export function liveSession(db: Database): Session | null {
@@ -40,6 +44,7 @@ export function buildTick(db: Database, now: number): LiveTick | null {
     remainingMs: remainingMs(s, now),
     plannedMs: s.plannedMs,
     activeTaskId: activeTaskId(s),
+    mode: s.mode ?? 'timer',
   }
 }
 
@@ -55,15 +60,23 @@ export function buildBreakTimer(db: Database): AppState['breakTimer'] {
 export function buildState(db: Database, runtime: RuntimeState, now: number): AppState {
   return {
     revision: ++runtime.revision,
+    googleCalendar: runtime.googleCalendar,
     projects: db.projects,
     tasks: db.tasks,
     sessions: db.sessions,
     settings: db.settings,
     dayNotes: db.dayNotes,
+    taskSuggestions: db.taskSuggestions ?? [],
+    notes: db.notes ?? [],
+    weeklyBudgets: db.weeklyBudgets,
+    weeklyBudgetDefaults: db.weeklyBudgetDefaults,
+    fixedWork: db.fixedWork,
+    calendarBlocks: db.calendarBlocks,
     goalMap: db.goalMap,
     live: buildTick(db, now),
     breakTimer: buildBreakTimer(db),
     recovery: runtime.recovery,
+    presenceCandidates: db.presenceCandidates ?? [],
     pendingReview: runtime.pendingReview,
   }
 }

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "origin": "artifactreview/strict-20261006/title-compatibility.log",
+  "stage": "historical title compatibility correction",
+  "counts": {
+    "files": 1,
+    "tests": 9
+  },
+  "allPassed": true,
+  "testFile": "apps/renderer/tests/task-title-draft.test.ts",
+  "conditions": [
+    "Unchanged legacy empty/whitespace titles remain unchanged",
+    "A newly blank title reverts to the saved title and allows leaving",
+    "Blank during pending save waits for that save and then uses its saved value",
+    "Meaningful failed drafts remain and can retry",
+    "Further input drains before navigation",
+    "Same-field conflicts preserve both texts until explicit choice"
+  ]
+}

@@ -16,6 +16,8 @@ fs.mkdirSync(DATA)
 const require = createRequire(import.meta.url)
 const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : path.join(path.dirname(require.resolve('electron')), 'dist', 'electron.exe')
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const QUIT_TIMEOUT_MS = 60000
+const OBSERVER_READY_TIMEOUT_MS = 60000
 const checks = []
 const errors = []
 let child
@@ -72,15 +74,16 @@ async function connect(url) {
     if (message.error) request.reject(new Error(JSON.stringify(message.error)))
     else request.resolve(message.result)
   })
-  const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, timeoutMs = 10000) => new Promise((resolve, reject) => {
     if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
     const id = ++sequence
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 10000)
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, timeoutMs)
     pending.set(id, { resolve, reject, timer })
     ws.send(JSON.stringify({ id, method, params }))
   })
   await send('Runtime.enable')
   await send('Log.enable')
+  await send('Page.enable')
   return {
     send,
     close: () => ws.close(),
@@ -104,12 +107,12 @@ async function stateData() { const { revision, ...data } = await state(); return
 
 async function launch(label) {
   port = await freePort()
-  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }
+  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA, WHITEBOX_QUIT_TRACE_DIR: RUN }
   delete env.VITE_DEV_SERVER_URL
   delete env.ELECTRON_RUN_AS_NODE
   const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
-  const args = ['--hidden', '--open=main', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
-  if (!process.env.WHITEBOX_EXE) args.unshift(ROOT)
+  const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
+  if (!process.env.WHITEBOX_EXE) args.unshift(process.env.WHITEBOX_QUIT_OBSERVER === '1' ? path.join(ROOT, 'scripts', 'quit-observer.mjs') : ROOT)
   child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
   console.log(`Electron PID: ${child.pid}`)
   fs.closeSync(log)
@@ -128,21 +131,153 @@ async function launch(label) {
   await page.send('Page.bringToFront')
 }
 
+async function nativeExitObserver(owned) {
+  const prefix = path.join(RUN, `native-exit-${owned.pid}`)
+  const readyPath = `${prefix}-ready.json`
+  const requestPath = `${prefix}-request.txt`
+  const resultPath = `${prefix}-result.json`
+  const quote = (value) => "'" + String(value).replaceAll("'", "''") + "'"
+  const script = `$ErrorActionPreference='Stop'
+$qaProcess=$null
+function Publish-Observation([string]$Path,[string]$Value) {
+  [IO.File]::WriteAllText($Path+'.tmp',$Value)
+  [IO.File]::Move($Path+'.tmp',$Path)
+}
+try {
+  $qaProcess=Get-Process -Id ${owned.pid}
+  $qaHandle=$qaProcess.Handle
+  $qaIdentity=Get-CimInstance Win32_Process -Filter 'ProcessId=${owned.pid}'
+  $qaStarted=$qaProcess.StartTime.ToUniversalTime()
+  Publish-Observation ${quote(readyPath)} ([pscustomobject]@{pid=$qaProcess.Id;parentPid=$qaIdentity.ParentProcessId;creationDate=$qaStarted.ToString('o');name=$qaProcess.ProcessName;handle=$qaHandle.ToInt64()}|ConvertTo-Json -Compress)
+  $qaRequestDeadline=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()+${OBSERVER_READY_TIMEOUT_MS}
+  while(-not [IO.File]::Exists(${quote(requestPath)})) {
+    if([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -ge $qaRequestDeadline) { throw 'Quit request was not received by the native observer' }
+    Start-Sleep -Milliseconds 20
+  }
+  $qaDeadline=[long][IO.File]::ReadAllText(${quote(requestPath)})+${QUIT_TIMEOUT_MS}
+  $qaTimeout=[Math]::Max(0,$qaDeadline-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())
+  $qaExited=$qaProcess.WaitForExit([int]$qaTimeout)
+  $qaResult=[pscustomobject]@{pid=$qaProcess.Id;creationDate=$qaStarted.ToString('o');hasExited=$qaExited;exitCode=$(if($qaExited){$qaProcess.ExitCode}else{$null});exitedAt=$(if($qaExited){([DateTimeOffset]$qaProcess.ExitTime.ToUniversalTime()).ToUnixTimeMilliseconds()}else{$null});deadline=$qaDeadline}
+  Publish-Observation ${quote(resultPath)} ($qaResult|ConvertTo-Json -Compress)
+} catch {
+  Publish-Observation ${quote(resultPath)} ([pscustomobject]@{error=$_.Exception.Message}|ConvertTo-Json -Compress)
+  exit 1
+} finally {
+  if($null -ne $qaProcess) { $qaProcess.Dispose() }
+}`
+  fs.writeFileSync(`${prefix}.ps1`, '\ufeff' + script)
+  const helperLog = fs.openSync(`${prefix}-helper.log`, 'a')
+  const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', `${prefix}.ps1`], { stdio: ['ignore', helperLog, helperLog], windowsHide: true })
+  fs.closeSync(helperLog)
+  let helperError
+  helper.once('error', (error) => { helperError = error })
+  const result = () => fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : null
+  const ready = await until(() => {
+    if (helperError) throw helperError
+    const observation = result()
+    if (observation?.error) throw new Error(observation.error)
+    return fs.existsSync(readyPath) ? JSON.parse(fs.readFileSync(readyPath, 'utf8')) : null
+  }, 'native process handle ready', OBSERVER_READY_TIMEOUT_MS)
+  assert.equal(ready.pid, owned.pid, 'Native observer pins the launched PID')
+  assert.equal(ready.parentPid, process.pid, 'Native observer pins this harness child')
+  assert.equal(ready.name.toLowerCase(), path.basename(electron, '.exe').toLowerCase(), 'Native observer pins the launched executable')
+  assert.ok(ready.handle > 0 && Number.isFinite(Date.parse(ready.creationDate)), 'Native observer retains a valid process handle and creation time')
+  return { ready, result, request: (at) => { fs.writeFileSync(requestPath + '.tmp', String(at), { flag: 'wx' }); fs.renameSync(requestPath + '.tmp', requestPath) } }
+}
+
+function requireNaturalExit(native, ready, requestedAt) {
+  assert.ok(native && !native.error, 'Native process exit must be observed: ' + JSON.stringify(native))
+  assert.equal(native.pid, ready.pid, 'Native exit belongs to the pinned PID')
+  assert.equal(native.creationDate, ready.creationDate, 'Native exit belongs to the pinned process lifetime')
+  assert.equal(native.hasExited, true, 'Owned Electron must exit within the quit deadline')
+  assert.equal(native.exitCode, 0, 'Owned Electron must exit naturally with code 0')
+  assert.ok(native.exitedAt >= requestedAt && native.exitedAt <= requestedAt + QUIT_TIMEOUT_MS, 'Native exit occurs after app:quit and within the observation deadline')
+}
+
 async function stop() {
-  if (!child || child.exitCode !== null) { page?.close(); return }
-  const exited = new Promise((resolve) => child.once('exit', resolve))
-  try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch { child.kill() }
-  page?.close()
-  if (!await Promise.race([exited.then(() => true), wait(15000).then(() => false)])) {
-    console.log(`Cleanup: terminating owned Electron PID ${child.pid} after quit timeout`)
-    child.kill('SIGKILL')
-    await Promise.race([exited, wait(5000).then(() => { throw new Error('Owned Electron did not exit after cleanup') })])
+  const owned = child
+  if (!owned) { page?.close(); page = undefined; return }
+  let exitEventObserved = false
+  let quitRequested = false
+  let quitError = null
+  let forcedKill = false
+  let killAccepted = null
+  let shutdownError = null
+  let cleanupError = null
+  let observer
+  let native = null
+  let requestedAt = null
+  const onExit = () => { exitEventObserved = true }
+  owned.on('exit', onExit)
+  const pidAlive = () => {
+    if (!owned.pid) return false
+    try { process.kill(owned.pid, 0); return true } catch (error) {
+      if (error.code === 'ESRCH') return false
+      throw error
+    }
+  }
+  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null
+  try {
+    if (exited()) {
+      assert.equal(owned.exitCode, 0, 'Previously exited Electron must have code 0')
+      assert.equal(owned.signalCode, null, 'Previously exited Electron must not be killed')
+      return
+    }
+    observer = await nativeExitObserver(owned)
+    requestedAt = Date.now()
+    observer.request(requestedAt)
+    quitRequested = Boolean(page)
+    assert.ok(quitRequested, 'Quit requires the owned renderer connection')
+    try { await page.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
+    const deadline = requestedAt + QUIT_TIMEOUT_MS
+    while (Date.now() < deadline) {
+      native = observer.result()
+      if (native) break
+      await wait(50)
+    }
+    native ??= observer.result()
+    if (native?.hasExited) {
+      requireNaturalExit(native, observer.ready, requestedAt)
+      assert.equal(pidAlive(), false, 'Owned Electron PID must be absent after native exit')
+      assert.equal(owned.signalCode, null, 'Owned Electron must not have a kill signal')
+      if (owned.exitCode !== null) assert.equal(owned.exitCode, native.exitCode, 'Node and native exit codes agree')
+      return
+    }
+    if (!pidAlive()) throw new Error('Electron PID is absent but native natural exit was not confirmed: ' + JSON.stringify(native))
+    throw new Error('Owned Electron did not exit naturally after app:quit: ' + JSON.stringify(native))
+  } catch (error) {
+    shutdownError = error.message
+    try {
+      if (pidAlive()) {
+        forcedKill = true
+        console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after shutdown failure`)
+        killAccepted = owned.kill('SIGKILL')
+        const cleanupDeadline = Date.now() + 5000
+        while (pidAlive() && Date.now() < cleanupDeadline) await wait(100)
+        if (pidAlive()) throw new Error('Owned Electron did not exit after cleanup')
+      }
+    } catch (cleanupFailure) { cleanupError = cleanupFailure.message }
+    throw error
+  } finally {
+    page?.close()
+    owned.off('exit', onExit)
+    const alive = pidAlive()
+    const observation = { pid: owned.pid, quitRequested, quitError, shutdownError, forcedKill, killAccepted, cleanupError, requestedAt,
+      nativeIdentity: observer?.ready ?? null, nativeExit: native,
+      exitEventObserved, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: alive,
+      confirmedBy: native?.hasExited ? 'native process handle' : exited() ? 'child exit state' : !alive ? 'PID absent only' : null }
+    fs.writeFileSync(path.join(RUN, `shutdown-${owned.pid ?? 'unspawned'}.json`), JSON.stringify(observation, null, 2))
+    console.log(`Cleanup: ${JSON.stringify(observation)}`)
+    if (exited() || !alive) { child = undefined; page = undefined }
   }
 }
 
 async function screenshot(name) {
+  await call('window:open', { kind: 'main' })
+  await until(() => page.evaluate('document.visibilityState === "visible" && document.hasFocus()'), 'visible main window before capture')
+  await page.send('Page.bringToFront')
   await wait(350)
-  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, 30000)
   fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
 }
 
@@ -152,7 +287,8 @@ async function key(key, code, modifiers = 0) {
 }
 
 async function click(selector) {
-  const point = await until(() => page.evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), selector)
+  await page.send('Page.bringToFront')
+  const point = await until(() => page.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), selector)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
@@ -160,7 +296,8 @@ async function click(selector) {
 }
 
 async function button(text, scope = 'body') {
-  const point = await until(() => page.evaluate(`(async () => { const el = [...document.querySelectorAll(${JSON.stringify(scope + ' button')})].find(el => el.textContent.trim() === ${JSON.stringify(text)}); if(!el) return null; el.scrollIntoView({block:'center'}); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), `button ${text}`)
+  await page.send('Page.bringToFront')
+  const point = await until(() => page.evaluate(`(() => { const el = [...document.querySelectorAll(${JSON.stringify(scope + ' button')})].find(el => el.textContent.trim() === ${JSON.stringify(text)}); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const point={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && point.x>0 && point.x<innerWidth && point.y>0 && point.y<innerHeight && el.contains(document.elementFromPoint(point.x,point.y)) ? point : null })()`), `button ${text}`)
   await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
   await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
   await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
@@ -264,6 +401,9 @@ async function verifyImport() {
   }
   const before = read()
   await key('5', 'Digit5', 2)
+  const visibility = await page.evaluate('({ visibility: document.visibilityState, hidden: document.hidden, focused: document.hasFocus(), width: innerWidth, height: innerHeight })')
+  fs.writeFileSync(path.join(RUN, 'before-import-ui.json'), JSON.stringify(visibility, null, 2))
+  console.log(`Before import UI: ${JSON.stringify(visibility)}`)
   await click('[aria-label="その他の操作"]')
   await button('道標のデータを取り込む')
   await fill('.gm-import-json', JSON.stringify(legacy))
@@ -316,6 +456,25 @@ async function verifyUi() {
   await button('作成する')
   const node = await until(() => Object.values(read().goalMap.nodes).find((n) => n.goal === '画面で作る子目標'), 'UI child persisted')
   check('UI creates a head and a linked child', node.parentId === head.id && read().goalMap.nodes[head.id].children.includes(node.id))
+  check('A goal without criteria is explicitly unconfigured', await page.evaluate('document.querySelector(".gm-criteria-missing").textContent.includes("未設定")'))
+  async function criterionField(label, value) {
+    await page.evaluate(`(() => { const label = [...document.querySelectorAll('.gm-criterion-editor label')].find(el=>el.querySelector('span')?.textContent===${JSON.stringify(label)}); const el=label?.querySelector('input,textarea'); if(!el) throw Error('Missing criterion field'); document.querySelector('[data-criterion-input]')?.removeAttribute('data-criterion-input'); el.setAttribute('data-criterion-input','true'); })()`)
+    await fill('[data-criterion-input]', value)
+  }
+  await button('＋ 成功条件を追加', '.gm-criteria')
+  await criterionField('具体的な成功条件', '新しい利用者に試してもらう')
+  await criterionField('目標値', '100')
+  await criterionField('単位', '人')
+  await criterionField('確認できる証拠', '利用者ヒアリングの集計')
+  await button('条件を保存', '.gm-criteria')
+  await until(() => read().goalMap.nodes[node.id].criteria?.length === 1, 'numeric criterion saved')
+  check('Unmeasured numerical criteria retain null instead of inventing zero', read().goalMap.nodes[node.id].criteria[0].current === null && await page.evaluate('document.querySelector(".gm-criterion").textContent.includes("未測定")'))
+  await button('編集', '.gm-criteria')
+  await criterionField('現在値（未測定なら空欄）', '100')
+  await button('条件を保存', '.gm-criteria')
+  await until(() => read().goalMap.nodes[node.id].criteria?.[0].current === 100, 'measured criterion saved')
+  check('Reaching a numerical condition does not declare the whole goal achieved', read().goalMap.nodes[node.id].outcome.status === 'pending' && await page.evaluate('document.querySelector(".gm-criterion").textContent.includes("数値に到達")'))
+  await screenshot('12-goal-criteria')
   const historyCount = read().goalMap.history.length
   await fill('[aria-label="目標"]', '画面で編集した子目標')
   await fill('[aria-label="この目標を目指す理由"]', '実画面から編集した理由')
@@ -491,6 +650,66 @@ async function verifyUi() {
   check('Confirmed issue deletion removes only the selected issue', read().goalMap.issues.some((i) => i.id === issue.id) && isDeepStrictEqual(read().sessions, sessionsBeforeDelete))
 }
 
+async function verifyBranchEditing() {
+  const a = await call('goal:create', { goal: '道筋を組み替える' })
+  const b = await call('goal:create', { goal: '別の最上位目標' })
+  const branch = await call('goal:create', { goal: '移動する枝', parentId: a.id })
+  const leaf = await call('goal:create', { goal: '枝と一緒に残る子', parentId: branch.id })
+  const target = await call('goal:create', { goal: '新しい付け先', parentId: a.id })
+  const task = await call('task:create', { title: '枝に結びついたタスク', goalNodeId: branch.id })
+  const issue = await call('issue:create', { kind: 'question', text: '枝に残す問い', nodeId: leaf.id })
+  await call('goal:ui', { activeHeadId: a.id, patch: { view: 'map', headsOpen: true, showHidden: false } })
+  await key('5', 'Digit5', 2)
+  await button('全体を表示')
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  const unchanged = JSON.stringify(read())
+  await button('枝を切り取る', '.gm-detail')
+  check('Cut previews the entire branch without saving a detached tree', JSON.stringify(read()) === unchanged && await page.evaluate(`Boolean(document.querySelector('[data-node-id="${branch.id}"].gm-node-cut'))`))
+  check('Cut disables self, descendant and current parent targets', await page.evaluate(`['${a.id}','${branch.id}','${leaf.id}'].every(id=>document.querySelector('[data-node-id="'+id+'"] .gm-node-body').disabled)`))
+  await screenshot('13-cut-and-attach')
+  await button('キャンセル', '.gm-attach-bar')
+  check('Cancel retains the original complete database', JSON.stringify(read()) === unchanged)
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await page.evaluate('document.querySelector("[aria-label=枝の付け先]").focus()')
+  await key('Escape', 'Escape')
+  check('Escape from the target selector cancels without changing data', JSON.stringify(read()) === unchanged && !await page.evaluate('Boolean(document.querySelector(".gm-attach-bar"))'))
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await click(`[data-node-id="${target.id}"] .gm-node-body`)
+  await until(() => read().goalMap.nodes[branch.id].parentId === target.id, 'branch attached by card click')
+  check('Card click moves the complete branch and keeps task and issue references', read().goalMap.nodes[leaf.id].parentId === branch.id && read().tasks.find(t=>t.id===task.id).goalNodeId === branch.id && read().goalMap.issues.find(i=>i.id===issue.id).nodeId === leaf.id && !read().goalMap.nodes[a.id].children.includes(branch.id))
+  await until(() => page.evaluate('Boolean(document.querySelector(".gm-detail"))'), 'moved branch selected')
+  await button('枝を切り取る', '.gm-detail')
+  await select('[aria-label="枝の付け先"]', b.id)
+  await until(() => read().goalMap.nodes[branch.id].parentId === b.id && read().goalMap.activeHeadId === b.id, 'cross-head branch attached and followed')
+  check('Target selector can move across heads and follow the moved card', await page.evaluate(`Boolean(document.querySelector('[data-node-id="${branch.id}"].gm-node-selected'))`))
+  await button('全体を表示')
+  const original = read().goalMap.nodes[branch.id]
+  await click(`[data-node-id="${branch.id}"] .gm-node-insert`)
+  await fill('[aria-label="新しい目標"]', '途中で確かめる成果')
+  await button('作成する', '[role="dialog"]')
+  const inserted = await until(() => Object.values(read().goalMap.nodes).find(n=>n.goal==='途中で確かめる成果'), 'intermediate inserted')
+  check('Edge insert links parent to intermediate to original branch and preserves its content', inserted.parentId === b.id && inserted.children[0] === branch.id && read().goalMap.nodes[b.id].children[0] === inserted.id && isDeepStrictEqual(read().goalMap.nodes[branch.id], { ...original, parentId: inserted.id }))
+  await button('全体を表示')
+  await screenshot('14-intermediate-goal')
+  await click(`[data-node-id="${branch.id}"] .gm-node-body`)
+  await button('枝を切り取る', '.gm-detail')
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 940, height: 620, deviceScaleFactor: 1, mobile: false })
+  const size = await page.evaluate('({overflow:document.documentElement.scrollWidth-innerWidth,bar:document.querySelector(".gm-attach-bar").getBoundingClientRect().bottom,canvas:document.querySelector(".gm-canvas").getBoundingClientRect().height,bottom:document.querySelector(".gm-zoom").getBoundingClientRect().bottom,height:innerHeight})')
+  check('Minimum viewport keeps the attachment toolbar and map usable', size.overflow <= 1 && size.bar < 500 && size.canvas >= 150 && size.bottom <= size.height, size)
+  await screenshot('15-minimum-attach')
+  await page.send('Emulation.clearDeviceMetricsOverride')
+  await button('最上位にする', '.gm-attach-bar')
+  await until(() => read().goalMap.nodes[branch.id].parentId === null, 'branch detached to head')
+  check('Detach to head keeps the child and records both operations', read().goalMap.heads.includes(branch.id) && read().goalMap.nodes[leaf.id].parentId === branch.id && read().goalMap.history.some(h=>h.type==='reparent' && h.nodeId===branch.id) && read().goalMap.history.some(h=>h.type==='insert' && h.nodeId===inserted.id))
+  const beforeInvalid = JSON.stringify(read())
+  for (const args of [{ id: branch.id, parentId: branch.id }, { id: branch.id, parentId: leaf.id }]) {
+    const response = await raw('goal:reparent', args)
+    check('Cyclic branch attachment is rejected without a partial save', !response.ok && JSON.stringify(read()) === beforeInvalid, args)
+  }
+}
+
 let exitCode = 1
 try {
   console.log(`Evidence: ${RUN}`)
@@ -498,6 +717,7 @@ try {
   await verifyIpc()
   await verifyImport()
   await verifyUi()
+  await verifyBranchEditing()
   const persisted = read()
   fs.writeFileSync(path.join(RUN, 'before-restart.json'), JSON.stringify(persisted, null, 2))
   await stop()

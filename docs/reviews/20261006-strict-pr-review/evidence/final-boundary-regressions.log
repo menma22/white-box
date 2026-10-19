@@ -1,0 +1,10 @@
+
+ RUN  v2.1.9 .
+
+ ✓ artifactreview/strict-20261006/final-boundary-probes.test.ts (3 tests) 14ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  21:07:45
+   Duration  1.37s (transform 236ms, setup 0ms, collect 994ms, tests 14ms, environment 0ms, prepare 109ms)
+

@@ -5,6 +5,26 @@
   "type": "module",
   "description": "両プロセスで使う純粋な時間計算と型。外部依存ゼロ",
   "exports": {
+    "./calendar": {
+      "types": "./dist/calendar.d.ts",
+      "default": "./dist/calendar.js"
+    },
+    "./weekly-budget": {
+      "types": "./dist/weekly-budget.d.ts",
+      "default": "./dist/weekly-budget.js"
+    },
+    "./task-priority": {
+      "types": "./dist/task-priority.d.ts",
+      "default": "./dist/task-priority.js"
+    },
+    "./activity": {
+      "types": "./dist/activity.d.ts",
+      "default": "./dist/activity.js"
+    },
+    "./task-control": {
+      "types": "./dist/task-control.d.ts",
+      "default": "./dist/task-control.js"
+    },
     "./engine": {
       "types": "./dist/engine.d.ts",
       "default": "./dist/engine.js"
@@ -17,9 +37,25 @@
       "types": "./dist/goal-map.d.ts",
       "default": "./dist/goal-map.js"
     },
+    "./agent": {
+      "types": "./dist/agent.d.ts",
+      "default": "./dist/agent.js"
+    },
     "./outcome": {
       "types": "./dist/outcome.d.ts",
       "default": "./dist/outcome.js"
+    },
+    "./goal-criteria": {
+      "types": "./dist/goal-criteria.d.ts",
+      "default": "./dist/goal-criteria.js"
+    },
+    "./presence": {
+      "types": "./dist/presence.d.ts",
+      "default": "./dist/presence.js"
+    },
+    "./notes": {
+      "types": "./dist/notes.d.ts",
+      "default": "./dist/notes.js"
     }
   },
   "scripts": {

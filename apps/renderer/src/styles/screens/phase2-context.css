@@ -1,0 +1,58 @@
+.phase2-form { display: grid; gap: 16px; }
+.phase2-form > label, .phase2-form .phase2-input-group { display: grid; gap: 6px; font-size: 12px; color: var(--text-2); }
+.phase2-form textarea { resize: vertical; min-height: 70px; }
+.phase2-form .task-command-error { margin: 0; }
+.phase2-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.phase2-actions [role="status"] { color: var(--text-3); font-size: 11px; }
+.board-project-context { flex: none; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 28px 16px; font-size: 12px; color: var(--text-2); }
+.phase2-disclosure { flex: none; border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--surface); padding: 16px 18px; margin: 18px 0; }
+.phase2-disclosure > summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.phase2-disclosure > summary > span { font-size: 12px; font-weight: 400; color: var(--text-2); margin-left: 10px; }
+.phase2-disclosure[open] > summary { margin-bottom: 16px; }
+.phase2-disclosure > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-sm); }
+.phase2-hint { color: var(--text-2); font-size: 12px; line-height: 1.7; margin: 0; overflow-wrap: anywhere; }
+.phase2-constraint { padding: 10px 12px; color: var(--amber); background: var(--amber-dim); border-radius: var(--r-sm); font-size: 12px; line-height: 1.6; }
+.phase2-two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.weekly-budget-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.weekly-budget-inputs label { display: grid; gap: 6px; font-size: 12px; color: var(--text-2); }
+.weekly-budget-equation { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 12px; color: var(--text-2); }
+.weekly-budget-equation strong { color: var(--accent-deep); font-size: 20px; }
+.weekly-allocation { display: grid; grid-template-columns: minmax(120px, 1fr) 130px 100px 100px auto; align-items: end; gap: 10px; border-top: 1px solid var(--line-soft); padding: 12px 0; font-size: 12px; }
+.weekly-allocation label { display: grid; gap: 5px; }
+.weekly-allocation .allocation-project { display: grid; gap: 5px; align-self: center; }
+.weekly-allocation small { color: var(--text-3); font-size: 11px; }
+.fixed-work-list { display: grid; gap: 10px; margin-top: 12px; }
+.fixed-work-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.fixed-work-item > div { display: grid; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
+.fixed-work-item strong { font-size: 13px; color: var(--text); }
+.fixed-work-item button { flex: none; }
+.board > .fixed-work-overview { margin: 0 28px 16px; }
+.fixed-work-overview { flex: none; }
+.task-context { display: grid; gap: 16px; }
+.task-context-lock { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.editor-flush-status { flex: none; margin: 0; padding: 10px 20px; color: var(--text-2); background: var(--accent-soft); font-size: 12px; }
+.task-context .phase2-disclosure { margin: 0; padding: 12px; }
+.task-context-heading { margin: 0; font-size: 14px; }
+.task-context-record { font-size: 12px; border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; }
+.task-context-record summary { cursor: pointer; color: var(--text-2); font-weight: 600; }
+.task-context-record p { color: var(--text-2); line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; margin: 9px 0; }
+.task-context-fields { display: grid; gap: 14px; }
+.task-context-fields label { display: grid; gap: 6px; font-size: 12px; color: var(--text-2); }
+.task-context-fields textarea { font-size: 13px; resize: vertical; }
+.task-context .note-editor { padding: 12px 0; overflow: visible; gap: 12px; }
+.task-context .note-title-input { font-size: 16px; }
+.task-context .note-body-input { min-height: 120px; font-size: 13px; flex: none; }
+.task-context .note-links { flex-direction: column; }
+.task-context-notes { display: grid; gap: 8px; }
+.task-context-note-title { width: 100%; text-align: left; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 12px; overflow-wrap: anywhere; }
+.task-context-note-title.is-selected { color: var(--accent-deep); background: var(--accent-soft); }
+.restart-context { flex: none; display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: var(--r-md); }
+.restart-context p { margin: 0; font-size: 12px; color: var(--text-2); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.restart-context strong { color: var(--accent-deep); }
+.start-win > .restart-context { margin: 0 20px 10px; max-height: 120px; overflow-y: auto; }
+@media (max-width: 900px) {
+  .weekly-allocation { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .weekly-allocation .allocation-project { grid-column: 1 / -1; }
+  .weekly-budget-inputs { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) { .phase2-two-columns { grid-template-columns: minmax(0, 1fr); } }

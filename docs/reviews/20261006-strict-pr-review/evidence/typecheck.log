@@ -1,0 +1,14 @@
+pnpm.CMD : $ pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --
+noEmit && tsc -p tsconfig.test.json
+発生場所 行:2 文字:1340
++ ... view/strict-20261006/$gate.log"; & pnpm.cmd run $gate *> $log; $code= ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ pnpm build:pa...onfig.test.json:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+$ pnpm -r --filter "./packages/*" run build
+Scope: 2 of 4 workspace projects
+packages/core build$ tsc -p tsconfig.json
+packages/core build: Done
+packages/contracts build$ tsc -p tsconfig.json
+packages/contracts build: Done

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import type { Database, GoalHistory, GoalIssue, GoalMap, GoalNode, ID, OutcomeRecord, Priority, Task } from '@white-box/core/types'
 import { goalHead, goalId, goalRecord, goalString, goalTime, isGoalHidden, parseGoalMap, parseGoalUi, validGoalDue } from '@white-box/core/goal-map'
 import { changeOutcome, emptyOutcome } from '@white-box/core/outcome'
+import { parseGoalCriteria, type GoalCriterion } from '@white-box/core/goal-criteria'
 import { newId } from './session-ops.js'
 
 export function requireGoal(db: Pick<Database, 'goalMap'>, id: ID): GoalNode {
@@ -19,11 +20,12 @@ function node(goal: string, reason: string, parentId: ID | null): GoalNode {
   return { id: newId('goal'), goal: goalString(goal), reason: goalString(reason), parentId, children: [], hidden: false, hiddenAt: null, hideReason: '', outcome: emptyOutcome() }
 }
 
-export function createGoal(db: Database, input: { goal: string; reason?: string; parentId?: ID | null }): { goalMap: GoalMap; goal: GoalNode } {
+export function createGoal(db: Database, input: { goal: string; reason?: string; parentId?: ID | null; criteria?: GoalCriterion[] }): { goalMap: GoalMap; goal: GoalNode } {
   const map = structuredClone(db.goalMap)
   const parent = input.parentId == null ? null : requireGoal({ goalMap: map }, input.parentId)
   if (parent && isGoalHidden(map, parent.id)) throw new Error('隠した枝に子目標は追加できません。先に表示へ戻してください')
   const created = node(input.goal, input.reason ?? '', parent?.id ?? null)
+  if (input.criteria !== undefined) created.criteria = parseGoalCriteria(input.criteria)
   map.nodes[created.id] = created
   if (parent) parent.children.push(created.id)
   else {
@@ -34,11 +36,12 @@ export function createGoal(db: Database, input: { goal: string; reason?: string;
   return { goalMap: map, goal: created }
 }
 
-export function updateGoal(db: Database, id: ID, patch: { goal?: string; reason?: string; outcome?: Partial<OutcomeRecord> }): GoalMap {
+export function updateGoal(db: Database, id: ID, patch: { goal?: string; reason?: string; outcome?: Partial<OutcomeRecord>; criteria?: GoalCriterion[] }): GoalMap {
   const map = structuredClone(db.goalMap)
   const target = requireGoal({ goalMap: map }, id)
   if (patch.goal !== undefined) target.goal = goalString(patch.goal)
   if (patch.reason !== undefined) target.reason = goalString(patch.reason)
+  if (patch.criteria !== undefined) target.criteria = parseGoalCriteria(patch.criteria)
   if (patch.outcome !== undefined) target.outcome = changeOutcome(target.outcome, patch.outcome, Date.now())
   return map
 }
@@ -58,6 +61,43 @@ export function mergeGoals(db: Database, input: { ids: ID[]; goal: string; reaso
   map.heads = heads
   map.activeHeadId = created.id
   history(map, selected.length === 1 ? 'promote' : 'merge', created.id, { withIds: [...input.ids] })
+  return { goalMap: map, goal: created }
+}
+
+export function reparentGoal(db: Database, input: { id: ID; parentId: ID | null }): { goalMap: GoalMap; goal: GoalNode } {
+  const map = structuredClone(db.goalMap)
+  const target = requireGoal({ goalMap: map }, input.id)
+  const parent = input.parentId === null ? null : requireGoal({ goalMap: map }, input.parentId)
+  if (isGoalHidden(map, target.id) || parent && isGoalHidden(map, parent.id)) throw new Error('隠した枝は移動できません。先に表示へ戻してください')
+  let ancestor = parent
+  while (ancestor) {
+    if (ancestor.id === target.id) throw new Error('自分自身や子孫を親にはできません')
+    ancestor = ancestor.parentId === null ? null : map.nodes[ancestor.parentId]!
+  }
+  if (target.parentId === input.parentId) return { goalMap: db.goalMap, goal: requireGoal(db, input.id) }
+  const oldParentId = target.parentId
+  const siblings = oldParentId === null ? map.heads : map.nodes[oldParentId]!.children
+  siblings.splice(siblings.indexOf(target.id), 1)
+  target.parentId = input.parentId
+  if (parent) parent.children.push(target.id)
+  else map.heads.push(target.id)
+  if (map.activeHeadId === target.id || map.activeHeadId === null) map.activeHeadId = goalHead(map, target.id)
+  history(map, 'reparent', target.id, { parentId: input.parentId, withIds: oldParentId === null ? [] : [oldParentId] })
+  return { goalMap: map, goal: target }
+}
+
+export function insertGoal(db: Database, input: { id: ID; goal: string; reason?: string }): { goalMap: GoalMap; goal: GoalNode } {
+  const map = structuredClone(db.goalMap)
+  const target = requireGoal({ goalMap: map }, input.id)
+  if (target.parentId === null) throw new Error('中継目標は親子の間に追加してください')
+  if (isGoalHidden(map, target.id)) throw new Error('隠した枝には中継目標を追加できません。先に表示へ戻してください')
+  const parent = requireGoal({ goalMap: map }, target.parentId)
+  const created = node(input.goal, input.reason ?? '', parent.id)
+  created.children = [target.id]
+  parent.children.splice(parent.children.indexOf(target.id), 1, created.id)
+  target.parentId = created.id
+  map.nodes[created.id] = created
+  history(map, 'insert', created.id, { parentId: parent.id, withIds: [target.id] })
   return { goalMap: map, goal: created }
 }
 

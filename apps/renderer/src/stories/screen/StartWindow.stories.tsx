@@ -17,3 +17,5 @@ export default meta
 type Story = StoryObj<typeof StartWindow>
 
 export const Default: Story = {}
+export const Stopwatch: Story = { beforeEach: seedApp({ ...state, settings: { ...state.settings, defaultSessionMode: 'stopwatch' } }) }
+export const Pomodoro: Story = { beforeEach: seedApp({ ...state, settings: { ...state.settings, defaultSessionMode: 'pomodoro' } }) }

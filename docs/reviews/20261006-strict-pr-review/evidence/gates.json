@@ -1,0 +1,26 @@
+[
+  {
+    "gate": "typecheck",
+    "exitCode": 0,
+    "time": "2026-10-06T20:53:44.6321665+09:00",
+    "log": "artifactreview/strict-20261006/typecheck.log"
+  },
+  {
+    "gate": "lint",
+    "exitCode": 0,
+    "time": "2026-10-06T20:53:54.8490827+09:00",
+    "log": "artifactreview/strict-20261006/lint.log"
+  },
+  {
+    "gate": "test",
+    "exitCode": 0,
+    "time": "2026-10-06T20:54:05.7240344+09:00",
+    "log": "artifactreview/strict-20261006/test.log"
+  },
+  {
+    "gate": "pack",
+    "exitCode": 0,
+    "time": "2026-10-06T20:54:17.2435768+09:00",
+    "log": "artifactreview/strict-20261006/pack.log"
+  }
+]

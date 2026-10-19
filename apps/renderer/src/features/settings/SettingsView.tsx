@@ -5,6 +5,7 @@ import { projectColor } from '@/lib/selectors'
 import { shortcutLabel } from '@/lib/format'
 import { Modal } from '@/components/ui'
 import type { Settings } from '@white-box/core/types'
+import { GoogleCalendarSettings } from '@/features/google-calendar/GoogleCalendarSettings'
 
 export function SettingsView() {
   const state = useData()
@@ -15,7 +16,7 @@ export function SettingsView() {
   const [saved, setSaved] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
+  // Record<string, unknown> はキーの綴り違いを型検査で拾えないため、送信する patch は Partial<Settings> で縛る。
   const patch = (p: Partial<Settings>) => {
     setError(null)
     void invoke('settings:update', { patch: p }).catch((err) => setError(String(err).replace(/^(Error:\s*)+/, '')))
@@ -30,6 +31,7 @@ export function SettingsView() {
         </div>
       </header>
       {error && <p className="set-error" role="alert">{error}</p>}
+      <GoogleCalendarSettings />
 
       <section className="set-block">
         <h2 className="set-title">あなたのこと</h2>
@@ -83,6 +85,17 @@ export function SettingsView() {
             />
             <span className="set-unit">分</span>
           </Row>
+          <Row label="既定の計測方法" hint="開始画面で変更できる。">
+            <select className="input" value={s.defaultSessionMode ?? 'timer'} onChange={(e) => patch({ defaultSessionMode: e.target.value as Settings['defaultSessionMode'] })}>
+              <option value="timer">タイマー</option><option value="stopwatch">ストップウォッチ</option><option value="pomodoro">ポモドーロ</option>
+            </select>
+          </Row>
+          <Row label="ポモドーロの休憩" hint="作業時間の満了後に自動で休憩へ切り替える。">
+            <input className="input num set-num" type="number" min={1} max={180} value={s.pomodoroBreakMinutes ?? 5} onChange={(e) => patch({ pomodoroBreakMinutes: Math.max(1, Math.min(180, Number(e.target.value) || 5)) })} /><span className="set-unit">分</span>
+          </Row>
+          <Row label="休憩後に自動で次の作業へ" hint="OFFなら、自分で再開するまで計測は止まったまま。">
+            <Toggle value={s.pomodoroAutoResume ?? false} onChange={(v) => patch({ pomodoroAutoResume: v })} />
+          </Row>
           <Row label="延長の既定値" hint="満了ポップアップの「続ける」に出る値。">
             <input
               className="input num set-num"
@@ -123,7 +136,7 @@ export function SettingsView() {
             />
             <span className="set-unit">時</span>
           </Row>
-          <Row label="停滞とみなす日数" hint="「重要」にしたタスクがこの日数動いていなければ、朝の画面で聞く。">
+          <Row label="Todo の警告までの日数" hint="作業・進捗の記録がない期間。この日数で Warning、2 倍で High Risk。Inbox は数えない。">
             <input
               className="input num set-num"
               type="number"
@@ -191,6 +204,32 @@ export function SettingsView() {
       </section>
 
       <section className="set-block">
+        <h2 className="set-title">開始忘れ</h2>
+        <div className="set-rows">
+          <Row label="入力が続いたら開始を思い出す" hint="押下回数だけを端末内で数える。入力した文字は取得しない。セッションがある間は通知しない。">
+            <Toggle value={s.remindToStart ?? false} onChange={(v) => patch({ remindToStart: v })} />
+          </Row>
+          <Row label="通知までの入力時間" hint="無視した通知は30分間繰り返さない。">
+            <input className="input num set-num" type="number" min={1} max={60} value={s.startReminderMinutes ?? 3} onChange={(e) => patch({ startReminderMinutes: Math.max(1, Math.min(60, Number(e.target.value) || 3)) })} /><span className="set-unit">分</span>
+          </Row>
+        </div>
+      </section>
+
+      <section className="set-block">
+        <h2 className="set-title">AI連携</h2>
+        <div className="set-rows">
+          <Row label="ローカルのAIエージェントからつなぐ" hint="接続したエージェントが目標・タスクを参照し、依頼したタスクを登録できる。記録・完了の判定は確認待ちの提案になる。">
+            <Toggle value={s.enableAgentApi ?? false} onChange={(v) => patch({ enableAgentApi: v })} />
+          </Row>
+        </div>
+        <p className="set-note">AI連携はMCP対応エージェントで使える。コピーした接続設定を、エージェントのMCP設定へ追加する。音声の書き起こしからも、同じ手順でタスクを整理できる。</p>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={!s.enableAgentApi || isBrowserPreview} onClick={() => {
+          setError(null)
+          void invoke('agent:config').then((config) => navigator.clipboard.writeText(config)).then(() => setSaved('AI連携の接続設定をコピーした')).catch((failure) => setError(String(failure)))
+        }}>AI連携の接続設定をコピー</button>
+      </section>
+
+      <section className="set-block">
         <h2 className="set-title">データ</h2>
         <p className="set-note">
           記録はこの PC の中だけにある。書き出しておけば、PC を移しても続きから使える。
@@ -207,7 +246,7 @@ export function SettingsView() {
           >
             書き出す
           </button>
-          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import')}>
+          <button type="button" className="btn btn-ghost btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:import').catch((failure) => setError(String(failure).replace(/^(Error:\s*)+/, '')))}>
             読み込む
           </button>
           <button type="button" className="btn btn-quiet btn-md" disabled={isBrowserPreview} onClick={() => void invoke('data:reveal')}>

@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "stage": "before",
+  "origin": "artifactreview/strict-20261006/shutdown-heartbeat-check/run-ZNk8kJ/results.json",
+  "fixture": {
+    "data": "fresh synthetic database only",
+    "productionDatabaseIncluded": false,
+    "clock": "process-local test clock"
+  },
+  "measurement": "Actual Store and lifecycle.prepareQuit plus actual recovery; ticker/system ports modeled; native Electron quit not exercised",
+  "sourceSnapshot": {
+    "revision": "97e583d5",
+    "sha256": {
+      "apps/desktop/src/infra/store.ts": "066a3f1ce5bad5c1e4cfcd1c25525a6f1572b6c8cf44ad27b4b9edf067ad2332",
+      "apps/desktop/src/app/lifecycle.ts": "aef92240b830042bac32bb84d45e7d637a5ad4f36f190a1f78ef057d4b25773c",
+      "apps/desktop/src/presentation/main.ts": "2f4fec214634a0962ba1d8704b90433cf38b7a08aec69f4f3b82be545fc97c68"
+    }
+  },
+  "expectedCancellation": false,
+  "cases": [
+    {
+      "fault": "none",
+      "timestamps": {
+        "startedAt": 1791244800000,
+        "lastGoodAliveAt": 1791248100000,
+        "quitAt": 1791248400000,
+        "restartedAt": 1791249000000
+      },
+      "shutdown": {
+        "canceled": false,
+        "error": null,
+        "quitting": true,
+        "tickerRunning": false,
+        "databaseRenames": 1,
+        "databaseFinalMarkerSaved": true,
+        "heartbeatAfterShutdown": 1791248400000,
+        "injectedFaults": 0,
+        "periodicInjectedFaults": 0
+      },
+      "recovery": {
+        "lastKnownAt": 1791248400000
+      },
+      "restoredPauseAt": 1791248400000,
+      "activeRecordedMs": 3600000,
+      "actualFocusBeforeQuitMs": 3600000,
+      "unrecordedFocusMs": 0
+    },
+    {
+      "fault": "runtime-write",
+      "timestamps": {
+        "startedAt": 1791244800000,
+        "lastGoodAliveAt": 1791248100000,
+        "quitAt": 1791248400000,
+        "restartedAt": 1791249000000
+      },
+      "shutdown": {
+        "canceled": false,
+        "error": null,
+        "quitting": true,
+        "tickerRunning": false,
+        "databaseRenames": 1,
+        "databaseFinalMarkerSaved": true,
+        "heartbeatAfterShutdown": 1791248100000,
+        "injectedFaults": 1,
+        "periodicInjectedFaults": 19
+      },
+      "recovery": {
+        "lastKnownAt": 1791248100000
+      },
+      "restoredPauseAt": 1791248100000,
+      "activeRecordedMs": 3300000,
+      "actualFocusBeforeQuitMs": 3600000,
+      "unrecordedFocusMs": 300000
+    },
+    {
+      "fault": "runtime-rename",
+      "timestamps": {
+        "startedAt": 1791244800000,
+        "lastGoodAliveAt": 1791248100000,
+        "quitAt": 1791248400000,
+        "restartedAt": 1791249000000
+      },
+      "shutdown": {
+        "canceled": false,
+        "error": null,
+        "quitting": true,
+        "tickerRunning": false,
+        "databaseRenames": 1,
+        "databaseFinalMarkerSaved": true,
+        "heartbeatAfterShutdown": 1791248100000,
+        "injectedFaults": 4,
+        "periodicInjectedFaults": 76
+      },
+      "recovery": {
+        "lastKnownAt": 1791248100000
+      },
+      "restoredPauseAt": 1791248100000,
+      "activeRecordedMs": 3300000,
+      "actualFocusBeforeQuitMs": 3600000,
+      "unrecordedFocusMs": 300000
+    }
+  ],
+  "probeTests": {
+    "files": 1,
+    "tests": 3,
+    "startedAt": "21:12:38",
+    "allPassed": true,
+    "purpose": "Confirm the faulty shutdown and the normal control; green baseline is not a correct-product verdict"
+  },
+  "excludedEvidence": "Earlier regression failure from an unwired fake SystemPort is a harness failure, not product reproduction evidence",
+  "limits": [
+    "Synchronous runtime write/rename EACCES injection; no power-loss durability claim",
+    "The corrected canceled fault cases do not restart because quit is refused; no claim of recovering fresh time after a failed heartbeat"
+  ]
+}

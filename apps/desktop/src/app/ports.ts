@@ -2,6 +2,7 @@
  * ユースケース（app 層）が外の世界に触るための口。実装は infra / presentation が注入する。
  * app 層はここにある型だけに依存し、electron を import しない（テストは偽物の Port で回す）。
  */
+import type { GoogleCalendarService } from './google-calendar-service.js'
 import type { Database, WindowKind } from '@white-box/core/types'
 import type { RuntimeState } from './state.js'
 
@@ -10,11 +11,12 @@ export interface StorePort {
   save(): void
   replace(next: Database): void
   /** 実行中セッションの復旧用。生きている時刻の記録。 */
-  markAlive(): void
+  markAlive(options?: { requireSuccess?: boolean }): void
   readLastAlive(): number | null
 }
 
 export interface WindowPort {
+  prepareEditors?(reason: 'close' | 'quit' | 'end' | 'switch' | 'import', kinds?: WindowKind[]): Promise<(closing?: WindowKind[]) => void>
   open(kind: WindowKind, focus?: boolean): void
   close(kind: WindowKind): void
   toggle(kind: WindowKind): void
@@ -29,6 +31,7 @@ export interface TickerPort {
 }
 
 export interface SystemPort {
+  agentConfig?(): string
   applyShortcuts(): string[]
   applyLoginItem(): void
   quit(): void
@@ -43,6 +46,7 @@ export interface DataIOPort {
 }
 
 export interface Ctx {
+  googleCalendar?: Pick<GoogleCalendarService, 'configure' | 'connect' | 'cancelConnect' | 'disconnect' | 'select' | 'sync' | 'create'>
   store: StorePort
   windows: WindowPort
   ticker: TickerPort
@@ -50,6 +54,6 @@ export interface Ctx {
   dataIO: DataIOPort
   runtime: RuntimeState
   now(): number
-  /** 状態を保存し、全ウィンドウとトレイへ配る。 */
-  publish(): void
+  /** 状態を保存し、全ウィンドウとトレイへ配る。実行不能な保存済みデータを安全停止させる復旧保存が失敗したときは persist=false で安全停止を配信する。 */
+  publish(persist?: boolean): void
 }

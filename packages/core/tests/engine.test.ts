@@ -25,6 +25,24 @@ describe('一日の境目', () => {
   it('境目ちょうどはその日に入る', () => {
     expect(dayKey(new Date(2026, 7, 21, 4, 0).getTime(), 4)).toBe('2026-08-21')
   })
+
+  it.each([
+    { month: 2, day: 8, previous: '2026-03-07', current: '2026-03-08', offset: 240 },
+    { month: 10, day: 1, previous: '2026-10-31', current: '2026-11-01', offset: 300 },
+  ])('夏時間切替日の $current も現地の4時を境目にする', ({ month, day, previous, current, offset }) => {
+    const originalTimezone = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      expect(new Date(2026, month, day, 12).getTimezoneOffset()).toBe(offset)
+      expect(dayKey(new Date(2026, month, day, 3, 59).getTime(), 4)).toBe(previous)
+      expect(dayKey(new Date(2026, month, day, 4).getTime(), 4)).toBe(current)
+      expect(dayKey(new Date(2026, month, day, 4, 30).getTime(), 4)).toBe(current)
+      expect(dayKey(new Date(2026, month, day, 12).getTime(), 4)).toBe(current)
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ
+      else process.env.TZ = originalTimezone
+    }
+  })
 })
 
 it('重なった停止区間は一度だけ差し引く', () => {

@@ -1,0 +1,98 @@
+{
+  "sources": {
+    "baseline": {
+      "commit": "125026f7088487a429170f6276786a13f0e40c4c",
+      "sourceSha256": "ac0aa0025c80aeb800385e8cb113ef36f6adfec5ffdb00a3339005f17e8cf461",
+      "extractedFunctionSha256": "93d15d4b78d5edb1b8661b7c80e90809ba9fbeaf47291dda776571281877c76c"
+    },
+    "fixed": {
+      "commit": "130016c83ce352598283ca8378362dad3c1821b0",
+      "sourceSha256": "929c3a6e637a9660262210ee8812105bb564aa1d0209edc0a5e76be89fcc8312",
+      "extractedFunctionSha256": "f36ba72c27d84c4ad28ba4b47a446cac34d193260b3a208935a8733c6ccc2387"
+    }
+  },
+  "checks": [
+    {
+      "name": "baseline: normal reply",
+      "passed": true,
+      "observed": {
+        "status": "fulfilled",
+        "value": 2
+      },
+      "remainingTimers": 0
+    },
+    {
+      "name": "baseline: close while request pending",
+      "passed": true,
+      "observed": {
+        "status": "pending-at-25ms-bound"
+      },
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: normal reply",
+      "passed": true,
+      "observed": {
+        "status": "fulfilled",
+        "value": 2
+      },
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: close while request pending",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP connection closed"
+      },
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: request on already-closed socket",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP connection closed"
+      },
+      "messagesSent": 0,
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: request timeout",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP request timed out"
+      },
+      "timeoutMs": 10000,
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: socket error while request pending",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP connection closed"
+      },
+      "remainingTimers": 0
+    },
+    {
+      "name": "fixed: close before open",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP connection closed"
+      }
+    },
+    {
+      "name": "fixed: error before open",
+      "passed": true,
+      "observed": {
+        "status": "rejected",
+        "error": "Error: CDP connection closed"
+      }
+    }
+  ],
+  "scope": "Actual extracted connect function, fake WebSocket/timers only; not a native app shutdown probe.",
+  "oldTaskPriorityNativeHangCauseEstablished": false
+}

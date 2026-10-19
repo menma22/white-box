@@ -1,0 +1,272 @@
+{
+  "fingerprint": "d0ebf90c7b0035db2ff8dbb315b6b90f753747dfec0b621f0ee360d65153adad",
+  "comparison": {
+    "repository": "menma22/white-box",
+    "base": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48",
+    "head": "130016c83ce352598283ca8378362dad3c1821b0",
+    "working_tree_included": false,
+    "product_measured_commit": "125026f7088487a429170f6276786a13f0e40c4c",
+    "qa_commit": "130016c83ce352598283ca8378362dad3c1821b0"
+  },
+  "purposes": {
+    "PqaRequestSettlementAndNativeQuit": "Settle Basic CDP evaluation requests on reply/error/socket closure/timeout, and assess quit from the launched native ChildProcess outcome instead of an awaited renderer reply that can disappear during exit; retain actual zero-exit requirement and failure-only cleanup."
+  },
+  "assignments": {
+    "1": "PqaRequestSettlementAndNativeQuit",
+    "2": "PqaRequestSettlementAndNativeQuit",
+    "3": "PqaRequestSettlementAndNativeQuit",
+    "4": "PqaRequestSettlementAndNativeQuit",
+    "5": "PqaRequestSettlementAndNativeQuit",
+    "6": "PqaRequestSettlementAndNativeQuit",
+    "7": "PqaRequestSettlementAndNativeQuit",
+    "8": "PqaRequestSettlementAndNativeQuit",
+    "9": "PqaRequestSettlementAndNativeQuit",
+    "10": "PqaRequestSettlementAndNativeQuit",
+    "11": "PqaRequestSettlementAndNativeQuit",
+    "12": "PqaRequestSettlementAndNativeQuit",
+    "13": "PqaRequestSettlementAndNativeQuit",
+    "14": "PqaRequestSettlementAndNativeQuit",
+    "15": "PqaRequestSettlementAndNativeQuit",
+    "16": "PqaRequestSettlementAndNativeQuit",
+    "17": "PqaRequestSettlementAndNativeQuit",
+    "18": "PqaRequestSettlementAndNativeQuit"
+  },
+  "coverage": {
+    "files": 1,
+    "hunks": 5,
+    "units": 18,
+    "added": 15,
+    "deleted": 3,
+    "metadata": 0,
+    "purposes": 1,
+    "missing": 0,
+    "duplicates": 0,
+    "deleted_tests_or_comments": 0
+  },
+  "counts_by_purpose": {
+    "PqaRequestSettlementAndNativeQuit": {
+      "added": 15,
+      "deleted": 3,
+      "metadata": 0
+    }
+  },
+  "changed_locations": [
+    {
+      "id": "1",
+      "kind": "added",
+      "line": 117,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "2",
+      "kind": "deleted",
+      "line": 120,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "3",
+      "kind": "added",
+      "line": 121,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "4",
+      "kind": "added",
+      "line": 122,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "5",
+      "kind": "added",
+      "line": 123,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "6",
+      "kind": "added",
+      "line": 124,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "7",
+      "kind": "added",
+      "line": 125,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "8",
+      "kind": "added",
+      "line": 126,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "9",
+      "kind": "added",
+      "line": 127,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "10",
+      "kind": "added",
+      "line": 128,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "11",
+      "kind": "deleted",
+      "line": 127,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "12",
+      "kind": "added",
+      "line": 135,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "13",
+      "kind": "added",
+      "line": 136,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "14",
+      "kind": "added",
+      "line": 137,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "15",
+      "kind": "deleted",
+      "line": 333,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "16",
+      "kind": "added",
+      "line": 343,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "17",
+      "kind": "added",
+      "line": 344,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    },
+    {
+      "id": "18",
+      "kind": "added",
+      "line": 348,
+      "file": "scripts/e2e.mjs",
+      "purpose": "PqaRequestSettlementAndNativeQuit"
+    }
+  ],
+  "primary_sources": [
+    {
+      "path": "docs/verification.md",
+      "lines": "20-21,51",
+      "requirement": "Judge native exit and owned-process outcomes from actual evidence; forced cleanup is not natural-exit proof.",
+      "content_sha256_at_classification": "875c4741953d59e6af1695e3245fb4b869902818712fa7823f51531a8a54e31b"
+    },
+    {
+      "path": "docs/stories/20261006_story_phase2-completion.md",
+      "lines": "20,24,32-33",
+      "requirement": "Use real shutdown observations, preserve failures and avoid causal claims about unreproduced native hangs.",
+      "content_sha256_at_classification": "bbee0d24cb26f88b7575288fd68726c46e3589de949fb3efc1bc56d7854a14bb"
+    },
+    {
+      "kind": "explicit parent task",
+      "requirement": "Correct observed Basic Node exit13 from an unsettled await after native app/socket exit; keep product125 unchanged and independently account final QA130."
+    }
+  ],
+  "conditions": [
+    {
+      "id": "D1",
+      "verdict": "satisfied",
+      "condition": "Responses clear request timers; socket error/close rejects and clears every pending evaluation; closed socket dispatch rejects immediately and an evaluation has a10s deadline.",
+      "evidence": [
+        "scripts/e2e.mjs:117",
+        "scripts/e2e.mjs:121",
+        "scripts/e2e.mjs:135"
+      ]
+    },
+    {
+      "id": "D2",
+      "verdict": "satisfied",
+      "condition": "Quit dispatch observes renderer rejection separately and keeps a15s native deadline, requiring child exitCode0/signalCode null before successful shutdown count. Existing failure-only child cleanup remains.",
+      "evidence": [
+        "scripts/e2e.mjs:343",
+        "artifactreview/strict-20261006/basic-source-cdp-final.log"
+      ]
+    },
+    {
+      "id": "D3",
+      "verdict": "satisfied",
+      "condition": "Official new source Basic finishes33 log checks and captures native exit0 under product125/QA130.",
+      "evidence": [
+        "artifactreview/strict-20261006/basic-source-cdp-final.log"
+      ],
+      "observed_quit_response": {
+        "error": null,
+        "exitCode": 0,
+        "signalCode": null
+      }
+    },
+    {
+      "id": "D4",
+      "verdict": "unverified",
+      "condition": "Every protocol failure branch and the historical intermittent native quit hang is reproduced or causally resolved.",
+      "scope": "Source inspection and the successful nominal rerun establish only stated settlement/native-outcome boundaries; they do not solve an unrelated native hang."
+    }
+  ],
+  "deleted_guarantee_checks": [
+    {
+      "units": [
+        "2",
+        "11",
+        "15"
+      ],
+      "retained_or_intentionally_replaced": "Outer connection rejection remains in disconnected; request resolve/reject handlers remain with timer tracking. The awaited quit response is intentionally replaced by observation, while the mandatory native-zero assertion/deadline and cleanup behavior remain."
+    }
+  ],
+  "observed_prior_failure": {
+    "qa_commit": "15eea5d1e5757fac3a8b4eb59fa2177aeb841b48",
+    "script": "scripts/e2e.mjs",
+    "node_exit_code": 13,
+    "parent_observation": "Native app had naturally exited and the CDP socket closed; the pending evaluation was not rejected, leaving top-level await unsettled. Root will attach its preserved failure metadata.",
+    "scope": "Parent live observation; no fabricated structured Basic result or overwritten shared DB is attributed to that run."
+  },
+  "official_source": {
+    "log": "artifactreview/strict-20261006/basic-source-cdp-final.log",
+    "log_sha256": "e1c667c25427398105130c5503beba114dae44b646ac5fe7cd5b31aa894c5604",
+    "checks_log_only": 33,
+    "quit_response_observation": {
+      "error": null,
+      "exitCode": 0,
+      "signalCode": null
+    }
+  },
+  "limits": [
+    "Evaluation deadline is bounded; no new universal outer WebSocket connection-timeout guarantee is claimed.",
+    "Basic has no immutable structured result artifact; preserve the stdout log and native-child observation.",
+    "No current shared basic .e2e/data is attributed to prior source/package runs.",
+    "Product apps/packages Git trees125==130 and all old behavior checks are retained; this is a QA repair, not a product or native-hang repair."
+  ]
+}

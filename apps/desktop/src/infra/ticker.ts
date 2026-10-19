@@ -3,11 +3,11 @@
  */
 import type { TickerPort } from '../app/ports.js'
 
-export function createTicker(onTick: () => void): TickerPort {
+export function createTicker(onTick: () => void, enabled = () => true): TickerPort {
   let timer: NodeJS.Timeout | null = null
   return {
     start() {
-      if (!timer) timer = setInterval(onTick, 1000)
+      if (!timer && enabled()) timer = setInterval(() => { if (enabled()) onTick() }, 1000)
     },
     stop() {
       if (timer) {

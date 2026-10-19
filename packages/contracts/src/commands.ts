@@ -1,3 +1,4 @@
+import { GOOGLE_CALENDAR_COMMANDS } from './google-calendar.js'
 /**
  * 画面⇄メインプロセスの全コマンド契約。ここが両者の唯一の合意点。
  *
@@ -6,6 +7,13 @@
  * args を緩い object にすると、綴り違いのキーが zod に黙って捨てられ、無反応のまま成功が返る。
  */
 import { z } from 'zod'
+import { GoalCriteriaSchema } from './goal-criteria.js'
+import { PRESENCE_COMMANDS } from './presence.js'
+import { AgentPlanEntrySchema, TaskSuggestionSchema } from './agent.js'
+import { NOTE_COMMANDS } from './notes.js'
+import { TaskControlSchema } from './task-control.js'
+import { PLANNING_COMMANDS } from './planning.js'
+import { CALENDAR_COMMANDS } from './calendar.js'
 import {
   AppStateSchema,
   GoalIssueKindSchema,
@@ -19,6 +27,7 @@ import {
   ProgressChangeSchema,
   ProjectSchema,
   SessionSchema,
+  SessionModeSchema,
   SettingsSchema,
   TaskSchema,
   TaskStatusSchema,
@@ -29,12 +38,36 @@ import {
 const NoArgs = z.strictObject({})
 
 export const COMMANDS = {
+  ...GOOGLE_CALENDAR_COMMANDS,
+  ...PLANNING_COMMANDS,
+  ...CALENDAR_COMMANDS,
+  ...PRESENCE_COMMANDS,
+  'agent:config': { args: NoArgs, result: z.string() },
+  'agent:context': {
+    args: z.strictObject({ projectId: z.string().optional() }),
+    result: z.object({
+      projects: z.array(ProjectSchema),
+      tasks: z.array(TaskSchema),
+      goals: z.array(GoalNodeSchema),
+      sessions: z.array(z.object({ id: z.string(), startedAt: z.number(), endedAt: z.number().nullable(), taskIds: z.array(z.string()), focusMs: z.number() })),
+    }),
+  },
+  'agent:applyPlan': {
+    args: z.strictObject({ requestId: z.string().min(1).max(200).refine((id) => id !== '__proto__', 'requestIdが不正です'), tasks: z.array(AgentPlanEntrySchema).min(1).max(100) }),
+    result: z.array(TaskSchema),
+  },
+  'agent:propose': {
+    args: z.strictObject({ sessionId: z.string(), taskId: z.string().nullable().optional(), title: z.string().trim().min(1).max(500).optional(), reason: z.string().trim().min(1).max(2000), markDone: z.boolean().optional() }),
+    result: TaskSuggestionSchema,
+  },
+  'agent:resolve': { args: z.strictObject({ id: z.string(), accept: z.boolean() }), result: z.null() },
+  ...NOTE_COMMANDS,
   'state:get': { args: NoArgs, result: AppStateSchema },
 
   // ── Project
   'project:create': { args: z.strictObject({ name: z.string() }), result: ProjectSchema },
   'project:update': {
-    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: ProjectSchema.omit({ id: true, createdAt: true, updatedAt: true }).partial().strict() }),
     result: z.null(),
   },
   'project:delete': { args: z.strictObject({ id: IdSchema }), result: z.null() },
@@ -42,22 +75,29 @@ export const COMMANDS = {
   // ── Task
   'task:create': {
     args: z.strictObject({
+      ...TaskControlSchema.shape,
       title: z.string(),
       projectId: IdSchema.nullable().optional(),
       parentId: IdSchema.nullable().optional(),
       status: TaskStatusSchema.optional(),
       priority: PrioritySchema.optional(),
       notes: z.string().optional(),
+      problems: z.string().optional(),
+      decisions: z.string().optional(),
+      nextContext: z.string().optional(),
       sessionId: IdSchema.nullable().optional(),
       due: z.string().nullable().optional(),
       goalNodeId: IdSchema.nullable().optional(),
+      remainingEffortMinutes: TaskSchema.shape.remainingEffortMinutes,
+      safetyBufferMinutes: TaskSchema.shape.safetyBufferMinutes,
       /** true なら実行中セッションのログに「タスク追加」を残す */
       fromSession: z.boolean().optional(),
     }),
     result: TaskSchema,
   },
   'task:update': {
-    args: z.strictObject({ id: IdSchema, patch: TaskSchema.partial().strict() }),
+    args: z.strictObject({ id: IdSchema, patch: TaskSchema.omit({ id: true, createdAt: true, updatedAt: true, committedAt: true, lastProgressAt: true }).partial().strict(),
+      expectedContext: z.strictObject({ title: z.string(), notes: z.string(), problems: z.string(), decisions: z.string(), nextContext: z.string() }).partial().optional() }),
     result: z.null(),
   },
   'task:move': {
@@ -69,7 +109,7 @@ export const COMMANDS = {
 
   // ── 道標（目標・問題・改善）
   'goal:create': {
-    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional() }),
+    args: z.strictObject({ goal: z.string(), reason: z.string().optional(), parentId: IdSchema.nullable().optional(), criteria: GoalCriteriaSchema.optional() }),
     result: GoalNodeSchema,
   },
   'goal:update': {
@@ -78,6 +118,7 @@ export const COMMANDS = {
       patch: z.strictObject({
         goal: z.string().optional(),
         reason: z.string().optional(),
+        criteria: GoalCriteriaSchema.optional(),
         outcome: OutcomeRecordSchema.omit({ assessedAt: true }).partial().strict().optional(),
       }),
     }),
@@ -85,6 +126,14 @@ export const COMMANDS = {
   },
   'goal:merge': {
     args: z.strictObject({ ids: z.array(IdSchema), goal: z.string(), reason: z.string().optional() }),
+    result: GoalNodeSchema,
+  },
+  'goal:reparent': {
+    args: z.strictObject({ id: IdSchema, parentId: IdSchema.nullable() }),
+    result: GoalNodeSchema,
+  },
+  'goal:insert': {
+    args: z.strictObject({ id: IdSchema, goal: z.string(), reason: z.string().optional() }),
     result: GoalNodeSchema,
   },
   'goal:hide': { args: z.strictObject({ id: IdSchema, reason: z.string().optional() }), result: z.null() },
@@ -121,7 +170,10 @@ export const COMMANDS = {
     args: z.strictObject({
       taskId: IdSchema.optional(),
       newTask: z.strictObject({ title: z.string(), projectId: IdSchema.nullable().optional() }).optional(),
-      minutes: z.number().optional(),
+      minutes: z.number().finite().min(1).max(1440).optional(),
+      mode: SessionModeSchema.optional(),
+      breakMinutes: z.number().int().min(1).max(180).optional(),
+      autoResume: z.boolean().optional(),
     }),
     result: SessionSchema.nullable(),
   },
@@ -145,8 +197,8 @@ export const COMMANDS = {
     args: z.strictObject({
       id: IdSchema,
       patch: z.strictObject({
-        startedAt: z.number().optional(),
-        endedAt: z.number().optional(),
+        startedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
+        endedAt: z.number().finite().min(-8_640_000_000_000_000).max(8_640_000_000_000_000).optional(),
         plannedMs: z.number().optional(),
         note: z.string().optional(),
         /** 後から申告する除外区間の全体。渡すと申告ぶんを置き換える（観測された一時停止には触らない） */

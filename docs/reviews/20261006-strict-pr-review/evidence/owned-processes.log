@@ -1,0 +1,96 @@
+TAP version 13
+# Subtest: positive baseline detects root, child and grandchild independent of inventory order
+ok 1 - positive baseline detects root, child and grandchild independent of inventory order
+  ---
+  duration_ms: 2.9706
+  type: 'test'
+  ...
+# Subtest: registered orphan descendants remain detectable after their parent exits
+ok 2 - registered orphan descendants remain detectable after their parent exits
+  ---
+  duration_ms: 0.5445
+  type: 'test'
+  ...
+# Subtest: a surviving owned child can register its new descendant after the root exits
+ok 3 - a surviving owned child can register its new descendant after the root exits
+  ---
+  duration_ms: 0.1456
+  type: 'test'
+  ...
+# Subtest: root PID reuse by electron.exe is excluded and does not own replacement descendants
+ok 4 - root PID reuse by electron.exe is excluded and does not own replacement descendants
+  ---
+  duration_ms: 1.9468
+  type: 'test'
+  ...
+# {"oldWronglyReports":[{"ProcessId":10,"ParentProcessId":1,"Name":"electron.exe","CreationDate":"2026-10-06T00:00:10.0000000Z"},{"ProcessId":40,"ParentProcessId":10,"Name":"electron.exe","CreationDate":"2026-10-06T00:00:11.0000000Z"}],"identityRemaining":[],"reused":[{"expected":{"ProcessId":10,"ParentProcessId":1,"Name":"electron.exe","CreationDate":"2026-10-06T00:00:00.0000000Z"},"current":{"ProcessId":10,"ParentProcessId":1,"Name":"electron.exe","CreationDate":"2026-10-06T00:00:10.0000000Z"}}]}
+# Subtest: child PID reuse by electron.exe cannot own replacement grandchildren
+ok 5 - child PID reuse by electron.exe cannot own replacement grandchildren
+  ---
+  duration_ms: 0.2044
+  type: 'test'
+  ...
+# Subtest: root PID reuse by unrelated.exe is excluded and does not own replacement descendants
+ok 6 - root PID reuse by unrelated.exe is excluded and does not own replacement descendants
+  ---
+  duration_ms: 0.4217
+  type: 'test'
+  ...
+# {"oldWronglyReports":[{"ProcessId":10,"ParentProcessId":1,"Name":"unrelated.exe","CreationDate":"2026-10-06T00:00:10.0000000Z"},{"ProcessId":40,"ParentProcessId":10,"Name":"unrelated.exe","CreationDate":"2026-10-06T00:00:11.0000000Z"}],"identityRemaining":[],"reused":[{"expected":{"ProcessId":10,"ParentProcessId":1,"Name":"electron.exe","CreationDate":"2026-10-06T00:00:00.0000000Z"},"current":{"ProcessId":10,"ParentProcessId":1,"Name":"unrelated.exe","CreationDate":"2026-10-06T00:00:10.0000000Z"}}]}
+# Subtest: child PID reuse by unrelated.exe cannot own replacement grandchildren
+ok 7 - child PID reuse by unrelated.exe cannot own replacement grandchildren
+  ---
+  duration_ms: 0.1617
+  type: 'test'
+  ...
+# Subtest: a genuinely new child of the same live root is registered even when its PID was reused
+ok 8 - a genuinely new child of the same live root is registered even when its PID was reused
+  ---
+  duration_ms: 0.126
+  type: 'test'
+  ...
+# Subtest: separate launches retain earlier orphan identities and track the new root and child
+ok 9 - separate launches retain earlier orphan identities and track the new root and child
+  ---
+  duration_ms: 0.3468
+  type: 'test'
+  ...
+# Subtest: explicitly registered second launch can reuse the root PID without claiming an older orphan
+ok 10 - explicitly registered second launch can reuse the root PID without claiming an older orphan
+  ---
+  duration_ms: 0.3843
+  type: 'test'
+  ...
+# Subtest: root registration checks launch parent, executable and lower creation-time bound
+ok 11 - root registration checks launch parent, executable and lower creation-time bound
+  ---
+  duration_ms: 0.4846
+  type: 'test'
+  ...
+# Subtest: creation ordering retains sub-millisecond precision when excluding a stale parent PID
+ok 12 - creation ordering retains sub-millisecond precision when excluding a stale parent PID
+  ---
+  duration_ms: 0.9004
+  type: 'test'
+  ...
+# Subtest: missing owned creation times fail observation instead of reporting a false absence
+ok 13 - missing owned creation times fail observation instead of reporting a false absence
+  ---
+  duration_ms: 0.4118
+  type: 'test'
+  ...
+# Subtest: a repeated snapshot preserves reuse evidence after the stale identity was pruned
+ok 14 - a repeated snapshot preserves reuse evidence after the stale identity was pruned
+  ---
+  duration_ms: 0.0948
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 116.965

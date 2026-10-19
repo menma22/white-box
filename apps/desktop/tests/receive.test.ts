@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from '@white-box/core/types'
 import { excludedMs, focusMs, MINUTE } from '@white-box/core/engine'
+import { restoreOpenSession } from '../src/app/lifecycle.js'
 import { createHandlers, dispatch, type Handlers } from '../src/app/handlers.js'
 import { receive } from '../src/app/receive.js'
 import { emptyDb, fakeCtx, task, type FakeCtx } from './helpers.js'
@@ -10,14 +11,65 @@ async function neglected(): Promise<{ ctx: FakeCtx; h: Handlers; session: Sessio
   db.tasks = [task({ id: 'a' })]
   const ctx = fakeCtx(db)
   const h = createHandlers(ctx)
-  await dispatch(h, 'session:start', { taskId: 'a', minutes: 50 })
+  const startedAt = ctx.now()
   ctx.advance(230 * MINUTE)
-  await dispatch(h, 'session:end', {})
+  db.sessions.push({
+    id: 'legacy-overrun',
+    startedAt,
+    endedAt: ctx.now(),
+    plannedMs: 50 * MINUTE,
+    state: 'ended',
+    segments: [{ id: 'legacy-segment', taskId: 'a', startedAt, endedAt: ctx.now() }],
+    pauses: [],
+    events: [{ at: ctx.now(), type: 'session_ended', label: 'セッション終了' }],
+    progressChanges: [],
+    note: '',
+    expiredNotifiedAt: null,
+    editedAt: null,
+    createdAt: startedAt,
+  })
   return { ctx, h, session: db.sessions[0]! }
 }
 
 describe('受け口', () => {
-  it('通る除外は {ok:true} で、実作業がその分だけ減る', async () => {
+  it('満了後の異常終了から再開しても停止を保ち、延長の確認窓を示す', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await receive(h, 'session:start', { taskId: 'a', minutes: 1 })
+    ctx.advance(2 * MINUTE)
+    await receive(h, 'session:resume', {})
+    ctx.setLastAlive(ctx.now())
+    ctx.advance(5 * MINUTE)
+    restoreOpenSession(ctx, 90_000)
+    expect(ctx.runtime.recovery).not.toBeNull()
+    ctx.calls.length = 0
+    expect((await receive(h, 'recovery:resume', {})).ok).toBe(true)
+    expect(db.sessions[0]?.state).toBe('paused')
+    expect(ctx.runtime.recovery).toBeNull()
+    expect(ctx.calls).toContain('open:expire')
+    expect(focusMs(db.sessions[0]!, ctx.now())).toBe(MINUTE)
+  })
+
+  it('満了後の再開コマンドは停止と確認窓を保ち、延長コマンドで再開する', async () => {
+    const db = emptyDb()
+    db.tasks = [task({ id: 'a' })]
+    const ctx = fakeCtx(db)
+    const h = createHandlers(ctx)
+    await receive(h, 'session:start', { taskId: 'a', minutes: 1 })
+    ctx.advance(2 * MINUTE)
+    expect((await receive(h, 'session:resume', {})).ok).toBe(true)
+    expect(db.sessions[0]?.state).toBe('paused')
+    expect(focusMs(db.sessions[0]!, ctx.now())).toBe(MINUTE)
+    expect(ctx.calls.at(-1)).toBe('open:expire')
+    await receive(h, 'session:extend', { minutes: 1 })
+    ctx.advance(MINUTE / 2)
+    expect(db.sessions[0]?.state).toBe('running')
+    expect(focusMs(db.sessions[0]!, ctx.now())).toBe(1.5 * MINUTE)
+  })
+
+  it('旧タイマーの満了超過記録でも除外は {ok:true} で、実作業がその分だけ減る', async () => {
     const { ctx, h, session } = await neglected()
     expect(focusMs(session, ctx.now())).toBe(230 * MINUTE)
     const from = session.startedAt + 50 * MINUTE

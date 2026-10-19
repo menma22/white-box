@@ -5,17 +5,31 @@
  * Session は「起きたこと」の記録なので、後から意味を変えない（編集は editedAt を残す）。
  */
 
+import type { GoalCriterion } from './goal-criteria.js'
+import type { PresenceCandidate } from './presence.js'
+import type { AgentRequestRecord, TaskSuggestion } from './agent.js'
+import type { Note } from './notes.js'
+
 export type ID = string
 
 export type TaskStatus = 'inbox' | 'todo' | 'doing' | 'done'
 
 export type Priority = 'low' | 'normal' | 'high'
 
+export interface ExternalBlock {
+  who: string
+  what: string
+  since: string
+  lastContactOn: string | null
+  nextFollowUpOn: string | null
+}
+
 export interface Project {
   id: ID
   name: string
   hue: number
   archived: boolean
+  priority?: Priority
   order: number
   createdAt: number
   updatedAt: number
@@ -27,6 +41,9 @@ export interface Task {
   parentId: ID | null
   title: string
   notes: string
+  problems?: string
+  decisions?: string
+  nextContext?: string
   status: TaskStatus
   /** 人間が宣言する値。子タスクや実績から自動計算しない。 */
   progress: number
@@ -38,6 +55,17 @@ export interface Task {
   createdInSessionId: ID | null
   due?: string | null
   goalNodeId?: ID | null
+  /** 残作業の見積。セッション実績から自動で減らさない。 */
+  remainingEffortMinutes?: number | null
+  safetyBufferMinutes?: number | null
+  /** 現在のコミット期間の開始。Inbox の滞在期間は含めない。 */
+  committedAt?: number | null
+  lastProgressAt?: number | null
+  blocked?: boolean
+  blockReason?: string
+  hardDependencies?: ID[]
+  recommendedPredecessors?: ID[]
+  externalBlock?: ExternalBlock | null
 }
 
 export type OutcomeStatus = 'pending' | 'achieved' | 'not-achieved'
@@ -59,6 +87,7 @@ export interface GoalNode {
   hiddenAt: number | null
   hideReason: string
   outcome?: OutcomeRecord
+  criteria?: GoalCriterion[]
 }
 
 export interface GoalIssue {
@@ -73,7 +102,7 @@ export interface GoalIssue {
 export interface GoalHistory {
   id: ID
   at: number
-  type: 'create-head' | 'create-child' | 'hide' | 'unhide' | 'merge' | 'promote'
+  type: 'create-head' | 'create-child' | 'hide' | 'unhide' | 'merge' | 'promote' | 'reparent' | 'insert'
   nodeId: ID
   parentId: ID | null
   note: string
@@ -96,6 +125,7 @@ export interface GoalMap {
 }
 
 export type SessionState = 'running' | 'paused' | 'ended'
+export type SessionMode = 'timer' | 'stopwatch' | 'pomodoro'
 
 /** 同一瞬間に開いている区間は 1 つだけ（Foreground Task は常に 1 つ）。 */
 export interface TaskSegment {
@@ -109,7 +139,7 @@ export interface TaskSegment {
 export interface PauseInterval {
   startedAt: number
   endedAt: number | null
-  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | null
+  reason: 'manual' | 'suspend' | 'lock' | 'break' | 'excluded' | 'expired' | 'task-management' | null
   plannedEndAt?: number
   notifiedAt?: number | null
 }
@@ -151,8 +181,12 @@ export interface Session {
   id: ID
   startedAt: number
   endedAt: number | null
-  /** 「今から何分やるか」。タスク全体の所要見積もりとしては使わない。 */
+  /** 作業時間の予定。ポモドーロでは周期ごとの累積、ストップウォッチでは満了に使わない。タスク全体の見積もりではない。 */
   plannedMs: number
+  mode?: SessionMode
+  pomodoroBreakMs?: number
+  pomodoroWorkMs?: number
+  pomodoroAutoResume?: boolean
   state: SessionState
   segments: TaskSegment[]
   pauses: PauseInterval[]
@@ -168,6 +202,9 @@ export interface Settings {
   /** 呼びかけに使う名前。 */
   displayName: string
   defaultSessionMinutes: number
+  defaultSessionMode?: SessionMode
+  pomodoroBreakMinutes?: number
+  pomodoroAutoResume?: boolean
   defaultExtendMinutes: number
   extendOptions: number[]
   shortcuts: {
@@ -186,6 +223,9 @@ export interface Settings {
   showSessionCard: boolean
   /** 初回オンボーディングを終えた時刻。null は未完了。 */
   onboardedAt: number | null
+  remindToStart?: boolean
+  startReminderMinutes?: number
+  enableAgentApi?: boolean
 }
 
 export interface Database {
@@ -195,8 +235,64 @@ export interface Database {
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
+  agentRequests?: Record<string, AgentRequestRecord>
+  notes?: Note[]
   goalMap: GoalMap
+  presenceCandidates?: PresenceCandidate[]
   goalMapImports?: string[]
+  weeklyBudgets?: WeeklyTimeBudget[]
+  weeklyBudgetDefaults?: WeeklyBudgetPlan
+  fixedWork?: FixedWork[]
+  calendarBlocks?: CalendarBlock[]
+}
+
+export type ProjectAllocation =
+  | { projectId: ID; mode: 'minimum' | 'maximum'; minutes: number }
+  | { projectId: ID; mode: 'range'; minimumMinutes: number; maximumMinutes: number }
+  | { projectId: ID; mode: 'unlimited' }
+
+export interface WeeklyBudgetPlan {
+  sleepMinutes: number
+  mealMinutes: number
+  fixedMinutes: number
+  allocations: ProjectAllocation[]
+}
+
+export interface WeeklyTimeBudget extends WeeklyBudgetPlan {
+  weekStart: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface CalendarBlockInput {
+  title: string
+  category: 'work' | 'sleep' | 'meal' | 'fixed'
+  taskId: ID | null
+  projectId: ID | null
+  startedAt: number
+  endedAt: number
+  repeat: 'none' | 'weekly'
+  weekdays: number[]
+  until: string | null
+}
+
+export interface CalendarBlock extends CalendarBlockInput {
+  id: ID
+  cancelled: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export interface FixedWork {
+  id: ID
+  taskId: ID
+  startedAt: number
+  endedAt: number
+  externalReason: string
+  cancelled: boolean
+  createdAt: number
+  updatedAt: number
 }
 
 /** 毎秒流す軽い更新。状態全体の再送はミューテーション時だけに限る。 */
@@ -204,24 +300,63 @@ export interface LiveTick {
   sessionId: ID
   state: Exclude<SessionState, 'ended'>
   elapsedMs: number
-  /** 満了後はマイナスになり、超過時間を表す。 */
+  /** 予定時間−実作業時間。タイマー／ポモドーロは満了で通常0に止まり、旧記録の超過やストップウォッチでは負値になり得る。ストップウォッチの満了判定には使わない。 */
   remainingMs: number
   plannedMs: number
+  mode?: SessionMode
   activeTaskId: ID | null
 }
 
+export interface GoogleCalendarInfo {
+  id: string
+  title: string
+  accessRole: string
+  primary: boolean
+}
+
+export interface GoogleCalendarEvent {
+  id: string
+  calendarId: string
+  title: string
+  startedAt: number
+  endedAt: number
+  allDay: boolean
+  htmlLink?: string
+  location?: string
+}
+
+export interface GoogleCalendarState {
+  configured: boolean
+  connected: boolean
+  account: string | null
+  calendars: GoogleCalendarInfo[]
+  selectedCalendarIds: string[]
+  events: GoogleCalendarEvent[]
+  syncing: boolean
+  lastSyncedAt: number | null
+  error: string | null
+}
+
 export interface AppState {
+  googleCalendar?: GoogleCalendarState
   revision: number
   projects: Project[]
   tasks: Task[]
   sessions: Session[]
   settings: Settings
   dayNotes: Record<string, string>
+  taskSuggestions?: TaskSuggestion[]
+  notes?: Note[]
   goalMap: GoalMap
   live: LiveTick | null
   breakTimer: { startedAt: number; endsAt: number; notifiedAt: number | null } | null
   recovery: { sessionId: ID; lastKnownAt: number } | null
+  presenceCandidates?: PresenceCandidate[]
   pendingReview: { sessionId: ID; thenStart: boolean } | null
+  weeklyBudgets?: WeeklyTimeBudget[]
+  weeklyBudgetDefaults?: WeeklyBudgetPlan
+  fixedWork?: FixedWork[]
+  calendarBlocks?: CalendarBlock[]
 }
 
 export type WindowKind = 'main' | 'start' | 'hud' | 'expire' | 'review' | 'current'

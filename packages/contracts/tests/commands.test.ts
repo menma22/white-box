@@ -3,9 +3,24 @@ import { COMMANDS, isCommand, parseArgs, type ArgsOf, type CommandName } from '.
 import { AppStateSchema, SessionSchema } from '../src/schemas.js'
 
 describe('コマンド契約', () => {
-  it('コマンドは 44 個で固定（増減するときはこのテストを意図的に更新する）', () => {
-    expect(Object.keys(COMMANDS)).toHaveLength(44)
+  it('コマンドは 69 個で固定（増減するときはこのテストを意図的に更新する）', () => {
+    expect(Object.keys(COMMANDS)).toHaveLength(69)
   })
+
+  it('開始通知の設定を保持し、不正な継続時間を拒否する', () => {
+    expect(parseArgs('settings:update', { patch: { remindToStart: true, startReminderMinutes: 3 } })).toEqual({ patch: { remindToStart: true, startReminderMinutes: 3 } })
+    for (const startReminderMinutes of [0, 1.5, 61, Infinity]) expect(() => parseArgs('settings:update', { patch: { startReminderMinutes } })).toThrow()
+  })
+
+  it('方式と休憩設定の開始引数を受け取る', () => {
+    const args = { taskId: 't1', mode: 'pomodoro' as const, minutes: 25, breakMinutes: 5, autoResume: false }
+    expect(parseArgs('session:start', args)).toEqual(args)
+  })
+
+  it.each([{ mode: 'other' }, { minutes: 0 }, { minutes: 1441 }, { minutes: NaN }, { breakMinutes: 0 }, { autoResume: 'yes' }])('不正な方式や開始時間は受け付けない: %j', (args) => {
+    expect(() => parseArgs('session:start', args)).toThrow()
+  })
+
 
   it('全コマンドが args と result の両スキーマを持つ', () => {
     for (const [name, def] of Object.entries(COMMANDS)) {
@@ -33,6 +48,17 @@ describe('コマンド契約', () => {
     })
   })
 
+  it('記録修正は日付にできない時刻を拒否し、有効な過去・未来の時刻を保持する', () => {
+    for (const field of ['startedAt', 'endedAt'] as const) {
+      for (const value of [NaN, Infinity, -Infinity, 1e20, -1e20]) {
+        expect(() => parseArgs('session:update', { id: 's1', patch: { [field]: value } })).toThrow()
+      }
+      for (const value of [-8_640_000_000_000_000, 0, new Date(2100, 0, 1).getTime(), 8_640_000_000_000_000]) {
+        expect(parseArgs('session:update', { id: 's1', patch: { [field]: value } })).toEqual({ id: 's1', patch: { [field]: value } })
+      }
+    }
+  })
+
   it('休憩コマンドの時間を受け取り、停止理由としての直接指定は拒否する', () => {
     expect(parseArgs('session:break', { minutes: 7 })).toEqual({ minutes: 7 })
     expect(() => parseArgs('session:pause', { reason: 'break' })).toThrow()
@@ -52,6 +78,29 @@ describe('コマンド契約', () => {
 
   // コマンドを足すとここが型エラーになるので、新しいコマンドも必ずこの検査を通ることになる
   const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'googleCalendar:configure': { clientId: 'client', clientSecret: 'secret' },
+      'googleCalendar:connect': {},
+      'googleCalendar:cancelConnect': {},
+      'googleCalendar:disconnect': {},
+      'googleCalendar:select': { calendarIds: [] },
+      'googleCalendar:sync': { startedAt: 0, endedAt: 86400000 },
+      'googleCalendar:create': { calendarId: 'primary', title: 'Event', startedAt: 0, endedAt: 3600000, requestId: 'request' },
+    'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
+    'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
+    'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },
+    'fixedWork:update': { id: 'fixed1', patch: { cancelled: true } },
+    'calendar:create': { title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null },
+    'calendar:update': { id: 'calendar1', patch: { cancelled: true } },
+    'presence:resolve': { id: 'candidate', decision: 'dismiss' },
+    'agent:config': {},
+    'agent:context': {},
+    'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
+    'agent:propose': { sessionId: 's1', taskId: 't1', reason: '本人の依頼' },
+    'agent:resolve': { id: 'suggestion', accept: false },
+    'note:create': { title: 'N' },
+    'note:update': { id: 'n1', patch: { pinned: true } },
+    'note:archive': { id: 'n1', archived: true },
+    'note:markReminded': { id: 'n1', remindAt: 1000 },
     'state:get': {},
     'project:create': { name: 'P' },
     'project:update': { id: 'p1', patch: { name: 'P2' } },
@@ -64,6 +113,8 @@ describe('コマンド契約', () => {
     'goal:create': { goal: '目標', reason: '理由', parentId: null },
     'goal:update': { id: 'g1', patch: { goal: '目標', outcome: { status: 'achieved', result: '決まった' } } },
     'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+    'goal:reparent': { id: 'g1', parentId: null },
+    'goal:insert': { id: 'g1', goal: '中継' },
     'goal:hide': { id: 'g1', reason: '休止' },
     'goal:restore': { id: 'g1' },
     'goal:ui': { patch: { view: 'map', showHidden: true }, activeHeadId: 'g1' },

@@ -1,0 +1,4 @@
+BASELINE sequential helper: first participant unlocks while later participant is pending; production callers need whole-surface protection.
+PASS whole-surface local navigation signal stays frozen through pending saves and navigation action, rejects a concurrent navigation, then releases.
+PASS TaskContext response race: own save response preserves newer remote baseline; next edit uses current expected value, saves, and can flush cleanly.
+PASS TaskDetail title: close waits for pending blur save; failure blocks close and retains input with visible error.

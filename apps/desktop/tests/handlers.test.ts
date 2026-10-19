@@ -1,6 +1,6 @@
 /**
  * 全ユースケースの Electron 起動なしテスト。
- * 網羅テストは「全 44 コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
+ * 網羅テストは「全コマンドが偽 Port で実行でき、返り値が契約の result スキーマを通る」を固定する。
  */
 import { describe, expect, it } from 'vitest'
 import { COMMANDS, type ArgsOf, type CommandName } from '@white-box/contracts'
@@ -10,7 +10,7 @@ import { checkExpire, restoreOpenSession } from '../src/app/lifecycle.js'
 import { buildState, liveSession } from '../src/app/state.js'
 import { emptyDb, fakeCtx, task } from './helpers.js'
 
-describe('ユースケースの網羅（44 コマンド）', () => {
+describe('ユースケースの網羅（69 コマンド）', () => {
   it('全コマンドにハンドラが実在し、契約のコマンド一覧と一致する', () => {
     const handlers = createHandlers(fakeCtx())
     expect(Object.keys(handlers).sort()).toEqual(Object.keys(COMMANDS).sort())
@@ -23,26 +23,61 @@ describe('ユースケースの網羅（44 コマンド）', () => {
     db.goalMap.nodes = { g1: goal('g1'), g2: goal('g2') }
     db.goalMap.heads = ['g1', 'g2']
     db.goalMap.issues = [{ id: 'i1', text: '難点', kind: 'problem', nodeId: null, resolved: false, createdAt: 0 }]
+    db.presenceCandidates = [{ id: 'candidate', sessionId: 'finished', startedAt: 0, endedAt: 10_000, status: 'pending', createdAt: 10_000, reviewedAt: null }]
     const ctx = fakeCtx(db)
+    ctx.googleCalendar = {
+      configure: () => {}, connect: async () => {}, cancelConnect: () => {}, disconnect: () => {}, select: () => {}, sync: async () => {},
+      create: async (a) => ({ id: 'remote', calendarId: a.calendarId, title: a.title, startedAt: a.startedAt, endedAt: a.endedAt, allDay: false }),
+    }
+    db.fixedWork = [{ id: 'fixed1', taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議', cancelled: false, createdAt: 0, updatedAt: 0 }]
+    db.calendarBlocks = [{ id: 'calendar1', title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null, cancelled: false, createdAt: 0, updatedAt: 0 }]
+    db.weeklyBudgetDefaults = { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] }
     // 復旧系・レビュー系が「対象あり」の経路を通るよう、実行時状態を仕込む
     const handlers = createHandlers(ctx)
     await dispatch(handlers, 'session:start', { taskId: 't1', minutes: 50 })
     const sessionId = ctx.store.data.sessions[0]!.id
+    db.notes = [{ id: 'n1', title: 'ノート', body: '', projectId: null, taskId: null, pinned: false, archived: false, remindAt: null, remindedAt: null, createdAt: 0, updatedAt: 0 }]
+    db.sessions.push({ ...db.sessions[0]!, id: 'finished', state: 'ended', endedAt: ctx.now() })
     ctx.runtime.recovery = { sessionId, lastKnownAt: ctx.now() }
 
     const sample: { [N in CommandName]: ArgsOf<N> } = {
+      'googleCalendar:configure': { clientId: 'client', clientSecret: 'secret' },
+      'googleCalendar:connect': {},
+      'googleCalendar:cancelConnect': {},
+      'googleCalendar:disconnect': {},
+      'googleCalendar:select': { calendarIds: [] },
+      'googleCalendar:sync': { startedAt: 0, endedAt: 86400000 },
+      'googleCalendar:create': { calendarId: 'primary', title: 'Event', startedAt: 0, endedAt: 3600000, requestId: 'request' },
+      'weeklyBudget:set': { weekStart: '2026-10-05', plan: { sleepMinutes: 3360, mealMinutes: 840, fixedMinutes: 0, allocations: [] } },
+      'weeklyBudget:reuseDefaults': { weekStart: '2026-10-12' },
+      'fixedWork:create': { taskId: 't1', startedAt: 2_000_000_000, endedAt: 2_000_060_000, externalReason: '外部会議' },
+      'fixedWork:update': { id: 'fixed1', patch: { cancelled: true } },
+      'calendar:create': { title: 'Plan', category: 'work', taskId: 't1', projectId: null, startedAt: 100, endedAt: 200, repeat: 'none', weekdays: [], until: null },
+      'calendar:update': { id: 'calendar1', patch: { cancelled: true } },
+      'presence:resolve': { id: 'candidate', decision: 'dismiss' },
+      'agent:config': {},
+      'agent:context': {},
+      'agent:applyPlan': { requestId: 'plan', tasks: [{ title: 'Inboxへ登録' }] },
+      'agent:propose': { sessionId: 'finished', taskId: 't1', reason: '本人の依頼' },
+      'agent:resolve': { id: 'nothing', accept: false },
+      'note:create': { title: 'ノート' },
+      'note:update': { id: 'n1', patch: { body: '更新' } },
+      'note:archive': { id: 'n1', archived: true },
+      'note:markReminded': { id: 'n1', remindAt: 0 },
       'state:get': {},
       'project:create': { name: 'P' },
       'project:update': { id: 'p1', patch: { name: 'P2' } },
       'project:delete': { id: 'p1' },
       'task:create': { title: 'T' },
       'task:update': { id: 't1', patch: { progress: 10 } },
-      'task:move': { id: 't1', status: 'todo', index: 0 },
+      'task:move': { id: 't2', status: 'todo', index: 0 },
       'task:delete': { id: 't2' },
       'task:hasTime': { id: 't1' },
       'goal:create': { goal: '新しい目標' },
       'goal:update': { id: 'g1', patch: { reason: '理由', outcome: { result: '決まった' } } },
       'goal:merge': { ids: ['g1', 'g2'], goal: '統合' },
+      'goal:reparent': { id: 'g1', parentId: 'g2' },
+      'goal:insert': { id: 'g1', goal: '中継' },
       'goal:hide': { id: 'g1', reason: '休止' },
       'goal:restore': { id: 'g1' },
       'goal:ui': { patch: { view: 'map' } },

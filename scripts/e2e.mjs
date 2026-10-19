@@ -114,17 +114,27 @@ function connect(url) {
       const p = pending.get(msg.id)
       if (!p) return
       pending.delete(msg.id)
+      clearTimeout(p.timer)
       if (msg.error) p.reject(new Error(JSON.stringify(msg.error)))
       else p.resolve(msg.result)
     })
-    ws.addEventListener('error', reject)
+    const disconnected = () => {
+      const cause = new Error('CDP connection closed')
+      for (const request of pending.values()) { clearTimeout(request.timer); request.reject(cause) }
+      pending.clear()
+      reject(cause)
+    }
+    ws.addEventListener('error', disconnected)
+    ws.addEventListener('close', disconnected)
     ws.addEventListener('open', () =>
       resolve({
         close: () => ws.close(),
         async evaluate(expression) {
           const id = ++seq
           const result = await new Promise((res, rej) => {
-            pending.set(id, { resolve: res, reject: rej })
+            if (ws.readyState !== WebSocket.OPEN) { rej(new Error('CDP connection closed')); return }
+            const timer = setTimeout(() => { pending.delete(id); rej(new Error('CDP request timed out')) }, 10_000)
+            pending.set(id, { resolve: res, reject: rej, timer })
             ws.send(
               JSON.stringify({
                 id,
@@ -163,7 +173,7 @@ const electron = packaged || createRequire(import.meta.url)('electron')
 const buildRoot = packaged ? path.join(path.dirname(packaged), 'resources', 'app') : ROOT
 const expectedPage = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href
 // userData を隔離しないと、起動中の White Box の single instance lock に当たって無言で終了する
-const args = ['--hidden', '--open=hud', '--remote-debugging-port=' + PORT, '--user-data-dir=' + path.join(DATA, 'userdata')]
+const args = ['--hidden', '--open=hud,main', '--remote-debugging-port=' + PORT, '--user-data-dir=' + path.join(DATA, 'userdata')]
 if (!packaged) args.unshift('.')
 console.log('対象: ' + electron)
 const env = { ...process.env, WHITEBOX_DATA_DIR: DATA }
@@ -326,7 +336,21 @@ try {
 } catch (err) {
   console.error('E2E が途中で失敗:', err)
 } finally {
-  child.kill()
-  await wait(500)
+  try {
+    const target = await findTarget('#main', 5)
+    const main = await connect(target.webSocketDebuggerUrl)
+    await waitReady(main)
+    let quitResponseError = null
+    void main.evaluate('void window.whitebox.call("app:quit")').catch((cause) => { quitResponseError = String(cause) })
+    const deadline = Date.now() + 15_000
+    while (child.exitCode === null && child.signalCode === null && Date.now() < deadline) await wait(100)
+    if (child.exitCode !== 0 || child.signalCode !== null) throw new Error('検証アプリが自然終了しなかった')
+    console.log('Quit response observation:', JSON.stringify({ error: quitResponseError, exitCode: child.exitCode, signalCode: child.signalCode }))
+    check('保存した検証アプリが自然終了する', true)
+  } catch (cause) {
+    console.error('E2E の終了に失敗:', cause)
+    exitCode = 1
+    if (child.exitCode === null && child.signalCode === null) child.kill()
+  }
   process.exit(exitCode)
 }

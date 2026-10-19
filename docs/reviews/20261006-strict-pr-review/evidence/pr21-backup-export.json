@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "stage": "before_export_recovery_asset_guard",
+  "origin": "artifactreview/strict-20261006/export-backup-probe/run-GcoRpg/report.json",
+  "fixture": {
+    "data": "synthetic only",
+    "nativeUserDataLookup": "stubbed or isolated explicit QA directory",
+    "productionDatabaseIncluded": false
+  },
+  "source": "Actual current Store + createDataIO TS source; Electron native dialog response mocked, filesystem real.",
+  "selectedBackupFamily": "before-import-<timestamp>.json",
+  "dailyBackupTaskIds": [
+    "C"
+  ],
+  "beforeImportBackupTaskIds": [
+    "A"
+  ],
+  "afterExportBackupTaskIds": [
+    "B"
+  ],
+  "copiesOfPreImportRecordBefore": 1,
+  "copiesOfPreImportRecordAfter": 0,
+  "currentDatabaseUnchanged": true,
+  "exportReturnedSuccessfully": true,
+  "limits": [
+    "Native save-dialog selection/overwrite approval is modeled by a fake dialog response; this is not an observed native dialog click.",
+    "Recovery-asset destination protection and reserving the backup subtree are added design decisions; ordinary external exports remain allowed."
+  ]
+}

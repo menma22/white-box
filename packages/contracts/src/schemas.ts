@@ -1,8 +1,16 @@
+import { GoogleCalendarStateSchema } from './google-calendar.js'
 /**
  * データ型の実行時スキーマ。型の正は @white-box/core/types の interface（Decision Record D-02）。
  * スキーマと型がずれると末尾の Exact 検査がコンパイルで落ちる。
  */
 import { z } from 'zod'
+import { GoalCriteriaSchema } from './goal-criteria.js'
+import { PresenceCandidatesSchema } from './presence.js'
+import { TaskSuggestionSchema } from './agent.js'
+import { NoteSchema } from './notes.js'
+import { TaskControlSchema } from './task-control.js'
+import { FixedWorkSchema, WeeklyBudgetPlanSchema, WeeklyTimeBudgetSchema } from './planning.js'
+import { CalendarBlockSchema } from './calendar.js'
 import type {
   AppState,
   GoalHistory,
@@ -20,6 +28,7 @@ import type {
   SessionEvent,
   SessionEventType,
   SessionState,
+  SessionMode,
   Settings,
   Task,
   TaskSegment,
@@ -33,8 +42,9 @@ export const IdSchema = z.string()
 export const TaskStatusSchema = z.enum(['inbox', 'todo', 'doing', 'done'])
 export const PrioritySchema = z.enum(['low', 'normal', 'high'])
 export const SessionStateSchema = z.enum(['running', 'paused', 'ended'])
+export const SessionModeSchema = z.enum(['timer', 'stopwatch', 'pomodoro'])
 export const WindowKindSchema = z.enum(['main', 'start', 'hud', 'expire', 'review', 'current'])
-export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'break', 'excluded'])
+export const PauseReasonSchema = z.enum(['manual', 'suspend', 'lock', 'break', 'excluded', 'expired', 'task-management'])
 /** 'excluded' は終了後の申告なので session:pause では受けない。 */
 export const LivePauseReasonSchema = z.enum(['manual', 'suspend', 'lock'])
 
@@ -43,17 +53,22 @@ export const ProjectSchema = z.object({
   name: z.string(),
   hue: z.number(),
   archived: z.boolean(),
+  priority: PrioritySchema.optional(),
   order: z.number(),
   createdAt: z.number(),
   updatedAt: z.number(),
 })
 
 export const TaskSchema = z.object({
+  ...TaskControlSchema.shape,
   id: IdSchema,
   projectId: IdSchema.nullable(),
   parentId: IdSchema.nullable(),
   title: z.string(),
   notes: z.string(),
+  problems: z.string().optional(),
+  decisions: z.string().optional(),
+  nextContext: z.string().optional(),
   status: TaskStatusSchema,
   progress: z.number(),
   priority: PrioritySchema,
@@ -64,6 +79,10 @@ export const TaskSchema = z.object({
   createdInSessionId: IdSchema.nullable(),
   due: z.string().nullable().optional(),
   goalNodeId: IdSchema.nullable().optional(),
+  remainingEffortMinutes: z.number().finite().nonnegative().nullable().optional(),
+  safetyBufferMinutes: z.number().finite().nonnegative().nullable().optional(),
+  committedAt: z.number().finite().nonnegative().nullable().optional(),
+  lastProgressAt: z.number().finite().nonnegative().nullable().optional(),
 })
 
 export const OutcomeStatusSchema = z.enum(['pending', 'achieved', 'not-achieved'])
@@ -85,6 +104,7 @@ export const GoalNodeSchema = z.object({
   hiddenAt: z.number().nullable(),
   hideReason: z.string(),
   outcome: OutcomeRecordSchema.optional(),
+  criteria: GoalCriteriaSchema.optional(),
 })
 
 export const GoalIssueKindSchema = z.enum(['problem', 'question', 'idea'])
@@ -101,7 +121,7 @@ export const GoalIssueSchema = z.object({
 export const GoalHistorySchema = z.object({
   id: IdSchema,
   at: z.number(),
-  type: z.enum(['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote']),
+  type: z.enum(['create-head', 'create-child', 'hide', 'unhide', 'merge', 'promote', 'reparent', 'insert']),
   nodeId: IdSchema,
   parentId: IdSchema.nullable(),
   note: z.string(),
@@ -185,6 +205,10 @@ export const SessionSchema = z.object({
   startedAt: z.number(),
   endedAt: z.number().nullable(),
   plannedMs: z.number(),
+  mode: SessionModeSchema.optional(),
+  pomodoroBreakMs: z.number().positive().optional(),
+  pomodoroWorkMs: z.number().positive().optional(),
+  pomodoroAutoResume: z.boolean().optional(),
   state: SessionStateSchema,
   segments: z.array(TaskSegmentSchema),
   pauses: z.array(PauseIntervalSchema),
@@ -199,6 +223,9 @@ export const SessionSchema = z.object({
 export const SettingsSchema = z.object({
   displayName: z.string(),
   defaultSessionMinutes: z.number(),
+  defaultSessionMode: SessionModeSchema.optional(),
+  pomodoroBreakMinutes: z.number().int().min(1).max(180).optional(),
+  pomodoroAutoResume: z.boolean().optional(),
   defaultExtendMinutes: z.number(),
   extendOptions: z.array(z.number()),
   shortcuts: z.object({
@@ -211,9 +238,12 @@ export const SettingsSchema = z.object({
   soundOnExpire: z.boolean(),
   dayStartHour: z.number(),
   lastWelcomeDate: z.string().nullable(),
-  stallWarningDays: z.number(),
+  stallWarningDays: z.number().finite().positive(),
   showSessionCard: z.boolean(),
   onboardedAt: z.number().nullable(),
+  remindToStart: z.boolean().optional(),
+  startReminderMinutes: z.number().int().min(1).max(60).optional(),
+  enableAgentApi: z.boolean().optional(),
 })
 
 export const LiveTickSchema = z.object({
@@ -222,21 +252,30 @@ export const LiveTickSchema = z.object({
   elapsedMs: z.number(),
   remainingMs: z.number(),
   plannedMs: z.number(),
+  mode: SessionModeSchema.optional(),
   activeTaskId: IdSchema.nullable(),
 })
 
 export const AppStateSchema = z.object({
+  googleCalendar: GoogleCalendarStateSchema.optional(),
+  presenceCandidates: PresenceCandidatesSchema.optional(),
   revision: z.number(),
   projects: z.array(ProjectSchema),
   tasks: z.array(TaskSchema),
   sessions: z.array(SessionSchema),
   settings: SettingsSchema,
   dayNotes: z.record(z.string(), z.string()),
+  taskSuggestions: z.array(TaskSuggestionSchema).optional(),
+  notes: z.array(NoteSchema).optional(),
   goalMap: GoalMapSchema,
   live: LiveTickSchema.nullable(),
   breakTimer: z.object({ startedAt: z.number(), endsAt: z.number(), notifiedAt: z.number().nullable() }).nullable(),
   recovery: z.object({ sessionId: IdSchema, lastKnownAt: z.number() }).nullable(),
   pendingReview: z.object({ sessionId: IdSchema, thenStart: z.boolean() }).nullable(),
+  weeklyBudgets: z.array(WeeklyTimeBudgetSchema).optional(),
+  weeklyBudgetDefaults: WeeklyBudgetPlanSchema.optional(),
+  fixedWork: z.array(FixedWorkSchema).optional(),
+  calendarBlocks: z.array(CalendarBlockSchema).optional(),
 })
 
 // ── スキーマ ⇄ core 型の等価性検査（ずれるとここがコンパイルエラーになる）──
@@ -246,6 +285,7 @@ const _exact: [
   Exact<z.infer<typeof TaskStatusSchema>, TaskStatus>,
   Exact<z.infer<typeof PrioritySchema>, Priority>,
   Exact<z.infer<typeof SessionStateSchema>, SessionState>,
+  Exact<z.infer<typeof SessionModeSchema>, SessionMode>,
   Exact<z.infer<typeof WindowKindSchema>, WindowKind>,
   Exact<z.infer<typeof ProjectSchema>, Project>,
   Exact<z.infer<typeof TaskSchema>, Task>,
@@ -265,5 +305,5 @@ const _exact: [
   Exact<z.infer<typeof GoalIssueSchema>, GoalIssue>,
   Exact<z.infer<typeof GoalHistorySchema>, GoalHistory>,
   Exact<z.infer<typeof GoalMapSchema>, GoalMap>,
-] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 void _exact

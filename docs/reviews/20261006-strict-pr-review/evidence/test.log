@@ -1,0 +1,1938 @@
+pnpm.CMD : $ pnpm build:packages && vitest run
+発生場所 行:2 文字:1340
++ ... view/strict-20261006/$gate.log"; & pnpm.cmd run $gate *> $log; $code= ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ pnpm build:packages && vitest run:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+$ pnpm -r --filter "./packages/*" run build
+Scope: 2 of 4 workspace projects
+packages/core build$ tsc -p tsconfig.json
+packages/core build: Done
+packages/contracts build$ tsc -p tsconfig.json
+packages/contracts build: Done
+
+ RUN  v2.1.9 .
+
+ ✓ apps/desktop/tests/agent-handlers.test.ts (25 tests) 28ms
+ ✓ apps/desktop/tests/session-modes.test.ts (19 tests) 17ms
+ ✓ apps/desktop/tests/handlers.test.ts (13 tests) 58ms
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported missing current w
+ork through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported done current work
+ through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: 完了済みのタスクは Todo に戻してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported blocked current w
+ork through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: Blocked
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported external current 
+work through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: 担当者 · 返答 待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported hard current work
+ through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: 先行タスク「before」の完了待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > stops imported archived current 
+work through the public import command and keeps measured focus stable
+[white-box] コマンド失敗: session:resume Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:30:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > keeps an imported blocked sessio
+n safely stopped when its recovery save fails after the import was saved
+[white-box] コマンド失敗: data:import Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:55:103)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:57:64)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at commitSafetyStop (.\a
+pps\desktop\src\app\lifecycle.ts:81:5)
+    at Module.restoreOpenSession (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-a
+nd-risk\apps\desktop\src\app\lifecycle.ts:39:5)
+    at data:import (.\apps\d
+esktop\src\app\handlers.ts:391:9)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:10)
+[white-box] コマンド失敗: session:resume Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:70:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects missing on start, switch
+, Doing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: タスクが見つからない
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:113:24)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:84:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: task:move Error: タスクが見つからない
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:151:22)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:85:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: session:switchTask Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects done on start, switch, D
+oing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: 完了済みのタスクは Todo に戻してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: session:switchTask Error: 完了済みのタスクは Todo に戻してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects blocked on start, switch
+, Doing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: 確認中
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: 確認中
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:132:33)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:84:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: 確認中
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:132:33)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:85:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:switchTask Error: 確認中
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects external on start, switc
+h, Doing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: 担当者 · 返答 待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: 担当者 · 返答 待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:132:33)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:84:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: 担当者 · 返答 待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:132:33)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:85:21
+ ✓ apps/desktop/tests/dataio.test.ts (17 tests) 351ms
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:switchTask Error: 担当者 · 返答 待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects hard on start, switch, D
+oing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: 先行タスク「before」の完了待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: 先行タスク「before」の完了待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:132:33)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:84:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: 先行タスク「before」の完了待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:132:33)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:85:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:switchTask Error: 先行タスク「before」の完了待ち
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects archived on start, switc
+h, Doing update and move without partial changes
+[white-box] コマンド失敗: session:start Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:143:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:81:19
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:132:33)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:84:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:132:33)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:85:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:switchTask Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:217:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:90:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects self/cyclic/new-missing/
+overlapping links atomically and rejects blocked Doing creation
+[white-box] コマンド失敗: task:update Error: 自分自身を先行タスクにできない
+    at Module.validateTaskLinks (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-an
+d-risk\packages\core\src\task-control.ts:61:31)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:131:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:130:21
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: task:update Error: 先行タスクのリンクが循環している
+    at validateTaskGraph (.\
+packages\core\src\task-control.ts:81:43)
+    at Module.validateTaskLinks (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-an
+d-risk\packages\core\src\task-control.ts:64:3)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:131:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:130:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: task:update Error: 先行タスクが見つからない
+    at Module.validateTaskLinks (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-an
+d-risk\packages\core\src\task-control.ts:62:75)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:131:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:130:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:update Error: 同じタスクを重複してリンクできない
+    at Module.validateTaskLinks (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-an
+d-risk\packages\core\src\task-control.ts:58:51)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:131:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:130:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rejects changes that conflict wi
+th running or paused work through direct and agent paths
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:delete Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.deleteTask (.\
+apps\desktop\src\domain\task-ops.ts:196:3)
+    at task:delete (.\apps\d
+esktop\src\app\handlers.ts:75:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:delete Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.deleteTask (.\
+apps\desktop\src\domain\task-ops.ts:196:3)
+    at task:delete (.\apps\d
+esktop\src\app\handlers.ts:75:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: project:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateProject (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\domain\task-ops.ts:35:3)
+    at project:update (.\app
+s\desktop\src\app\handlers.ts:47:46)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:133:3)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:update Error: 現在のタスク変更にはセッションの切替を使う
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:285:56)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:delete Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.deleteTask (.\
+apps\desktop\src\domain\task-ops.ts:196:3)
+    at task:delete (.\apps\d
+esktop\src\app\handlers.ts:75:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:delete Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.deleteTask (.\
+apps\desktop\src\domain\task-ops.ts:196:3)
+    at task:delete (.\apps\d
+esktop\src\app\handlers.ts:75:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: project:update Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateProject (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\domain\task-ops.ts:35:3)
+    at project:update (.\app
+s\desktop\src\app\handlers.ts:47:46)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: task:move Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at updateTask (.\apps\de
+sktop\src\domain\task-ops.ts:133:3)
+    at Module.moveTask (.\ap
+ps\desktop\src\domain\task-ops.ts:153:17)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:43)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: session:update Error: 現在のタスク変更にはセッションの切替を使う
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:285:56)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:152:23
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > gates imported blocked live work
+ on manual, toggle, recovery, extension and automatic resumes
+[white-box] コマンド失敗: session:resume Error: Blocked
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: session:toggle Error: Blocked
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at Object.handlers.<computed> [as session:resume] (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2
+-effort-slack-aging-and-risk\apps\desktop\src\app\handlers.ts:414:58)
+    at session:toggle (.\app
+s\desktop\src\app\handlers.ts:191:77)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: recovery:resume Error: Blocked
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at recovery:resume (.\ap
+ps\desktop\src\app\handlers.ts:322:14)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: session:extend Error: Blocked
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:extend (.\app
+s\desktop\src\app\handlers.ts:196:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > gates imported missing live work
+ on manual, toggle, recovery, extension and automatic resumes
+[white-box] コマンド失敗: session:resume Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: session:toggle Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at Object.handlers.<computed> [as session:resume] (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2
+-effort-slack-aging-and-risk\apps\desktop\src\app\handlers.ts:414:58)
+    at session:toggle (.\app
+s\desktop\src\app\handlers.ts:191:77)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: recovery:resume Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at recovery:resume (.\ap
+ps\desktop\src\app\handlers.ts:322:14)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: session:extend Error: タスクが見つからない
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:extend (.\app
+s\desktop\src\app\handlers.ts:196:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > gates imported hard live work on
+ manual, toggle, recovery, extension and automatic resumes
+[white-box] コマンド失敗: session:resume Error: 削除された先行タスク (missing) のリンク解除が必要
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: session:toggle Error: 削除された先行タスク (missing) のリンク解除が必要
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at Object.handlers.<computed> [as session:resume] (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2
+-effort-slack-aging-and-risk\apps\desktop\src\app\handlers.ts:414:58)
+    at session:toggle (.\app
+s\desktop\src\app\handlers.ts:191:77)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: recovery:resume Error: 削除された先行タスク (missing) のリンク解除が必要
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at recovery:resume (.\ap
+ps\desktop\src\app\handlers.ts:322:14)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: session:extend Error: 削除された先行タスク (missing) のリンク解除が必要
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:extend (.\app
+s\desktop\src\app\handlers.ts:196:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > gates imported archived live wor
+k on manual, toggle, recovery, extension and automatic resumes
+[white-box] コマンド失敗: session:resume Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:633:57
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: session:toggle Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at Object.handlers.<computed> [as session:resume] (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2
+-effort-slack-aging-and-risk\apps\desktop\src\app\handlers.ts:414:58)
+    at session:toggle (.\app
+s\desktop\src\app\handlers.ts:191:77)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+[white-box] コマンド失敗: recovery:resume Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at recovery:resume (.\ap
+ps\desktop\src\app\handlers.ts:322:14)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+[white-box] コマンド失敗: session:extend Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:extend (.\app
+s\desktop\src\app\handlers.ts:196:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:169:122
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > agent completion of a current ta
+sk is rejected and imported blockers can be removed independently
+[white-box] コマンド失敗: agent:resolve Error: セッションを終了してから、現在のタスクや先行タスクの待ち状態を変更する
+    at Module.assertLiveWorkPreserved (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-ag
+ing-and-risk\apps\desktop\src\domain\task-control.ts:15:13)
+    at Module.updateTask (.\
+apps\desktop\src\domain\task-ops.ts:133:3)
+    at agent:resolve (.\apps
+\desktop\src\app\agent-handlers.ts:88:47)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:219:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rolls back task/start/switch/rev
+iew changes on save failure, before window side effects
+[white-box] コマンド失敗: task:update Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:228:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at task:update (.\apps\d
+esktop\src\app\handlers.ts:67:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:232:21
+[white-box] コマンド失敗: task:move Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:228:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at task:move (.\apps\des
+ktop\src\app\handlers.ts:71:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:232:21
+[white-box] コマンド失敗: task:delete Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:228:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at task:delete (.\apps\d
+esktop\src\app\handlers.ts:75:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:232:21
+[white-box] コマンド失敗: session:start Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:228:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at session:start (.\apps
+\desktop\src\app\handlers.ts:156:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:232:21
+[white-box] コマンド失敗: session:switchTask Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:238:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at session:switchTask (.
+\apps\desktop\src\app\handlers.ts:227:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:240:19
+[white-box] コマンド失敗: session:review Error: disk full
+    at Object.<anonymous> (.
+\apps\desktop\tests\task-control.test.ts:238:42)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as save] (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/p
+hase-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:227:35)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at session:review (.\app
+s\desktop\src\app\handlers.ts:265:9)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:246:19
+
+stderr | apps/desktop/tests/task-control.test.ts > task control public command gates > rolls back manual and recovery r
+esume on save failure while preserving recovery UI
+[white-box] コマンド失敗: session:resume Error: disk full
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:258:33)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:181:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:262:21
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2
+-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+[white-box] コマンド失敗: recovery:resume Error: disk full
+    at Object.ctx.publish (.
+\apps\desktop\tests\task-control.test.ts:258:33)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at recovery:resume (.\ap
+ps\desktop\src\app\handlers.ts:327:9)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+task-control.test.ts:262:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+ ✓ apps/desktop/tests/task-control.test.ts (27 tests) 120ms
+ ✓ apps/desktop/tests/goal-ops.test.ts (24 tests) 570ms
+ ✓ apps/desktop/tests/windows-shutdown.test.ts (24 tests) 28ms
+ ✓ packages/contracts/tests/commands.test.ts (19 tests) 39ms
+ ✓ packages/core/tests/activity.test.ts (14 tests) 18ms
+ ✓ apps/desktop/tests/session-ops.test.ts (19 tests) 10ms
+ ✓ apps/desktop/tests/task-priority.test.ts (18 tests) 45ms
+ ✓ apps/renderer/tests/note-autosave.test.ts (12 tests) 13ms
+ ✓ apps/desktop/tests/note-ops.test.ts (10 tests) 9ms
+ ✓ apps/desktop/tests/renderer-flush.test.ts (9 tests) 16ms
+ ✓ apps/renderer/tests/selectors.test.ts (12 tests) 8ms
+ ✓ packages/core/tests/task-priority.test.ts (29 tests) 8ms
+ ✓ apps/desktop/tests/start-reminder-service.test.ts (8 tests) 8ms
+stderr | apps/desktop/tests/store-save.test.ts > atomic Store.save sharing-conflict recovery > persists the memory safe
+ty stop after failed import recovery and restores it without accumulating work
+[white-box] コマンド失敗: data:import Error: persistent sharing conflict
+    at Object.<anonymous> (.
+\apps\desktop\tests\store-save.test.ts:135:47)
+    at Object.mockCall (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-
+2-effort-slack-aging-and-risk/node_modules/.pnpm/@vitest+spy@2.1.9/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.renameSync (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phas
+e-2-effort-slack-aging-and-risk/node_modules/.pnpm/tinyspy@3.0.2/node_modules/tinyspy/dist/index.js:45:80)
+    at Store.replaceFile (.\
+apps\desktop\src\infra\store.ts:165:12)
+    at Store.save (.\apps\de
+sktop\src\infra\store.ts:158:10)
+    at Object.ctx.publish (.
+\apps\desktop\tests\store-save.test.ts:126:60)
+    at Module.commitChanges (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ri
+sk\apps\desktop\src\app\commit.ts:10:9)
+    at commitSafetyStop (.\a
+pps\desktop\src\app\lifecycle.ts:81:5)
+    at Module.restoreOpenSession (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-a
+nd-risk\apps\desktop\src\app\lifecycle.ts:39:5)
+    at data:import (.\apps\d
+esktop\src\app\handlers.ts:391:9) {
+  code: 'EPERM'
+}
+[white-box] コマンド失敗: session:resume Error: アーカイブされたプロジェクトは復元してから開始する
+    at Module.assertTaskExecutable (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging
+-and-risk\packages\core\src\task-control.ts:49:22)
+    at session:resume (.\app
+s\desktop\src\app\handlers.ts:175:7)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+store-save.test.ts:153:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ apps/desktop/tests/store-save.test.ts (22 tests) 1798ms
+ ✓ apps/desktop/tests/planning.test.ts (8 tests) 12ms
+ ✓ apps/desktop/tests/storage-integrity.test.ts (37 tests) 1320ms
+ ✓ apps/desktop/tests/session-boundaries.test.ts (9 tests) 266ms
+ ✓ apps/renderer/tests/task-title-draft.test.ts (9 tests) 7ms
+stderr | apps/desktop/tests/receive.test.ts > 受け口 > 噛み合わない除外は {ok:false} で、記録は 1 ミリ秒も動かない
+[white-box] コマンド失敗: session:update Error: 除外の終わりは始まりより後にする
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:270:41)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:101:27
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: session:update Error: 除外の終わりは始まりより後にする
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:270:41)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:101:27
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: session:update Error: 除外はセッションの開始から終了までの中で指定する
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:271:67)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:101:27
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+[white-box] コマンド失敗: session:update Error: 除外どうしが重なっている
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:272:38)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:101:27
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+stderr | apps/desktop/tests/receive.test.ts > 受け口 > 観測された一時停止と重なる除外は {ok:false}
+[white-box] コマンド失敗: session:update Error: その時間はすでに一時停止として記録されている
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:275:13)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:111:25
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+stderr | apps/desktop/tests/receive.test.ts > 受け口 > 終わっていないセッションへの除外は {ok:false}
+[white-box] コマンド失敗: session:update Error: 終わっていないセッションには除外を申告できない
+    at replaceExclusions (.\
+apps\desktop\src\domain\session-ops.ts:265:27)
+    at Module.editSession (.
+\apps\desktop\src\domain\session-ops.ts:257:24)
+    at session:update (.\app
+s\desktop\src\app\handlers.ts:289:24)
+    at handlers.<computed> (C:\Users\mahim\実行場\white-box\.review-worktrees\white-box\phase-2-effort-slack-aging-and-ris
+k\apps\desktop\src\app\handlers.ts:414:58)
+    at Module.dispatch (.\ap
+ps\desktop\src\app\handlers.ts:436:16)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:36)
+    at .\apps\desktop\tests\
+receive.test.ts:126:25
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+
+stderr | apps/desktop/tests/receive.test.ts > 受け口 > 契約に無いコマンド・綴り違いのキーも {ok:false}
+[white-box] コマンド失敗: session:steal Error: 未知のコマンド: session:steal
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:12:32)
+    at .\apps\desktop\tests\
+receive.test.ts:136:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-eff
+ort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.
+js:126:11
+[white-box] コマンド失敗: session:update ZodError: [
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "exclusion"
+    ],
+    "path": [
+      "patch"
+    ],
+    "message": "Unrecognized key: \"exclusion\""
+  }
+]
+    at Module.parseArgs (.\p
+ackages\contracts\src\commands.ts:234:30)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:60)
+    at .\apps\desktop\tests\
+receive.test.ts:137:19
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-eff
+ort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+[white-box] コマンド失敗: session:update ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "patch",
+      "exclusions",
+      0,
+      "endedAt"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "ended"
+    ],
+    "path": [
+      "patch",
+      "exclusions",
+      0
+    ],
+    "message": "Unrecognized key: \"ended\""
+  }
+]
+    at Module.parseArgs (.\p
+ackages\contracts\src\commands.ts:234:30)
+    at Module.receive (.\app
+s\desktop\src\app\receive.ts:13:60)
+    at .\apps\desktop\tests\
+receive.test.ts:139:14
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort-slack-ag
+ing-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effort
+-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-effor
+t-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/mahim/%E5%AE%9F%E8%A1%8C%E5%A0%B4/white-box/.review-worktrees/white-box/phase-2-eff
+ort-slack-aging-and-risk/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+ ✓ apps/desktop/tests/receive.test.ts (8 tests) 34ms
+ ✓ packages/core/tests/engine.test.ts (15 tests) 10ms
+ ✓ apps/renderer/tests/task-control-draft.test.ts (7 tests) 8ms
+ ✓ apps/desktop/tests/note-reminders.test.ts (8 tests) 24ms
+ ✓ apps/desktop/tests/task-ops.test.ts (9 tests) 10ms
+ ✓ apps/desktop/tests/planning-store.test.ts (7 tests) 329ms
+ ✓ apps/renderer/tests/day-ribbon.test.ts (9 tests) 8ms
+ ✓ apps/desktop/tests/goal-criteria.test.ts (6 tests) 280ms
+ ✓ apps/desktop/tests/presence-candidates.test.ts (5 tests) 7ms
+ ✓ packages/core/tests/weekly-budget.test.ts (19 tests) 7ms
+ ✓ apps/renderer/tests/optional-duration-draft.test.ts (6 tests) 8ms
+ ✓ packages/core/tests/task-control.test.ts (6 tests) 64ms
+ ✓ apps/desktop/tests/shutdown.test.ts (8 tests) 8ms
+ ✓ apps/renderer/tests/editor-flush.test.ts (6 tests) 5ms
+ ✓ apps/desktop/tests/pomodoro-recovery.test.ts (5 tests) 8ms
+ ✓ apps/desktop/tests/agent-mcp.test.ts (2 tests) 279ms
+ ✓ packages/core/tests/notes.test.ts (5 tests) 5ms
+ ✓ apps/desktop/tests/start-reminder.test.ts (7 tests) 6ms
+ ✓ apps/renderer/tests/budget-drafts.test.ts (6 tests) 4ms
+ ✓ packages/contracts/tests/notes.test.ts (6 tests) 24ms
+ ✓ packages/contracts/tests/planning.test.ts (4 tests) 11ms
+ ✓ packages/core/tests/goal-criteria.test.ts (11 tests) 6ms
+ ✓ apps/desktop/tests/task-hierarchy.test.ts (4 tests) 23ms
+ ✓ apps/desktop/tests/agent-api.test.ts (7 tests) 1443ms
+   ✓ 本物のローカルHTTP > 認証なしと間違った認証を拒否する 415ms
+ ✓ apps/desktop/tests/legacy-expiry.test.ts (2 tests) 6ms
+ ✓ packages/core/tests/presence.test.ts (3 tests) 4ms
+ ✓ apps/desktop/tests/agent-service.test.ts (3 tests) 91ms
+ ✓ apps/desktop/tests/input-activity.test.ts (2 tests) 6ms
+ ✓ apps/renderer/tests/context-draft.test.ts (4 tests) 3ms
+ ✓ apps/desktop/tests/context-conflicts.test.ts (2 tests) 6ms
+ ✓ packages/contracts/tests/task-control.test.ts (12 tests) 13ms
+ ✓ packages/contracts/tests/task-priority.test.ts (11 tests) 16ms
+ ✓ apps/desktop/tests/task-control-store.test.ts (5 tests) 6ms
+ ✓ packages/contracts/tests/goal-criteria.test.ts (2 tests) 7ms
+ ✓ apps/renderer/tests/live-timer.test.ts (3 tests) 3ms
+ ✓ apps/renderer/tests/session-edit.test.ts (2 tests) 3ms
+ ✓ packages/contracts/tests/presence.test.ts (2 tests) 5ms
+ ✓ apps/renderer/tests/format.test.ts (1 test) 4ms
+ ✓ apps/renderer/tests/task-priority.test.ts (1 test) 2ms
+
+ Test Files  61 passed (61)
+      Tests  615 passed (615)
+   Start at  20:53:58
+   Duration  6.85s (transform 2.15s, setup 0ms, collect 11.11s, tests 7.54s, environment 14ms, prepare 9.60s)
+

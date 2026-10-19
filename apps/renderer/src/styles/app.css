@@ -4,6 +4,7 @@
 @import './screens/view-common.css';
 @import './screens/today.css';
 @import './screens/history.css';
+@import './screens/activity.css';
 @import './screens/board.css';
 @import './screens/settings.css';
 @import './screens/slider.css';
@@ -16,3 +17,11 @@
 @import './screens/current.css';
 @import './screens/goal-tasks.css';
 @import './screens/goals.css';
+@import './screens/presence.css';
+@import './screens/agents.css';
+@import './screens/notes.css';
+@import './screens/task-control.css';
+@import './screens/phase2-context.css';
+
+@import './screens/week-calendar.css';
+@import './screens/google-calendar.css';

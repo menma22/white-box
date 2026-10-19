@@ -1,0 +1,2484 @@
+{
+  "schema": 1,
+  "sourceSnapshot": {
+    "revision": "97e583d5",
+    "mode": "source Electron"
+  },
+  "scope": "Selected PR21/22/23-relevant reports from the successful serial thirteen-script source suite; no claim that these five reports cover the other scripts",
+  "packagedRuntime": "PASS at 97e583d5",
+  "manualPixelReview": "pending",
+  "reports": [
+    {
+      "script": "e2e-dependencies.mjs",
+      "origin": ".e2e-dependencies/run-XkOAcn/report.json",
+      "reportedExitCode": null,
+      "checks": 62,
+      "passed": 62,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy optional fields load without altering original task",
+          "passed": true
+        },
+        {
+          "name": "A blocker update retains one waiting editor and one context editor",
+          "passed": true
+        },
+        {
+          "name": "Opening the external editor saves the entered Blocked reason",
+          "passed": true
+        },
+        {
+          "name": "External save preserves progress, status and completion",
+          "passed": true
+        },
+        {
+          "name": "External wait dates persist",
+          "passed": true
+        },
+        {
+          "name": "Dedicated external UI surfaces who, what, since and confirmation action",
+          "passed": true
+        },
+        {
+          "name": "Confirmation action opens editable task details",
+          "passed": true
+        },
+        {
+          "name": "Explicit unblock keeps 70% progress",
+          "passed": true
+        },
+        {
+          "name": "Inbox external waits are visible, archived waits require explicit reveal",
+          "passed": true
+        },
+        {
+          "name": "Archived external waits can be revealed without making them startable",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"missing\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmhfk31d4zvx\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:move: {\"id\":\"tsk_muwmhfk31d4zvx\",\"status\":\"doing\",\"index\":0}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmhfkxrjzr0q\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfjxzl2jrw\",\"patch\":{\"hardDependencies\":[\"tsk_muwmhfk31d4zvx\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"hardDependencies\":[\"tsk_muwmhfk31d4zvx\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"hardDependencies\":[\"missing\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"hardDependancies\":[]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"externalBlock\":{\"who\":\"\",\"what\":\"reply\",\"since\":\"invalid\",\"lastContactOn\":null,\"nextFollowUpOn\":null}}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Related task navigation works and rejected UI edits show an error without changing data",
+          "passed": true
+        },
+        {
+          "name": "start: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded",
+          "passed": true
+        },
+        {
+          "name": "current: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded",
+          "passed": true
+        },
+        {
+          "name": "Recommended predecessor never forces or prevents starting",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:switchTask: {\"taskId\":\"tsk_muwmhfk31d4zvx\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Completing the hard predecessor permits Inbox commitment",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfjxzl2jrw\",\"patch\":{\"status\":\"todo\"}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:delete: {\"id\":\"tsk_muwmhfjxzl2jrw\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"blocked\":true}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmhfk31d4zvx\",\"patch\":{\"externalBlock\":{\"who\":\"担当\",\"what\":\"回答\",\"since\":\"2026-10-06\",\"lastContactOn\":null,\"nextFollowUpOn\":\"2026-10-06\"}}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Deleting a hard predecessor preserves its dangling link",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmhfk31d4zvx\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Missing predecessor is visible with explicit removal action",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmhfk31d4zvx\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Control fields, task progress, histories and goal states survive restart",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"legacy\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmhfk31d4zvx\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "blocked-recovery: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Imported blocked live task is paused on restart",
+          "passed": true
+        },
+        {
+          "name": "Rejected recovery:resume: {}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Recovery UI exposes blocker and disables resume",
+          "passed": true
+        },
+        {
+          "name": "No renderer exceptions or console errors",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-activity.mjs",
+      "origin": ".e2e/activity-run-n7t1nx/result.json",
+      "reportedExitCode": 0,
+      "checks": 54,
+      "passed": 54,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Isolated profile starts with no projects, tasks or sessions",
+          "passed": true
+        },
+        {
+          "name": "Fixtures use IPC edits and preserve deleted-task session references",
+          "passed": true
+        },
+        {
+          "name": "Editing times and completing tasks do not assess the linked goal",
+          "passed": true
+        },
+        {
+          "name": "Previous week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Previous week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Previous week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Weekly metrics count three worked days, five original sessions and one completed task",
+          "passed": true
+        },
+        {
+          "name": "Week starts Monday and includes all seven daily totals, including zero days",
+          "passed": true
+        },
+        {
+          "name": "In-period session values sum to the same 185 minutes",
+          "passed": true
+        },
+        {
+          "name": "Original 60-minute boundary session is distinguished from the 30-minute daily portion",
+          "passed": true
+        },
+        {
+          "name": "02-minimum-week: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "The other 30 boundary minutes belong to Sunday of the preceding week",
+          "passed": true
+        },
+        {
+          "name": "Next week restores the original selection",
+          "passed": true
+        },
+        {
+          "name": "Historical fixtures do not leak into today",
+          "passed": true
+        },
+        {
+          "name": "Live stopwatch appears before a session is ended",
+          "passed": true
+        },
+        {
+          "name": "Real pause/resume records an observed interval",
+          "passed": true
+        },
+        {
+          "name": "Today: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Today: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Today: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Today shows declared progress, observed pause and exclusion separately",
+          "passed": true
+        },
+        {
+          "name": "Timeline work descriptions remain accessible",
+          "passed": true
+        },
+        {
+          "name": "04-minimum-today: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Fourteen consecutive trend days include independently expected nonzero and zero values",
+          "passed": true
+        },
+        {
+          "name": "Trend draws all fourteen points, including zero days",
+          "passed": true
+        },
+        {
+          "name": "Expired live timer contributes only its one-minute work cap and stops growing",
+          "passed": true
+        },
+        {
+          "name": "Viewing activity never changes declared progress or goal achievement",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves every edited session, task declaration and unassessed goal",
+          "passed": true
+        },
+        {
+          "name": "Restarted daily total retains the edited pause/exclusion and expired timer cap",
+          "passed": true
+        },
+        {
+          "name": "The saved exclusion and historical session IDs survive reload",
+          "passed": true
+        },
+        {
+          "name": "Previous week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Previous week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Previous week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Weekly metrics count three worked days, five original sessions and one completed task",
+          "passed": true
+        },
+        {
+          "name": "Week starts Monday and includes all seven daily totals, including zero days",
+          "passed": true
+        },
+        {
+          "name": "In-period session values sum to the same 185 minutes",
+          "passed": true
+        },
+        {
+          "name": "Original 60-minute boundary session is distinguished from the 30-minute daily portion",
+          "passed": true
+        },
+        {
+          "name": "02-minimum-week: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "The other 30 boundary minutes belong to Sunday of the preceding week",
+          "passed": true
+        },
+        {
+          "name": "Next week restores the original selection",
+          "passed": true
+        },
+        {
+          "name": "Historical fixtures do not leak into today",
+          "passed": true
+        },
+        {
+          "name": "History retains the independent all-time total across month paging",
+          "passed": true
+        },
+        {
+          "name": "Selected history month preserves all corresponding daily minutes 2026-09",
+          "passed": true
+        },
+        {
+          "name": "Selected history month preserves all corresponding daily minutes 2026-10",
+          "passed": true
+        },
+        {
+          "name": "Minimum History view keeps bounded date navigation visible without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        },
+        {
+          "name": "Screenshots contain captured PNG evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-task-priority.mjs",
+      "origin": ".e2e/task-priority-run-C4bJ5H/result.json",
+      "reportedExitCode": 0,
+      "checks": 65,
+      "passed": 65,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "first: the owned Main window is natively visible before CDP activation",
+          "passed": true
+        },
+        {
+          "name": "Legacy load leaves optional planning and commitment fields absent",
+          "passed": true
+        },
+        {
+          "name": "Welcome displays Warning, High Risk and Overdue with their reasons",
+          "passed": true
+        },
+        {
+          "name": "Legacy Inbox and unobserved legacy Todo have no warning",
+          "passed": true
+        },
+        {
+          "name": "Welcome excludes archived warnings and shows the Blocked start reason",
+          "passed": true
+        },
+        {
+          "name": "Blocked start is rejected by public IPC without changing saved data",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Today initially keeps current warning context compact and the activity metrics visible",
+          "passed": true
+        },
+        {
+          "name": "Today keeps activity metrics visible without horizontal overflow at 940x620",
+          "passed": true
+        },
+        {
+          "name": "Today shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "Today warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Today warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Today warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Week initially keeps current warning context compact and the activity metrics visible",
+          "passed": true
+        },
+        {
+          "name": "Week keeps activity metrics visible without horizontal overflow at 940x620",
+          "passed": true
+        },
+        {
+          "name": "Past week keeps present warnings out of historical activity",
+          "passed": true
+        },
+        {
+          "name": "Future week keeps present warnings out of future activity",
+          "passed": true
+        },
+        {
+          "name": "Week shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "Week warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Week warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Week warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Board has the same three warnings",
+          "passed": true
+        },
+        {
+          "name": "Board shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "ExternalWaiting is preserved alongside the warning panel",
+          "passed": true
+        },
+        {
+          "name": "Warning title opens detail from the list view too",
+          "passed": true
+        },
+        {
+          "name": "Board title opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Board organize opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Board organize focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Board organize click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Warning detail lets the user save waiting information",
+          "passed": true
+        },
+        {
+          "name": "Five warnings initially stay summarized at the daily welcome",
+          "passed": true
+        },
+        {
+          "name": "Welcome disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Today disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Week disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Board disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "User threshold changes Aging warnings while deadline warnings remain",
+          "passed": true
+        },
+        {
+          "name": "Old Inbox becomes newly committed Todo without an immediate warning",
+          "passed": true
+        },
+        {
+          "name": "Unentered remaining effort and safety buffer stay blank; Slack is unknown",
+          "passed": true
+        },
+        {
+          "name": "Negative UI input reports an error and keeps the saved effort",
+          "passed": true
+        },
+        {
+          "name": "Clearing optional buffer makes Slack unknown",
+          "passed": true
+        },
+        {
+          "name": "Actual save failure restores task state and keeps disk data unchanged",
+          "passed": true
+        },
+        {
+          "name": "Failed duration save blocks detail close and retains the entered draft",
+          "passed": true
+        },
+        {
+          "name": "Folding warning details preserves the visible save error and the saved priority",
+          "passed": true
+        },
+        {
+          "name": "Failed Blocked reason save preserves detail, input, error and saved task",
+          "passed": true
+        },
+        {
+          "name": "Failed submitted external wait preserves form, error and saved task until explicit cancellation",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"remainingEffortMinutes\":-1}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"safetyBufferMinutes\":\"0\"}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"remainingEffortMinute\":1}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"committedAt\":0}",
+          "passed": true
+        },
+        {
+          "name": "Invalid IPC does not change saved values",
+          "passed": true
+        },
+        {
+          "name": "Notes edit preserves the commitment and Aging warning",
+          "passed": true
+        },
+        {
+          "name": "Actual progress records its anchor",
+          "passed": true
+        },
+        {
+          "name": "Inbox action removes that warning",
+          "passed": true
+        },
+        {
+          "name": "User can start a chosen task even when another is Overdue",
+          "passed": true
+        },
+        {
+          "name": "Active work initially folds warnings while retaining current context",
+          "passed": true
+        },
+        {
+          "name": "The user can keep warning details open during active work",
+          "passed": true
+        },
+        {
+          "name": "Working and review do not decrement the remaining estimate",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "restart: the owned Main window is natively visible before CDP activation",
+          "passed": true
+        },
+        {
+          "name": "Restart restores effort, explicit buffer, progress and commitment",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves other legacy unknown fields",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-phase2-planning.mjs",
+      "origin": ".e2e/phase2-planning-run-S4tppu/result.json",
+      "reportedExitCode": 0,
+      "checks": 79,
+      "passed": 79,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "main: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy DB leaves new optional planning, Project Priority and structured Task context absent",
+          "passed": true
+        },
+        {
+          "name": "Legacy free Notes, linked Note and day notes load unchanged",
+          "passed": true
+        },
+        {
+          "name": "Week shows real activity before the closed, unset budget",
+          "passed": true
+        },
+        {
+          "name": "940x620 Week retains visible activity and no horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Unset living hours remain blank without invented values or calculations",
+          "passed": true
+        },
+        {
+          "name": "Missing hours prevent a save",
+          "passed": true
+        },
+        {
+          "name": "Partial budget draft survives a tab change",
+          "passed": true
+        },
+        {
+          "name": "Partial budget draft survives a week change",
+          "passed": true
+        },
+        {
+          "name": "Budget failed save retains all input and blocks leaving the Week tab",
+          "passed": true
+        },
+        {
+          "name": "Weekly Budget failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "All four allocation modes and personal defaults persist exactly",
+          "passed": true
+        },
+        {
+          "name": "Budget displays 91h available and the minimum allocation shortage",
+          "passed": true
+        },
+        {
+          "name": "Reuse opens the saved personal defaults without silently saving the next week",
+          "passed": true
+        },
+        {
+          "name": "Next week reuses every allocation and living input",
+          "passed": true
+        },
+        {
+          "name": "Legacy Project Priority stays unset in the real editor",
+          "passed": true
+        },
+        {
+          "name": "Selecting Project Priority updates the unsaved editor draft",
+          "passed": true
+        },
+        {
+          "name": "Project failed save retains priority and keeps the editor open",
+          "passed": true
+        },
+        {
+          "name": "Project Priority failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Project Priority changes independently from both Task priorities and unedited legacy Projects",
+          "passed": true
+        },
+        {
+          "name": "The actual editor clears Project Priority through Electron without changing Task priorities",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work requires an external reason before registration",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work failed save retains Task, time and external reason",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Registering external schedules uses existing Tasks and does not create Tasks or Sessions",
+          "passed": true
+        },
+        {
+          "name": "This week clips the boundary schedule to 30 minutes",
+          "passed": true
+        },
+        {
+          "name": "Next week counts overlapping external schedules once: 150 minutes",
+          "passed": true
+        },
+        {
+          "name": "Week exposes both real external schedules",
+          "passed": true
+        },
+        {
+          "name": "Cancellation retains the original Fixed Work record and never starts a Session",
+          "passed": true
+        },
+        {
+          "name": "Cancelled schedule remains inspectable in the actual UI",
+          "passed": true
+        },
+        {
+          "name": "Today lists external work only when its interval belongs to today",
+          "passed": true
+        },
+        {
+          "name": "Schedule registration and display still leave the app idle",
+          "passed": true
+        },
+        {
+          "name": "Existing free Notes and linked Note are preserved before editing structured context",
+          "passed": true
+        },
+        {
+          "name": "Problems, Decisions and Next Context save without replacing legacy Notes or linked Notes",
+          "passed": true
+        },
+        {
+          "name": "Changing Task flushes the latest context draft",
+          "passed": true
+        },
+        {
+          "name": "Changing tab flushes the selected Task context",
+          "passed": true
+        },
+        {
+          "name": "Closing the detail flushes the latest decision",
+          "passed": true
+        },
+        {
+          "name": "Task navigation flushes the existing linked Note editor",
+          "passed": true
+        },
+        {
+          "name": "A failed linked Note save blocks tab navigation and retains the full draft",
+          "passed": true
+        },
+        {
+          "name": "Linked Note failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Retry flushes the linked Note and then permits navigation",
+          "passed": true
+        },
+        {
+          "name": "start: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Start shows saved Next Context for the selected existing Task",
+          "passed": true
+        },
+        {
+          "name": "Failed Task context blocks tab, close, Task switch and start while retaining input",
+          "passed": true
+        },
+        {
+          "name": "Task Context failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Successful start flushes the entire retained context first",
+          "passed": true
+        },
+        {
+          "name": "current: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Conflicting Task edits retain both saved text and the local draft and block close",
+          "passed": true
+        },
+        {
+          "name": "Explicit conflict resolution commits the chosen context text",
+          "passed": true
+        },
+        {
+          "name": "Linked Note conflict stops autosave and preserves both texts",
+          "passed": true
+        },
+        {
+          "name": "Accepting the latest Note explicitly restores the saved text",
+          "passed": true
+        },
+        {
+          "name": "Current Work failed save blocks end, switch and close while retaining the context and active Session",
+          "passed": true
+        },
+        {
+          "name": "External end and switch requests also respect the failed Current Work draft",
+          "passed": true
+        },
+        {
+          "name": "An external close request reaches the native close event and retains the failed draft",
+          "passed": true
+        },
+        {
+          "name": "Current Work failed update keeps persisted context unchanged",
+          "passed": true
+        },
+        {
+          "name": "Switching current Task saves the latest context before the Session segment changes",
+          "passed": true
+        },
+        {
+          "name": "current: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Closing and reopening Current Work retains the latest decision",
+          "passed": true
+        },
+        {
+          "name": "An external end request flushes the Current Work context before ending the Session",
+          "passed": true
+        },
+        {
+          "name": "review: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Strict public planning IPC rejects unknown keys without changing saved state",
+          "passed": true
+        },
+        {
+          "name": "Existing free Notes, daily notes and linked Note identity remain intact",
+          "passed": true
+        },
+        {
+          "name": "A new weekly draft remains distinct from the saved budget before quitting",
+          "passed": true
+        },
+        {
+          "name": "An incomplete new week draft does not invent the remaining living hours or commit a budget",
+          "passed": true
+        },
+        {
+          "name": "The final context draft is still unsaved before the actual quit request",
+          "passed": true
+        },
+        {
+          "name": "first: natural quit exits with zero and leaves no owned PID",
+          "passed": true
+        },
+        {
+          "name": "Natural quit flushes the final Task context and preserves every other Database field",
+          "passed": true
+        },
+        {
+          "name": "main: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart deeply restores the full saved file and every exposed Database field",
+          "passed": true
+        },
+        {
+          "name": "Restarted Task detail shows saved Next Context and legacy Notes",
+          "passed": true
+        },
+        {
+          "name": "Restarted linked Note editor retains the entire recovered draft",
+          "passed": true
+        },
+        {
+          "name": "Restarted Week keeps personal budgets and default reuse available",
+          "passed": true
+        },
+        {
+          "name": "Natural quit and restart retain the unsaved weekly draft without changing the saved budget",
+          "passed": true
+        },
+        {
+          "name": "Restart also restores a partially entered new week with the missing hours still blank",
+          "passed": true
+        },
+        {
+          "name": "restart: natural quit exits with zero and leaves no owned PID",
+          "passed": true
+        },
+        {
+          "name": "Final natural quit preserves the full restarted Database",
+          "passed": true
+        },
+        {
+          "name": "Every monitored renderer has no console errors or uncaught exceptions",
+          "passed": true
+        },
+        {
+          "name": "App logs contain no unexpected application errors",
+          "passed": true
+        },
+        {
+          "name": "No owned Electron PID remains after both natural shutdowns",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-notes.mjs",
+      "origin": ".e2e/notes-run-RBpFJ2/result.json",
+      "reportedExitCode": 0,
+      "checks": 22,
+      "passed": 22,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy database loads empty notes and preserves tasks",
+          "passed": true
+        },
+        {
+          "name": "Two clicks during creation produce one note",
+          "passed": true
+        },
+        {
+          "name": "State broadcasts retain the current draft",
+          "passed": true
+        },
+        {
+          "name": "Autosave stores title and body without creating more notes",
+          "passed": true
+        },
+        {
+          "name": "Tab shortcut retains the failed draft and the note editor",
+          "passed": true
+        },
+        {
+          "name": "Tab click also retains the failed draft",
+          "passed": true
+        },
+        {
+          "name": "Leaving after retry persists the entire failed draft",
+          "passed": true
+        },
+        {
+          "name": "Project, task, pin and future date persist",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects misspelled changes without overwriting the body",
+          "passed": true
+        },
+        {
+          "name": "Search matches all words across title and body",
+          "passed": true
+        },
+        {
+          "name": "Creating another note flushes the selected note before switching",
+          "passed": true
+        },
+        {
+          "name": "Archive preserves content, links, pin and date",
+          "passed": true
+        },
+        {
+          "name": "Daily view displays the pinned reminder",
+          "passed": true
+        },
+        {
+          "name": "Reminder opens the exact saved note",
+          "passed": true
+        },
+        {
+          "name": "940x620 viewport retains usable list and editor with no horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Existing tasks and daily notes stay unchanged",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart restores every note with content, links and reminder state",
+          "passed": true
+        },
+        {
+          "name": "Restarted editor is linked to the original note",
+          "passed": true
+        },
+        {
+          "name": "Acknowledging clears the date and retains the pinned content",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "sourceRuntime": "PASS at 97e583d5",
+  "packagedSnapshot": {
+    "revision": "97e583d5",
+    "mode": "packaged White Box.exe"
+  },
+  "packagedReports": [
+    {
+      "script": "e2e-dependencies.mjs",
+      "origin": ".e2e-dependencies/run-E9172G/report.json",
+      "reportedExitCode": null,
+      "checks": 62,
+      "passed": 62,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy optional fields load without altering original task",
+          "passed": true
+        },
+        {
+          "name": "A blocker update retains one waiting editor and one context editor",
+          "passed": true
+        },
+        {
+          "name": "Opening the external editor saves the entered Blocked reason",
+          "passed": true
+        },
+        {
+          "name": "External save preserves progress, status and completion",
+          "passed": true
+        },
+        {
+          "name": "External wait dates persist",
+          "passed": true
+        },
+        {
+          "name": "Dedicated external UI surfaces who, what, since and confirmation action",
+          "passed": true
+        },
+        {
+          "name": "Confirmation action opens editable task details",
+          "passed": true
+        },
+        {
+          "name": "Explicit unblock keeps 70% progress",
+          "passed": true
+        },
+        {
+          "name": "Inbox external waits are visible, archived waits require explicit reveal",
+          "passed": true
+        },
+        {
+          "name": "Archived external waits can be revealed without making them startable",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"missing\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmnjtuyoaej9\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:move: {\"id\":\"tsk_muwmnjtuyoaej9\",\"status\":\"doing\",\"index\":0}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmnjut1jns42\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtje0ux8y\",\"patch\":{\"hardDependencies\":[\"tsk_muwmnjtuyoaej9\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"hardDependencies\":[\"tsk_muwmnjtuyoaej9\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"hardDependencies\":[\"missing\"]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"hardDependancies\":[]}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"externalBlock\":{\"who\":\"\",\"what\":\"reply\",\"since\":\"invalid\",\"lastContactOn\":null,\"nextFollowUpOn\":null}}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Related task navigation works and rejected UI edits show an error without changing data",
+          "passed": true
+        },
+        {
+          "name": "start: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded",
+          "passed": true
+        },
+        {
+          "name": "current: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded",
+          "passed": true
+        },
+        {
+          "name": "Recommended predecessor never forces or prevents starting",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:switchTask: {\"taskId\":\"tsk_muwmnjtuyoaej9\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Completing the hard predecessor permits Inbox commitment",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtje0ux8y\",\"patch\":{\"status\":\"todo\"}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:delete: {\"id\":\"tsk_muwmnjtje0ux8y\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"blocked\":true}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected task:update: {\"id\":\"tsk_muwmnjtuyoaej9\",\"patch\":{\"externalBlock\":{\"who\":\"担当\",\"what\":\"回答\",\"since\":\"2026-10-06\",\"lastContactOn\":null,\"nextFollowUpOn\":\"2026-10-06\"}}}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Deleting a hard predecessor preserves its dangling link",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmnjtuyoaej9\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Missing predecessor is visible with explicit removal action",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmnjtuyoaej9\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Control fields, task progress, histories and goal states survive restart",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"legacy\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Rejected session:start: {\"taskId\":\"tsk_muwmnjtuyoaej9\"}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "blocked-recovery: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Imported blocked live task is paused on restart",
+          "passed": true
+        },
+        {
+          "name": "Rejected recovery:resume: {}",
+          "passed": true
+        },
+        {
+          "name": "Rejected command preserves saved and live state",
+          "passed": true
+        },
+        {
+          "name": "Recovery UI exposes blocker and disables resume",
+          "passed": true
+        },
+        {
+          "name": "No renderer exceptions or console errors",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-activity.mjs",
+      "origin": ".e2e/activity-run-6zRlYT/result.json",
+      "reportedExitCode": 0,
+      "checks": 54,
+      "passed": 54,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Isolated profile starts with no projects, tasks or sessions",
+          "passed": true
+        },
+        {
+          "name": "Fixtures use IPC edits and preserve deleted-task session references",
+          "passed": true
+        },
+        {
+          "name": "Editing times and completing tasks do not assess the linked goal",
+          "passed": true
+        },
+        {
+          "name": "Previous week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Previous week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Previous week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Weekly metrics count three worked days, five original sessions and one completed task",
+          "passed": true
+        },
+        {
+          "name": "Week starts Monday and includes all seven daily totals, including zero days",
+          "passed": true
+        },
+        {
+          "name": "In-period session values sum to the same 185 minutes",
+          "passed": true
+        },
+        {
+          "name": "Original 60-minute boundary session is distinguished from the 30-minute daily portion",
+          "passed": true
+        },
+        {
+          "name": "02-minimum-week: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "The other 30 boundary minutes belong to Sunday of the preceding week",
+          "passed": true
+        },
+        {
+          "name": "Next week restores the original selection",
+          "passed": true
+        },
+        {
+          "name": "Historical fixtures do not leak into today",
+          "passed": true
+        },
+        {
+          "name": "Live stopwatch appears before a session is ended",
+          "passed": true
+        },
+        {
+          "name": "Real pause/resume records an observed interval",
+          "passed": true
+        },
+        {
+          "name": "Today: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Today: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Today: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Today shows declared progress, observed pause and exclusion separately",
+          "passed": true
+        },
+        {
+          "name": "Timeline work descriptions remain accessible",
+          "passed": true
+        },
+        {
+          "name": "04-minimum-today: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Fourteen consecutive trend days include independently expected nonzero and zero values",
+          "passed": true
+        },
+        {
+          "name": "Trend draws all fourteen points, including zero days",
+          "passed": true
+        },
+        {
+          "name": "Expired live timer contributes only its one-minute work cap and stops growing",
+          "passed": true
+        },
+        {
+          "name": "Viewing activity never changes declared progress or goal achievement",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves every edited session, task declaration and unassessed goal",
+          "passed": true
+        },
+        {
+          "name": "Restarted daily total retains the edited pause/exclusion and expired timer cap",
+          "passed": true
+        },
+        {
+          "name": "The saved exclusion and historical session IDs survive reload",
+          "passed": true
+        },
+        {
+          "name": "Previous week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Previous week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Previous week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Weekly metrics count three worked days, five original sessions and one completed task",
+          "passed": true
+        },
+        {
+          "name": "Week starts Monday and includes all seven daily totals, including zero days",
+          "passed": true
+        },
+        {
+          "name": "In-period session values sum to the same 185 minutes",
+          "passed": true
+        },
+        {
+          "name": "Original 60-minute boundary session is distinguished from the 30-minute daily portion",
+          "passed": true
+        },
+        {
+          "name": "02-minimum-week: 940x620 keeps readable panels without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: total is the independently expected duration",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: project attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "Preceding week: task attribution and total agree",
+          "passed": true
+        },
+        {
+          "name": "The other 30 boundary minutes belong to Sunday of the preceding week",
+          "passed": true
+        },
+        {
+          "name": "Next week restores the original selection",
+          "passed": true
+        },
+        {
+          "name": "Historical fixtures do not leak into today",
+          "passed": true
+        },
+        {
+          "name": "History retains the independent all-time total across month paging",
+          "passed": true
+        },
+        {
+          "name": "Selected history month preserves all corresponding daily minutes 2026-09",
+          "passed": true
+        },
+        {
+          "name": "Selected history month preserves all corresponding daily minutes 2026-10",
+          "passed": true
+        },
+        {
+          "name": "Minimum History view keeps bounded date navigation visible without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        },
+        {
+          "name": "Screenshots contain captured PNG evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-task-priority.mjs",
+      "origin": ".e2e/task-priority-run-UoBEvq/result.json",
+      "reportedExitCode": 0,
+      "checks": 65,
+      "passed": 65,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "first: the owned Main window is natively visible before CDP activation",
+          "passed": true
+        },
+        {
+          "name": "Legacy load leaves optional planning and commitment fields absent",
+          "passed": true
+        },
+        {
+          "name": "Welcome displays Warning, High Risk and Overdue with their reasons",
+          "passed": true
+        },
+        {
+          "name": "Legacy Inbox and unobserved legacy Todo have no warning",
+          "passed": true
+        },
+        {
+          "name": "Welcome excludes archived warnings and shows the Blocked start reason",
+          "passed": true
+        },
+        {
+          "name": "Blocked start is rejected by public IPC without changing saved data",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Welcome warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Today initially keeps current warning context compact and the activity metrics visible",
+          "passed": true
+        },
+        {
+          "name": "Today keeps activity metrics visible without horizontal overflow at 940x620",
+          "passed": true
+        },
+        {
+          "name": "Today shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "Today warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Today warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Today warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Week initially keeps current warning context compact and the activity metrics visible",
+          "passed": true
+        },
+        {
+          "name": "Week keeps activity metrics visible without horizontal overflow at 940x620",
+          "passed": true
+        },
+        {
+          "name": "Past week keeps present warnings out of historical activity",
+          "passed": true
+        },
+        {
+          "name": "Future week keeps present warnings out of future activity",
+          "passed": true
+        },
+        {
+          "name": "Week shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "Week warning opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Week warning focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Week warning click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Board has the same three warnings",
+          "passed": true
+        },
+        {
+          "name": "Board shows the same warnings, Blocked guard and archive exclusion",
+          "passed": true
+        },
+        {
+          "name": "ExternalWaiting is preserved alongside the warning panel",
+          "passed": true
+        },
+        {
+          "name": "Warning title opens detail from the list view too",
+          "passed": true
+        },
+        {
+          "name": "Board title opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Board organize opens the shared detail with readable Blocked reason and disabled start",
+          "passed": true
+        },
+        {
+          "name": "Board organize focuses after all ancestor saving locks are released",
+          "passed": true
+        },
+        {
+          "name": "Board organize click itself focuses the visible waiting and predecessor editor",
+          "passed": true
+        },
+        {
+          "name": "Warning detail lets the user save waiting information",
+          "passed": true
+        },
+        {
+          "name": "Five warnings initially stay summarized at the daily welcome",
+          "passed": true
+        },
+        {
+          "name": "Welcome disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Today disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Week disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "Board disclosure exposes all five warnings and their actions",
+          "passed": true
+        },
+        {
+          "name": "User threshold changes Aging warnings while deadline warnings remain",
+          "passed": true
+        },
+        {
+          "name": "Old Inbox becomes newly committed Todo without an immediate warning",
+          "passed": true
+        },
+        {
+          "name": "Unentered remaining effort and safety buffer stay blank; Slack is unknown",
+          "passed": true
+        },
+        {
+          "name": "Negative UI input reports an error and keeps the saved effort",
+          "passed": true
+        },
+        {
+          "name": "Clearing optional buffer makes Slack unknown",
+          "passed": true
+        },
+        {
+          "name": "Actual save failure restores task state and keeps disk data unchanged",
+          "passed": true
+        },
+        {
+          "name": "Failed duration save blocks detail close and retains the entered draft",
+          "passed": true
+        },
+        {
+          "name": "Folding warning details preserves the visible save error and the saved priority",
+          "passed": true
+        },
+        {
+          "name": "Failed Blocked reason save preserves detail, input, error and saved task",
+          "passed": true
+        },
+        {
+          "name": "Failed submitted external wait preserves form, error and saved task until explicit cancellation",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"remainingEffortMinutes\":-1}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"safetyBufferMinutes\":\"0\"}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"remainingEffortMinute\":1}",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects invalid planning input {\"committedAt\":0}",
+          "passed": true
+        },
+        {
+          "name": "Invalid IPC does not change saved values",
+          "passed": true
+        },
+        {
+          "name": "Notes edit preserves the commitment and Aging warning",
+          "passed": true
+        },
+        {
+          "name": "Actual progress records its anchor",
+          "passed": true
+        },
+        {
+          "name": "Inbox action removes that warning",
+          "passed": true
+        },
+        {
+          "name": "User can start a chosen task even when another is Overdue",
+          "passed": true
+        },
+        {
+          "name": "Active work initially folds warnings while retaining current context",
+          "passed": true
+        },
+        {
+          "name": "The user can keep warning details open during active work",
+          "passed": true
+        },
+        {
+          "name": "Working and review do not decrement the remaining estimate",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "restart: the owned Main window is natively visible before CDP activation",
+          "passed": true
+        },
+        {
+          "name": "Restart restores effort, explicit buffer, progress and commitment",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves other legacy unknown fields",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-phase2-planning.mjs",
+      "origin": ".e2e/phase2-planning-run-jXp2l0/result.json",
+      "reportedExitCode": 0,
+      "checks": 79,
+      "passed": 79,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "main: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy DB leaves new optional planning, Project Priority and structured Task context absent",
+          "passed": true
+        },
+        {
+          "name": "Legacy free Notes, linked Note and day notes load unchanged",
+          "passed": true
+        },
+        {
+          "name": "Week shows real activity before the closed, unset budget",
+          "passed": true
+        },
+        {
+          "name": "940x620 Week retains visible activity and no horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Unset living hours remain blank without invented values or calculations",
+          "passed": true
+        },
+        {
+          "name": "Missing hours prevent a save",
+          "passed": true
+        },
+        {
+          "name": "Partial budget draft survives a tab change",
+          "passed": true
+        },
+        {
+          "name": "Partial budget draft survives a week change",
+          "passed": true
+        },
+        {
+          "name": "Budget failed save retains all input and blocks leaving the Week tab",
+          "passed": true
+        },
+        {
+          "name": "Weekly Budget failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "All four allocation modes and personal defaults persist exactly",
+          "passed": true
+        },
+        {
+          "name": "Budget displays 91h available and the minimum allocation shortage",
+          "passed": true
+        },
+        {
+          "name": "Reuse opens the saved personal defaults without silently saving the next week",
+          "passed": true
+        },
+        {
+          "name": "Next week reuses every allocation and living input",
+          "passed": true
+        },
+        {
+          "name": "Legacy Project Priority stays unset in the real editor",
+          "passed": true
+        },
+        {
+          "name": "Selecting Project Priority updates the unsaved editor draft",
+          "passed": true
+        },
+        {
+          "name": "Project failed save retains priority and keeps the editor open",
+          "passed": true
+        },
+        {
+          "name": "Project Priority failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Project Priority changes independently from both Task priorities and unedited legacy Projects",
+          "passed": true
+        },
+        {
+          "name": "The actual editor clears Project Priority through Electron without changing Task priorities",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work requires an external reason before registration",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work failed save retains Task, time and external reason",
+          "passed": true
+        },
+        {
+          "name": "Fixed Work failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Registering external schedules uses existing Tasks and does not create Tasks or Sessions",
+          "passed": true
+        },
+        {
+          "name": "This week clips the boundary schedule to 30 minutes",
+          "passed": true
+        },
+        {
+          "name": "Next week counts overlapping external schedules once: 150 minutes",
+          "passed": true
+        },
+        {
+          "name": "Week exposes both real external schedules",
+          "passed": true
+        },
+        {
+          "name": "Cancellation retains the original Fixed Work record and never starts a Session",
+          "passed": true
+        },
+        {
+          "name": "Cancelled schedule remains inspectable in the actual UI",
+          "passed": true
+        },
+        {
+          "name": "Today lists external work only when its interval belongs to today",
+          "passed": true
+        },
+        {
+          "name": "Schedule registration and display still leave the app idle",
+          "passed": true
+        },
+        {
+          "name": "Existing free Notes and linked Note are preserved before editing structured context",
+          "passed": true
+        },
+        {
+          "name": "Problems, Decisions and Next Context save without replacing legacy Notes or linked Notes",
+          "passed": true
+        },
+        {
+          "name": "Changing Task flushes the latest context draft",
+          "passed": true
+        },
+        {
+          "name": "Changing tab flushes the selected Task context",
+          "passed": true
+        },
+        {
+          "name": "Closing the detail flushes the latest decision",
+          "passed": true
+        },
+        {
+          "name": "Task navigation flushes the existing linked Note editor",
+          "passed": true
+        },
+        {
+          "name": "A failed linked Note save blocks tab navigation and retains the full draft",
+          "passed": true
+        },
+        {
+          "name": "Linked Note failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Retry flushes the linked Note and then permits navigation",
+          "passed": true
+        },
+        {
+          "name": "start: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Start shows saved Next Context for the selected existing Task",
+          "passed": true
+        },
+        {
+          "name": "Failed Task context blocks tab, close, Task switch and start while retaining input",
+          "passed": true
+        },
+        {
+          "name": "Task Context failure: disk and exposed memory roll back completely",
+          "passed": true
+        },
+        {
+          "name": "Successful start flushes the entire retained context first",
+          "passed": true
+        },
+        {
+          "name": "current: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Conflicting Task edits retain both saved text and the local draft and block close",
+          "passed": true
+        },
+        {
+          "name": "Explicit conflict resolution commits the chosen context text",
+          "passed": true
+        },
+        {
+          "name": "Linked Note conflict stops autosave and preserves both texts",
+          "passed": true
+        },
+        {
+          "name": "Accepting the latest Note explicitly restores the saved text",
+          "passed": true
+        },
+        {
+          "name": "Current Work failed save blocks end, switch and close while retaining the context and active Session",
+          "passed": true
+        },
+        {
+          "name": "External end and switch requests also respect the failed Current Work draft",
+          "passed": true
+        },
+        {
+          "name": "An external close request reaches the native close event and retains the failed draft",
+          "passed": true
+        },
+        {
+          "name": "Current Work failed update keeps persisted context unchanged",
+          "passed": true
+        },
+        {
+          "name": "Switching current Task saves the latest context before the Session segment changes",
+          "passed": true
+        },
+        {
+          "name": "current: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Closing and reopening Current Work retains the latest decision",
+          "passed": true
+        },
+        {
+          "name": "An external end request flushes the Current Work context before ending the Session",
+          "passed": true
+        },
+        {
+          "name": "review: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Strict public planning IPC rejects unknown keys without changing saved state",
+          "passed": true
+        },
+        {
+          "name": "Existing free Notes, daily notes and linked Note identity remain intact",
+          "passed": true
+        },
+        {
+          "name": "A new weekly draft remains distinct from the saved budget before quitting",
+          "passed": true
+        },
+        {
+          "name": "An incomplete new week draft does not invent the remaining living hours or commit a budget",
+          "passed": true
+        },
+        {
+          "name": "The final context draft is still unsaved before the actual quit request",
+          "passed": true
+        },
+        {
+          "name": "first: natural quit exits with zero and leaves no owned PID",
+          "passed": true
+        },
+        {
+          "name": "Natural quit flushes the final Task context and preserves every other Database field",
+          "passed": true
+        },
+        {
+          "name": "main: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart deeply restores the full saved file and every exposed Database field",
+          "passed": true
+        },
+        {
+          "name": "Restarted Task detail shows saved Next Context and legacy Notes",
+          "passed": true
+        },
+        {
+          "name": "Restarted linked Note editor retains the entire recovered draft",
+          "passed": true
+        },
+        {
+          "name": "Restarted Week keeps personal budgets and default reuse available",
+          "passed": true
+        },
+        {
+          "name": "Natural quit and restart retain the unsaved weekly draft without changing the saved budget",
+          "passed": true
+        },
+        {
+          "name": "Restart also restores a partially entered new week with the missing hours still blank",
+          "passed": true
+        },
+        {
+          "name": "restart: natural quit exits with zero and leaves no owned PID",
+          "passed": true
+        },
+        {
+          "name": "Final natural quit preserves the full restarted Database",
+          "passed": true
+        },
+        {
+          "name": "Every monitored renderer has no console errors or uncaught exceptions",
+          "passed": true
+        },
+        {
+          "name": "App logs contain no unexpected application errors",
+          "passed": true
+        },
+        {
+          "name": "No owned Electron PID remains after both natural shutdowns",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "script": "e2e-notes.mjs",
+      "origin": ".e2e/notes-run-h5uGjs/result.json",
+      "reportedExitCode": 0,
+      "checks": 22,
+      "passed": 22,
+      "failed": 0,
+      "rendererErrors": 0,
+      "conditions": [
+        {
+          "name": "first: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Legacy database loads empty notes and preserves tasks",
+          "passed": true
+        },
+        {
+          "name": "Two clicks during creation produce one note",
+          "passed": true
+        },
+        {
+          "name": "State broadcasts retain the current draft",
+          "passed": true
+        },
+        {
+          "name": "Autosave stores title and body without creating more notes",
+          "passed": true
+        },
+        {
+          "name": "Tab shortcut retains the failed draft and the note editor",
+          "passed": true
+        },
+        {
+          "name": "Tab click also retains the failed draft",
+          "passed": true
+        },
+        {
+          "name": "Leaving after retry persists the entire failed draft",
+          "passed": true
+        },
+        {
+          "name": "Project, task, pin and future date persist",
+          "passed": true
+        },
+        {
+          "name": "Strict IPC rejects misspelled changes without overwriting the body",
+          "passed": true
+        },
+        {
+          "name": "Search matches all words across title and body",
+          "passed": true
+        },
+        {
+          "name": "Creating another note flushes the selected note before switching",
+          "passed": true
+        },
+        {
+          "name": "Archive preserves content, links, pin and date",
+          "passed": true
+        },
+        {
+          "name": "Daily view displays the pinned reminder",
+          "passed": true
+        },
+        {
+          "name": "Reminder opens the exact saved note",
+          "passed": true
+        },
+        {
+          "name": "940x620 viewport retains usable list and editor with no horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Existing tasks and daily notes stay unchanged",
+          "passed": true
+        },
+        {
+          "name": "restart: CDP is attached to this build",
+          "passed": true
+        },
+        {
+          "name": "Restart restores every note with content, links and reminder state",
+          "passed": true
+        },
+        {
+          "name": "Restarted editor is linked to the original note",
+          "passed": true
+        },
+        {
+          "name": "Acknowledging clears the date and retains the pinned content",
+          "passed": true
+        },
+        {
+          "name": "Renderer has no console errors or uncaught exceptions",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "additionalQuitRuns": [
+    {
+      "mode": "observer_off",
+      "origin": ".e2e-quit/run-jwGnRW/result.json",
+      "reportedExitCode": 0,
+      "checks": 7,
+      "passed": 7,
+      "failed": 0,
+      "conditions": [
+        {
+          "name": "first: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "first: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "Natural shutdown preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "All owned Electron processes are absent",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "mode": "live_multiwindow",
+      "origin": ".e2e-quit/run-wtWkxL/result.json",
+      "reportedExitCode": 0,
+      "checks": 11,
+      "passed": 11,
+      "failed": 0,
+      "conditions": [
+        {
+          "name": "first: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "first: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "first: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "first: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "Natural shutdown preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: verified CDP browser PID and main page belong to this launch",
+          "passed": true
+        },
+        {
+          "name": "Restart preserves the complete database",
+          "passed": true
+        },
+        {
+          "name": "restart: native process exited with code zero",
+          "passed": true
+        },
+        {
+          "name": "restart: quit IPC received and shutdown persistence returned",
+          "passed": true
+        },
+        {
+          "name": "restart: every window closed before will-quit and no window was created while quitting",
+          "passed": true
+        },
+        {
+          "name": "All owned Electron processes are absent",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "currentCandidate": {
+    "revision": "125026f7088487a429170f6276786a13f0e40c4c",
+    "status": "Final integrated gates and runtime pending; prior 97e583d5 results remain historical",
+    "additionalEvidence": "shutdown-heartbeat-after.json"
+  }
+}

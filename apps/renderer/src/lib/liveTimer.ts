@@ -17,12 +17,13 @@ export function liveTimerPresentation(tick: LiveTick, breakTimer: AppState['brea
   }
 
   const isPaused = tick.state === 'paused'
-  const isOver = tick.remainingMs < 0
+  const isStopwatch = tick.mode === 'stopwatch'
+  const isOver = !isStopwatch && tick.remainingMs < 0
   return {
     elapsedMs: tick.elapsedMs,
-    plannedMs: tick.plannedMs,
-    remainingMs: tick.remainingMs,
-    label: isPaused ? '停止中' : isOver ? '超過' : '残り',
+    plannedMs: isStopwatch ? 0 : tick.plannedMs,
+    remainingMs: isStopwatch ? tick.elapsedMs : tick.remainingMs,
+    label: isPaused ? '停止中' : isStopwatch ? '経過' : isOver ? '超過' : '残り',
     status: isPaused ? '一時停止' : '実行中',
     isBreak: false,
     isPaused,

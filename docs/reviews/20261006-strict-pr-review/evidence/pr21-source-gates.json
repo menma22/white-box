@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "sourceSnapshot": {
+    "revision": "97e583d5"
+  },
+  "gates": [
+    {
+      "gate": "typecheck",
+      "exitCode": 0,
+      "time": "2026-10-06T20:53:44.6321665+09:00"
+    },
+    {
+      "gate": "lint",
+      "exitCode": 0,
+      "time": "2026-10-06T20:53:54.8490827+09:00"
+    },
+    {
+      "gate": "test",
+      "exitCode": 0,
+      "time": "2026-10-06T20:54:05.7240344+09:00"
+    },
+    {
+      "gate": "pack",
+      "exitCode": 0,
+      "time": "2026-10-06T20:54:17.2435768+09:00"
+    }
+  ],
+  "fullTests": {
+    "files": 61,
+    "tests": 615
+  },
+  "historicalStorybook": {
+    "status": "Earlier Storybook build completed successfully; its compilation does not establish current pixels",
+    "currentFixedSourceRebuildClaimed": false
+  },
+  "limits": [
+    "Final source UI and packaged UI are separate measurements."
+  ],
+  "currentCandidate": {
+    "revision": "125026f7088487a429170f6276786a13f0e40c4c",
+    "status": "Final integrated gates and runtime pending; prior 97e583d5 results remain historical",
+    "additionalEvidence": "shutdown-heartbeat-after.json"
+  }
+}

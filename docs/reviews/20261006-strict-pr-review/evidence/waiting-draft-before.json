@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "stage": "before_waiting_draft_fix",
+  "origin": ".e2e/task-priority-run-2QkPLe/waiting-save-close.json",
+  "fixture": {
+    "data": "synthetic only",
+    "nativeUserDataLookup": "stubbed or isolated explicit QA directory",
+    "productionDatabaseIncluded": false
+  },
+  "fault": "Real data.json.tmp directory causes disk writes to fail; blur/submit then detail-close",
+  "observations": {
+    "reason": {
+      "open": false,
+      "draft": null,
+      "alert": false,
+      "savedUnchanged": true
+    },
+    "external": {
+      "open": false,
+      "who": null,
+      "what": null,
+      "alert": false,
+      "savedUnchanged": true
+    }
+  }
+}

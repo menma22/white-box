@@ -36,6 +36,20 @@
   --rose: #b4553f;
   --rose-soft: rgba(180, 85, 63, 0.09);
 
+  --calendar-surface: #fff;
+  --calendar-header-line: #eceef0;
+  --calendar-control-surface: #f3f4f4;
+  --calendar-control-shadow-color: #00000012;
+  --calendar-day-header-line: #e5e9eb;
+  --calendar-line-faint: #f0f2f3;
+  --calendar-axis-text: #7c8489;
+  --calendar-grid-line: #eef0f2;
+  --calendar-today-surface: #f8fbfa;
+  --calendar-routine-surface: #f3f3f0;
+  --calendar-routine-line: #d6d8d2;
+  --calendar-routine-text: #777b76;
+  --calendar-routine-legend: #dddeda;
+
   --font-display: 'Segoe UI Variable Display', 'Yu Gothic UI', 'Segoe UI', system-ui, sans-serif;
   --font-serif: Georgia, 'Constantia', 'Times New Roman', serif;
   --font-body: 'Yu Gothic UI', 'Segoe UI Variable Text', 'Segoe UI', 'Meiryo', system-ui, sans-serif;

@@ -1,0 +1,14 @@
+node.exe : $ pnpm build:packages && tsc -p apps/renderer/tsconfig.json --noEmit && tsc -p apps/desktop/tsconfig.json --
+noEmit && tsc -p tsconfig.test.json
+発生場所 C:\Users\mahim\AppData\Local\hermes\node\pnpm.ps1:16 文字:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ pnpm build:pa...onfig.test.json:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+$ pnpm -r --filter "./packages/*" run build
+Scope: 2 of 4 workspace projects
+packages/core build$ tsc -p tsconfig.json
+packages/core build: Done
+packages/contracts build$ tsc -p tsconfig.json
+packages/contracts build: Done

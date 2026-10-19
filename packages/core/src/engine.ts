@@ -1,7 +1,8 @@
 /**
  * セッションの時間計算。副作用を持たない純関数だけを置く（テスト対象）。
  *
- * 実作業時間 = 経過時間 − 一時停止の重なり。開いたままの区間は now で閉じて数える。
+ * 実作業時間 = 対象範囲の経過時間 − 一時停止の重なり。
+ * 未終了のタイマー／ポモドーロは、満了処理前でも予定到達時刻を上限にする。
  */
 import type { PauseInterval, Session, TaskSegment, TimeRange, ID } from './types.js'
 
@@ -41,9 +42,15 @@ export function sessionEndOrNow(session: Session, now: number): number {
 
 /** セッション全体の実作業時間。 */
 export function focusMs(session: Session, now: number): number {
-  const end = sessionEndOrNow(session, now)
+  const end = focusEndOrNow(session, now)
   const gross = Math.max(0, end - session.startedAt)
   return Math.max(0, gross - pausedMsWithin(session.pauses, session.startedAt, end, now))
+}
+
+export function focusEndOrNow(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  if (session.endedAt !== null || session.mode === 'stopwatch') return end
+  return plannedReachedAt(session, now) ?? end
 }
 
 /** セッション全体の一時停止時間。 */
@@ -64,6 +71,11 @@ export function livePausedMs(session: Session, now: number): number {
   const end = sessionEndOrNow(session, now)
   const observed = session.pauses.filter((p) => p.reason !== 'excluded')
   return pausedMsWithin(observed, session.startedAt, end, now)
+}
+
+export function managementMs(session: Session, now: number): number {
+  const end = sessionEndOrNow(session, now)
+  return pausedMsWithin(session.pauses.filter((p) => p.reason === 'task-management'), session.startedAt, end, now)
 }
 
 /** 申告として記録されている除外区間。 */
@@ -104,6 +116,7 @@ export function plannedReachedAt(session: Session, now: number): number | null {
 
 /** 予定に達してから終了までの、まだ止まっていない範囲（＝満了後に放置していた分）。 */
 export function overrunRanges(session: Session, now: number): TimeRange[] {
+  if (session.mode === 'stopwatch') return []
   const from = plannedReachedAt(session, now)
   if (from === null) return []
   return unpausedRanges(session.pauses, from, sessionEndOrNow(session, now), now)
@@ -114,13 +127,18 @@ export function totalRangeMs(ranges: TimeRange[]): number {
 }
 
 export function segmentFocusMs(session: Session, segment: TaskSegment, now: number): number {
-  const sessionEnd = sessionEndOrNow(session, now)
+  const { startedAt: start, endedAt: end } = segmentRange(session, segment, now)
+  const gross = Math.max(0, end - start)
+  return Math.max(0, gross - pausedMsWithin(session.pauses, start, end, now))
+}
+
+export function segmentRange(session: Session, segment: TaskSegment, now: number): TimeRange {
+  const sessionEnd = focusEndOrNow(session, now)
   const start = session.segments[0]?.id === segment.id ? session.startedAt : Math.max(segment.startedAt, session.startedAt)
   const end = session.segments[session.segments.length - 1]?.id === segment.id
     ? sessionEnd
     : Math.min(segment.endedAt ?? sessionEnd, sessionEnd)
-  const gross = Math.max(0, end - start)
-  return Math.max(0, gross - pausedMsWithin(session.pauses, start, end, now))
+  return { startedAt: start, endedAt: end }
 }
 
 export function remainingMs(session: Session, now: number): number {
@@ -154,7 +172,9 @@ export function focusByTask(session: Session, now: number): Map<ID, number> {
 
 /** dayStartHour を境界にした「その日」のキー（YYYY-MM-DD, ローカル）。 */
 export function dayKey(ts: number, dayStartHour: number): string {
-  const d = new Date(ts - dayStartHour * HOUR)
+  const d = new Date(ts)
+  const boundary = new Date(d.getFullYear(), d.getMonth(), d.getDate(), dayStartHour, 0, 0, 0).getTime()
+  if (ts < boundary) d.setDate(d.getDate() - 1)
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
@@ -167,9 +187,13 @@ export function dayStartTs(key: string, dayStartHour: number): number {
   return new Date(y, m - 1, d, dayStartHour, 0, 0, 0).getTime()
 }
 
-export function sessionsOfDay(sessions: Session[], key: string, dayStartHour: number): Session[] {
+export function sessionsOfDay(sessions: Session[], key: string, dayStartHour: number, now = Date.now()): Session[] {
+  const from = dayStartTs(key, dayStartHour)
+  const next = new Date(from)
+  next.setDate(next.getDate() + 1)
+  const to = next.getTime()
   return sessions
-    .filter((s) => dayKey(s.startedAt, dayStartHour) === key)
+    .filter((s) => s.startedAt < to && (sessionEndOrNow(s, now) > from || s.startedAt >= from))
     .sort((a, b) => a.startedAt - b.startedAt)
 }
 

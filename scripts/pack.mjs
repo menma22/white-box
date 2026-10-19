@@ -47,6 +47,9 @@ fs.copyFileSync(
   path.join(APP, 'apps', 'desktop', 'src', 'presentation', 'preload.cjs'),
 )
 
+fs.mkdirSync(path.join(APP, 'scripts'), { recursive: true })
+fs.copyFileSync(path.join(ROOT, 'scripts', 'white-box-mcp.mjs'), path.join(APP, 'scripts', 'white-box-mcp.mjs'))
+
 console.log('assembling workspace dependencies...')
 for (const name of WORKSPACE_PACKAGES) packWorkspacePackage(name)
 packZod()

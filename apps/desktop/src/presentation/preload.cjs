@@ -19,5 +19,22 @@ contextBridge.exposeInMainWorld('whitebox', {
     ipcRenderer.on('whitebox:signal', handler)
     return () => ipcRenderer.removeListener('whitebox:signal', handler)
   },
+  onFlushRequested: (cb, release) => {
+    const handler = async (_event, request) => {
+      let ok = false
+      try { ok = await cb(request) === true } catch {}
+      ipcRenderer.send('whitebox:flush-reply', { id: request.id, ok })
+    }
+    const releaseHandler = (_event, id) => release(id)
+    ipcRenderer.on('whitebox:flush-request', handler)
+    ipcRenderer.on('whitebox:flush-release', releaseHandler)
+    ipcRenderer.send('whitebox:flush-ready', true)
+    return () => {
+      ipcRenderer.removeListener('whitebox:flush-request', handler)
+      ipcRenderer.removeListener('whitebox:flush-release', releaseHandler)
+      ipcRenderer.send('whitebox:flush-ready', false)
+    }
+  },
+  draftProfileKey: () => process.argv.find((argument) => argument.startsWith('--whitebox-draft-profile='))?.slice('--whitebox-draft-profile='.length) || null,
   windowKind: () => location.hash.replace('#', '') || 'main',
 })

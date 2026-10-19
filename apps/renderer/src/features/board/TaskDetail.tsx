@@ -1,31 +1,60 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { invoke } from '@/lib/bridge'
 import { useApp, useData } from '@/stores/app'
 import { ancestorTitles, childrenOf, focusByTask, lastTouchedAt, STATUS_LABEL, STATUS_ORDER, taskById } from '@/lib/selectors'
 import { Modal, ProgressBar, Segmented, useEscape } from '@/components/ui'
 import { formatDuration } from '@white-box/core/engine'
 import type { Priority, Task, TaskStatus } from '@white-box/core/types'
+import { taskControl } from '@white-box/core/task-priority'
+import { OptionalDurationField } from '@/features/task-control/OptionalDurationField'
+import { TaskRiskSummary } from '@/features/task-control/TaskRiskSummary'
+import { taskExecutionProblem } from '@white-box/core/task-control'
+import { TaskControlEditor } from './TaskControlEditor'
+import { TaskContextEditor } from './TaskContextEditor'
+import type { NoteEditorHandle } from '@/features/notes/NoteEditor'
+import { FixedWorkOverview } from './FixedWorkOverview'
+import { flushDraftParticipants } from '@/lib/useEditorFlush'
+import { TaskTitleDraft } from '@/features/task-control/task-title-draft'
 
-export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+export type TaskDetailTarget = { section: 'waiting' }
+export interface TaskDetailHandle { flush(): Promise<boolean> }
+
+export const TaskDetail = forwardRef<TaskDetailHandle, { taskId: string; onClose: () => void; onSelectTask?: (id: string) => void; target?: TaskDetailTarget }>(function TaskDetail({ taskId, onClose, onSelectTask, target }, ref) {
   const state = useData()
   const now = useApp((s) => s.now)
   const task = taskById(state, taskId)
-  const [title, setTitle] = useState(task?.title ?? '')
-  const [notes, setNotes] = useState(task?.notes ?? '')
-  const editingTitle = useRef(false)
-  const editingNotes = useRef(false)
+  const [titleDraft] = useState(() => new TaskTitleDraft(task?.title ?? '', async (title, expected) => {
+    await invoke('task:update', { id: taskId, patch: { title }, expectedContext: { title: expected } })
+  }))
+  const [titleState, setTitleState] = useState(() => titleDraft.snapshot())
+  useEffect(() => titleDraft.subscribe(setTitleState), [titleDraft])
+  const context = useRef<NoteEditorHandle | null>(null)
+  const body = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hasTime, setHasTime] = useState(false)
+  const [error, setError] = useState('')
+  const [flushing, setFlushing] = useState(false)
+  const pendingFlush = useRef<Promise<boolean> | null>(null)
 
-  useEscape(!confirmDelete, onClose)
+  const flush = () => {
+    if (pendingFlush.current) return pendingFlush.current
+    setFlushing(true)
+    pendingFlush.current = (async () => await titleDraft.flush() && await context.current?.flush() !== false && await flushDraftParticipants())()
+      .finally(() => { pendingFlush.current = null; setFlushing(false) })
+    return pendingFlush.current
+  }
+  useImperativeHandle(ref, () => ({ flush }))
+  const close = () => { void flush().then((saved) => { if (saved) onClose() }) }
+  const related = (id: string) => { void flush().then((saved) => { if (saved) onSelectTask?.(id) }) }
+  useEscape(!confirmDelete, () => { if (!document.querySelector('[role="dialog"]')) close() })
 
   useEffect(() => {
-    if (!editingTitle.current) setTitle(task?.title ?? '')
-  }, [taskId, task?.title])
+    titleDraft.receive(task?.title ?? '')
+  }, [titleDraft, task?.title])
   useEffect(() => {
-    if (!editingNotes.current) setNotes(task?.notes ?? '')
-  }, [taskId, task?.notes])
+    if (!target) body.current?.scrollTo({ top: 0 })
+  }, [taskId, target])
 
   if (!task) return null
 
@@ -34,8 +63,14 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   const touched = lastTouchedAt(state, task.id)
   const path = ancestorTitles(state, task)
 
-  // Record<string, unknown> にすると綴り違いのキーがコンパイルを通り、zod が黙って捨てて無反応になる
-  const patch = (p: Partial<Task>) => void invoke('task:update', { id: task.id, patch: p })
+  async function run(action: () => Promise<unknown>): Promise<boolean> {
+    setError('')
+    try { await action(); return true } catch (cause) { setError(String(cause).replace(/^(Error:\s*)+/, '')); return false }
+  }
+  // Record<string, unknown> はキーの綴り違いを型検査で拾えないため、送信する patch は Partial<Task> で縛る。
+  const save = (p: Partial<Task>) => run(() => invoke('task:update', { id: task.id, patch: p }))
+  const patch = (p: Partial<Task>) => { void save(p) }
+  const executionProblem = taskExecutionProblem(state, task.id)
 
   const taskIdForDelete = task.id
   async function askDelete() {
@@ -44,29 +79,36 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
   }
 
   return (
-    <aside className="detail">
+    <aside className="detail" inert={flushing} aria-busy={flushing}>
       <header className="detail-head">
         <div className="detail-path">
           {path.length > 0 && <span className="detail-path-text">{path.join(' / ')} /</span>}
           <span className="label">タスク</span>
         </div>
-        <button type="button" className="detail-close" onClick={onClose} title="閉じる (Esc)">
+        <button type="button" className="detail-close" onClick={close} title="閉じる (Esc)">
           ✕
         </button>
       </header>
 
-      <div className="detail-body">
+      {error && <p className="task-command-error" role="alert">{error}</p>}
+      {titleState.error && <div className="task-command-error" role="alert">保存できなかった。{titleState.error} 入力は残っている。
+        {titleState.conflict !== null && <p>最新のタスク名: {titleState.conflict}</p>}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void titleDraft.retry()}>このタスク名を保存</button>
+        {titleState.conflict !== null && <button type="button" className="btn btn-ghost btn-sm" onClick={() => void titleDraft.acceptLatest()}>最新のタスク名へ戻す</button>}
+      </div>}
+
+      <div className="detail-body" ref={body}>
         <textarea
           className="detail-title"
-          value={title}
+          value={titleState.draft}
           rows={2}
-          onChange={(e) => setTitle(e.target.value)}
-          onFocus={() => { editingTitle.current = true }}
-          onBlur={() => {
-            editingTitle.current = false
-            if (title.trim() && title !== task.title) patch({ title: title.trim() })
-          }}
+          disabled={titleState.flushing}
+          onChange={(e) => titleDraft.update(e.target.value)}
+          onFocus={() => titleDraft.focus(true)}
+          onBlur={() => { titleDraft.focus(false); void titleDraft.save() }}
         />
+
+        {executionProblem && <p className="task-control-hint" data-execution-problem>開始できない理由: {executionProblem}</p>}
 
         <div className="detail-grid">
           <div className="detail-field">
@@ -106,6 +148,12 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             <span className="label">締切</span>
             <input className="input" type="date" value={task.due ?? ''} onChange={(e) => patch({ due: e.target.value || null })} />
           </label>
+          <OptionalDurationField label="残作業の見積（任意）" value={task.remainingEffortMinutes} onSave={(remainingEffortMinutes) => invoke('task:update', { id: task.id, patch: { remainingEffortMinutes } })} />
+          <OptionalDurationField label="安全余裕（任意）" value={task.safetyBufferMinutes} onSave={(safetyBufferMinutes) => invoke('task:update', { id: task.id, patch: { safetyBufferMinutes } })} />
+          <div className="detail-field">
+            <TaskRiskSummary control={taskControl(task, state.sessions, now, state.settings.stallWarningDays, state.projects)} />
+            <p className="task-control-hint">見積は残作業。セッションを記録しても自動で減らさない。Slack は締切日末までの暦時間から見積と安全余裕を引いた値。休息や他の仕事は引かない。安全余裕なしなら 0 を入力する。</p>
+          </div>
           <label className="detail-field">
             <span className="label">目標（道標）</span>
             <select className="input" value={task.goalNodeId ?? ''} onChange={(e) => patch({ goalNodeId: e.target.value || null })}>
@@ -145,21 +193,10 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
           </div>
         </div>
 
-        <div className="detail-field">
-          <span className="label">メモ</span>
-          <textarea
-            className="input detail-notes"
-            rows={3}
-            placeholder="次に再開するときの手がかり"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onFocus={() => { editingNotes.current = true }}
-            onBlur={() => {
-              editingNotes.current = false
-              if (notes !== task.notes) patch({ notes })
-            }}
-          />
-        </div>
+        <TaskControlEditor key={`control:${task.id}`} task={task} save={save} onRelated={related} focusRequest={target} />
+
+        <TaskContextEditor ref={context} key={`context:${task.id}`} task={task} />
+        <FixedWorkOverview taskId={task.id} />
 
         <div className="detail-field">
           <span className="label">分解（任意）</span>
@@ -168,7 +205,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
               <button
                 type="button"
                 className="detail-sub-check"
-                onClick={() => void invoke('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } })}
+                onClick={() => void run(() => invoke('task:update', { id: c.id, patch: { status: c.status === 'done' ? 'todo' : 'done' } }))}
               >
                 {c.status === 'done' ? '✓' : ''}
               </button>
@@ -185,8 +222,7 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             onChange={(e) => setSub(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' || !sub.trim()) return
-              void invoke('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })
-              setSub('')
+              void run(() => invoke('task:create', { title: sub.trim(), parentId: task.id, projectId: task.projectId, status: task.status === 'done' ? 'todo' : task.status })).then((saved) => { if (saved) setSub('') })
             }}
           />
         </div>
@@ -196,9 +232,9 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
         <button
           type="button"
           className="btn btn-primary btn-md"
-          onClick={() => void invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })}
-          disabled={Boolean(state.live)}
-          title={state.live ? 'すでにセッションが動いている' : ''}
+          onClick={() => void flush().then((saved) => { if (saved) void run(() => invoke('session:start', { taskId: task.id, minutes: state.settings.defaultSessionMinutes })) })}
+          disabled={Boolean(state.live) || Boolean(executionProblem)}
+          title={executionProblem ?? (state.live ? 'すでにセッションが動いている' : '')}
         >
           このタスクで開始
         </button>
@@ -223,9 +259,10 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
             type="button"
             className="btn btn-danger btn-md"
             onClick={() => {
-              void invoke('task:delete', { id: task.id })
-              setConfirmDelete(false)
-              onClose()
+              void run(() => invoke('task:delete', { id: task.id })).then((saved) => {
+                setConfirmDelete(false)
+                if (saved) onClose()
+              })
             }}
           >
             削除する
@@ -234,4 +271,4 @@ export function TaskDetail({ taskId, onClose }: { taskId: string; onClose: () =>
       </Modal>
     </aside>
   )
-}
+})

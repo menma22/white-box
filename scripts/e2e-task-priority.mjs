@@ -1,0 +1,630 @@
+import assert from 'node:assert/strict'
+import { dayKey } from '@white-box/core/engine'
+import { spawn, spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import net from 'node:net'
+import path from 'node:path'
+import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { OwnedProcesses, readWindowsProcesses, sameProcess } from './owned-processes.mjs'
+
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+const quitObserver = process.env.WHITEBOX_QA_QUIT_OBSERVER === '1'
+const keepQuitPage = process.env.WHITEBOX_QA_QUIT_KEEP_PAGE === '1'
+if (quitObserver && process.env.WHITEBOX_EXE) throw new Error('Quit observer entry is only supported for isolated source QA')
+if (keepQuitPage && !quitObserver) throw new Error('Keeping the quit CDP page requires opt-in quit observation')
+const OUTPUT = path.join(ROOT, '.e2e')
+fs.mkdirSync(OUTPUT, { recursive: true })
+const RUN = fs.mkdtempSync(path.join(OUTPUT, 'task-priority-run-'))
+const DATA = path.join(RUN, 'data')
+fs.mkdirSync(DATA)
+const electron = process.env.WHITEBOX_EXE ? path.resolve(process.env.WHITEBOX_EXE) : createRequire(import.meta.url)('electron')
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const checks = [], errors = []
+let child, page
+let launchIdentity, launchInfo
+const ownedProcesses = new OwnedProcesses()
+
+function check(name, condition, detail) {
+  checks.push({ name, passed: Boolean(condition), detail })
+  console.log(`${condition ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : ' ' + JSON.stringify(detail)}`)
+  assert.ok(condition, name)
+}
+
+async function until(test, label, timeout = 10000) {
+  const end = Date.now() + timeout
+  let last
+  while (Date.now() < end) {
+    try { const value = await test(); if (value) return value } catch (error) { last = error }
+    await wait(100)
+  }
+  throw new Error(`Timed out: ${label}${last ? ' / ' + last.message : ''}`)
+}
+
+async function freePort() {
+  const server = net.createServer()
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve) })
+  const assigned = server.address().port
+  await new Promise((resolve) => server.close(resolve))
+  return assigned
+}
+
+async function connect(url, enablePage = true, timeoutMs = 10000) {
+  const ws = new WebSocket(url)
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('CDP connection timeout')), timeoutMs)
+    ws.addEventListener('open', () => { clearTimeout(timer); resolve() }, { once: true })
+    ws.addEventListener('error', () => { clearTimeout(timer); reject(new Error('CDP connection failed')) }, { once: true })
+  })
+  let sequence = 0
+  const pending = new Map()
+  ws.addEventListener('close', () => {
+    for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('CDP connection closed')) }
+    pending.clear()
+  })
+  ws.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data)
+    if (message.method === 'Runtime.exceptionThrown' || message.method === 'Log.entryAdded' && message.params.entry.level === 'error' || message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push(message)
+    const request = pending.get(message.id)
+    if (!request) return
+    pending.delete(message.id)
+    clearTimeout(request.timer)
+    if (message.error) request.reject(new Error(JSON.stringify(message.error)))
+    else request.resolve(message.result)
+  })
+  const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
+    if (ws.readyState !== WebSocket.OPEN) { reject(new Error('CDP connection is not open')); return }
+    const id = ++sequence
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, method === 'Page.captureScreenshot' ? 30000 : timeoutMs)
+    pending.set(id, { resolve, reject, timer })
+    ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
+  })
+  if (enablePage) { await send('Runtime.enable'); await send('Log.enable') }
+  return {
+    send, close: () => ws.close(),
+    async evaluate(expression) {
+      const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
+      if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails))
+      return result.result.value
+    },
+  }
+}
+
+const read = () => JSON.parse(fs.readFileSync(path.join(DATA, 'data.json'), 'utf8'))
+async function raw(name, args = {}) { return page.evaluate(`window.whitebox.call(${JSON.stringify(name)},${JSON.stringify(args)})`) }
+async function call(name, args = {}) {
+  const response = await raw(name, args)
+  assert.equal(response.ok, true, `${name}: ${JSON.stringify(response)}`)
+  return response.data
+}
+
+function nativeMainWindow() {
+  const identity = readWindowsProcesses().find((item) => item.ProcessId === child.pid)
+  assert.ok(sameProcess(launchIdentity, identity), 'Native visibility is measured on the owned Electron')
+  const command = `[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false);
+    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class QaWindow { [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid); }';
+    $owned=Get-Process -Id ${child.pid} -ErrorAction Stop; $owned.Refresh(); $handle=$owned.MainWindowHandle; [uint32]$windowOwner=0;
+    [void][QaWindow]::GetWindowThreadProcessId($handle,[ref]$windowOwner);
+    [pscustomobject]@{pid=$owned.Id;windowPid=$windowOwner;handle=$handle.ToInt64();title=$owned.MainWindowTitle;visible=[QaWindow]::IsWindowVisible($handle)} | ConvertTo-Json -Compress`
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', command], { encoding: 'utf8', windowsHide: true, timeout: 5000 })
+  assert.equal(result.status, 0, `Native visibility probe: ${result.error?.message ?? result.stderr}`)
+  return JSON.parse(result.stdout)
+}
+
+async function launch(label) {
+  const port = await freePort()
+  const env = { ...process.env, WHITEBOX_DATA_DIR: DATA, ...(quitObserver ? { WHITEBOX_QUIT_TRACE_DIR: RUN } : {}) }
+  delete env.VITE_DEV_SERVER_URL
+  delete env.ELECTRON_RUN_AS_NODE
+  const log = fs.openSync(path.join(RUN, `${label}-app.log`), 'a')
+  const args = ['--hidden', '--open=main', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(RUN, 'profile')}`]
+  if (!process.env.WHITEBOX_EXE) args.unshift(quitObserver ? path.join(ROOT, 'scripts', 'quit-observer.mjs') : ROOT)
+  const launchStartedAt = Date.now()
+  child = spawn(electron, args, { cwd: ROOT, env, stdio: ['ignore', log, log], windowsHide: true })
+  fs.closeSync(log)
+  let spawnError
+  child.once('error', (error) => { spawnError = error })
+  const inventory = readWindowsProcesses()
+  launchIdentity = inventory.find((item) => item.ProcessId === child.pid)
+  assert.ok(launchIdentity, 'Launched Electron identity is present')
+  ownedProcesses.registerRoot(launchIdentity, { parentPid: process.pid, name: path.basename(electron), notBefore: launchStartedAt })
+  ownedProcesses.observe(inventory)
+  const target = await until(async () => {
+    if (spawnError) throw spawnError
+    const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1500) })
+    return (await response.json()).find((item) => item.type === 'page' && item.url.endsWith('#main'))
+  }, 'main window', 20000)
+  const buildRoot = process.env.WHITEBOX_EXE ? path.join(path.dirname(electron), 'resources', 'app') : ROOT
+  const expected = pathToFileURL(path.join(buildRoot, 'dist', 'index.html')).href + '#main'
+  launchInfo = { label, port, expected, pid: child.pid, identity: launchIdentity, quitObserver, keepQuitPage }
+  fs.writeFileSync(path.join(RUN, label+'-launch.json'), JSON.stringify(launchInfo, null, 2))
+  check(`${label}: CDP is attached to this build`, decodeURI(target.url) === decodeURI(expected), target.url)
+  page = await connect(target.webSocketDebuggerUrl)
+  await until(() => page.evaluate('Boolean(window.whitebox && document.querySelector(".rail-tabs"))'), 'renderer ready')
+  const native = await until(() => {
+    const window = nativeMainWindow()
+    return window.pid === child.pid && window.windowPid === child.pid && window.title === 'White Box' && window.visible ? window : null
+  }, 'owned native Main window visible', 20000)
+  fs.writeFileSync(path.join(RUN, label+'-native-window.json'), JSON.stringify(native, null, 2))
+  check(`${label}: the owned Main window is natively visible before CDP activation`, native.visible && native.windowPid === child.pid, native)
+  await page.send('Page.bringToFront')
+}
+
+async function captureLiveState(owned, stage = 'quit-timeout') {
+  const observation = { at: Date.now(), stage, launch: launchInfo, processes: ownedProcesses.observe(readWindowsProcesses()) }
+  const ids = observation.processes.remaining.map((item) => item.ProcessId)
+  if (ids.length) {
+    const command = `[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); Get-Process -Id ${ids.join(',')} -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,Responding,MainWindowTitle,@{Name="MainWindowHandle";Expression={$_.MainWindowHandle.ToInt64()}},@{Name="CpuSeconds";Expression={$_.TotalProcessorTime.TotalSeconds}} | ConvertTo-Json -Compress`
+    const native = spawnSync('powershell.exe', ['-NoProfile', '-Command', command], { encoding: 'utf8', windowsHide: true, timeout: 3000 })
+    try { observation.nativeProcesses = JSON.parse(native.stdout) }
+    catch { observation.nativeProcessError = { status: native.status, error: native.error?.message, stderr: native.stderr } }
+  }
+  let browser
+  try {
+    const response = await fetch(`http://127.0.0.1:${launchInfo.port}/json/version`, { signal: AbortSignal.timeout(1500), redirect: 'error' })
+    const version = await response.json()
+    const endpoint = new URL(version.webSocketDebuggerUrl)
+    assert.ok(endpoint.protocol === 'ws:' && ['127.0.0.1', 'localhost'].includes(endpoint.hostname) && endpoint.port === String(launchInfo.port) && endpoint.pathname.startsWith('/devtools/browser/') && !endpoint.username && !endpoint.password, 'Timeout CDP endpoint belongs to the isolated launch port')
+    browser = await connect(endpoint.href, false, 1500)
+    const { processInfo } = await browser.send('SystemInfo.getProcessInfo')
+    const browserProcesses = processInfo.filter((item) => item.type === 'browser')
+    assert.ok(browserProcesses.length === 1 && browserProcesses[0].id === owned.pid, 'Timeout CDP browser belongs to the owned Electron')
+    observation.cdpProcesses = processInfo
+    const { targetInfos } = await browser.send('Target.getTargets')
+    observation.targets = targetInfos
+    const target = targetInfos.find((item) => item.type === 'page' && decodeURI(item.url) === decodeURI(launchInfo.expected))
+    if (target) {
+      const { sessionId } = await browser.send('Target.attachToTarget', { targetId: target.targetId, flatten: true })
+      const result = await browser.send('Runtime.evaluate', { expression: `(() => {
+        if (decodeURI(location.href) !== ${JSON.stringify(decodeURI(launchInfo.expected))}) throw new Error('Quit snapshot page changed');
+        const active = document.activeElement;
+        return { url: location.href, readyState: document.readyState, activeElement: { tag: active?.tagName, className: String(active?.className) }, inert: Array.from(document.querySelectorAll('[inert]'), (element) => ({ tag: element.tagName, className: String(element.className) })), alerts: Array.from(document.querySelectorAll('[role="alert"], [role="status"]'), (element) => element.textContent), bodyText: document.body.innerText.slice(0, 4000) };
+      })()`, returnByValue: true }, sessionId)
+      if (result.exceptionDetails) observation.rendererError = result.exceptionDetails
+      else observation.renderer = result.result.value
+    }
+  } catch (error) { observation.cdpError = error.message }
+  finally { browser?.close() }
+  const tracePath = path.join(RUN, `quit-${owned.pid}.jsonl`)
+  if (fs.existsSync(tracePath)) observation.trace = fs.readFileSync(tracePath, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse)
+  observation.processesAfter = ownedProcesses.observe(readWindowsProcesses())
+  fs.writeFileSync(path.join(RUN, `${stage}-${owned.pid}.json`), JSON.stringify(observation, null, 2))
+  return observation.processesAfter
+}
+
+async function stop() {
+  const owned = child
+  if (!owned) { page?.close(); page = undefined; return }
+  const processesBefore = ownedProcesses.observe(readWindowsProcesses())
+  fs.writeFileSync(path.join(RUN, `quit-before-${owned.pid}.json`), JSON.stringify({ at: Date.now(), launch: launchInfo, processes: processesBefore }, null, 2))
+  let exitEventObserved = false
+  let quitRequested = false
+  let quitError = null
+  let forcedKill = false
+  let killAccepted = null
+  let quitEvaluationReturnedAt = null
+  let pageClosedAt = null
+  let timedOut = false
+  const onExit = () => { exitEventObserved = true }
+  owned.on('exit', onExit)
+  const pidAlive = () => {
+    if (!owned.pid) return false
+    try { process.kill(owned.pid, 0); return true } catch (error) {
+      if (error.code === 'ESRCH') return false
+      throw error
+    }
+  }
+  const exited = () => exitEventObserved || owned.exitCode !== null || owned.signalCode !== null || !pidAlive()
+  const waitForExit = async (timeout) => {
+    const deadline = Date.now() + timeout
+    while (!exited()) {
+      if (Date.now() >= deadline) return false
+      await wait(100)
+    }
+    return true
+  }
+  try {
+    if (exited()) return
+    quitRequested = Boolean(page)
+    try { await page?.evaluate('void window.whitebox.call("app:quit")') } catch (error) { quitError = error.message }
+    quitEvaluationReturnedAt = Date.now()
+    if (!keepQuitPage) { page?.close(); pageClosedAt = Date.now() }
+    if (await waitForExit(15000)) return
+    timedOut = true
+    const processes = await captureLiveState(owned)
+    const liveIdentity = processes.remaining.find((item) => sameProcess(item, launchIdentity))
+    if (exited() || !liveIdentity) throw new Error('Owned Electron exceeded the quit deadline but exited before forced cleanup')
+    forcedKill = true
+    console.log(`Cleanup: terminating owned Electron PID ${owned.pid} after quit timeout`)
+    killAccepted = owned.kill('SIGKILL')
+    if (!await waitForExit(5000)) throw new Error('Owned Electron did not exit after cleanup')
+    throw new Error('Owned Electron required forced cleanup instead of exiting after app:quit')
+  } finally {
+    page?.close()
+    owned.off('exit', onExit)
+    const alive = pidAlive()
+    const processes = ownedProcesses.observe(readWindowsProcesses())
+    const observation = { pid: owned.pid, identity: launchIdentity, quitRequested, quitError, forcedKill, killAccepted, timedOut, quitEvaluationReturnedAt, pageClosedAt, keepQuitPage, quitObserver, processesBefore, processes,
+      exitEventObserved, exitCode: owned.exitCode, signalCode: owned.signalCode, pidAlive: alive,
+      confirmedBy: exitEventObserved || owned.exitCode !== null || owned.signalCode !== null ? 'child exit state' : !alive ? 'PID absent' : null }
+    fs.writeFileSync(path.join(RUN, `shutdown-${owned.pid ?? 'unspawned'}.json`), JSON.stringify(observation, null, 2))
+    console.log(`Cleanup: ${JSON.stringify(observation)}`)
+    if (exited()) { child = undefined; page = undefined }
+  }
+}
+
+async function screenshot(name) {
+  await page.send('Page.bringToFront')
+  await wait(350)
+  const shot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+  fs.writeFileSync(path.join(RUN, `${name}.png`), Buffer.from(shot.data, 'base64'))
+}
+
+async function key(key, code, modifiers = 0) {
+  const params = { key, code, modifiers, windowsVirtualKeyCode: key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0 }
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', ...params })
+  await page.send('Input.dispatchKeyEvent', { type: 'keyUp', ...params })
+}
+
+async function click(selector) {
+  const point = await until(() => page.evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if(!el) return null; el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(); const p={x:r.x+r.width/2,y:r.y+r.height/2}; return r.width && r.height && p.x>0 && p.x<innerWidth && p.y>0 && p.y<innerHeight && el.contains(document.elementFromPoint(p.x,p.y)) ? p : null })()`), selector)
+  await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
+  await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 })
+  await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 })
+  await wait(100)
+}
+
+async function fill(selector, value) {
+  await click(selector)
+  await key('a', 'KeyA', 2)
+  await page.send('Input.insertText', { text: value })
+}
+
+
+const now = Date.now()
+const DAY = 86_400_000
+const calendar = (at) => { const date=new Date(at); return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` }
+const task = (id, patch={}) => ({ id, title:id, projectId:null, parentId:null, notes:'', status:'todo', progress:0,
+  priority:'normal', order:0, createdAt:now - 100 * DAY, updatedAt:now, doneAt:null, createdInSessionId:null, ...patch })
+fs.writeFileSync(path.join(DATA, 'data.json'), JSON.stringify({ version:1, projects:[
+  { id:'archived-project', name:'アーカイブした仕事', hue:150, archived:true, order:0, createdAt:now, updatedAt:now },
+], sessions:[], dayNotes:{}, tasks:[
+  task('legacy-inbox', { status:'inbox', priority:'high' }), task('legacy-todo'),
+  task('aging-warning', { committedAt:now - 4 * DAY }),
+  task('negative-slack', { committedAt:now, due:calendar(now + DAY), remainingEffortMinutes:100000, safetyBufferMinutes:0 }),
+  task('deadline-overdue', { committedAt:now, due:calendar(now - DAY), blocked:true, blockReason:'承認待ち',
+    externalBlock:{who:'確認担当',what:'承認の返答',since:calendar(now - DAY),lastContactOn:null,nextFollowUpOn:calendar(now)} }),
+  task('archived-overdue', { projectId:'archived-project', committedAt:now, due:calendar(now - DAY) }),
+], settings:{ onboardedAt:now, lastWelcomeDate:null, stallWarningDays:3, shortcuts:{startPause:'',currentWork:'',dashboard:''} } }))
+
+async function board() {
+  await key('2','Digit2',2)
+  await until(() => page.evaluate('Boolean(document.querySelector(".board"))'), 'board')
+  if (!await page.evaluate('Boolean(document.querySelector(".board-cols"))')) await click('.board-head .segmented-item:first-child')
+  await until(() => page.evaluate('Boolean(document.querySelector(".board-cols"))'), 'board view')
+}
+async function detail(id) {
+  await click(`[data-card][data-task-id="${id}"]`)
+  await until(() => page.evaluate('Boolean(document.querySelector(".detail"))'), 'task detail')
+}
+async function warningSnapshot(surface) {
+  return page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(surface+' .task-warnings [data-warning-task]')}), row => ({
+    id:row.dataset.warningTask, risk:row.querySelector('.task-risk-badge').dataset.risk,
+    disabled:row.querySelector('.btn-primary').disabled, problem:row.querySelector('[data-warning-execution]')?.textContent ?? ''
+  }))`)
+}
+async function openWarnings(surface) {
+  if (!await page.evaluate(`document.querySelector(${JSON.stringify(surface+' [data-warning-disclosure]')})?.open`)) {
+    await click(surface+' [data-warning-toggle]')
+  }
+  await until(() => page.evaluate(`document.querySelector(${JSON.stringify(surface+' [data-warning-disclosure]')})?.open`), 'warning details opened')
+}
+async function waitingDetail(label, focused = true) {
+  await until(() => page.evaluate(`document.querySelector('.detail-title')?.value==='deadline-overdue'`), label+' detail')
+  check(label+' opens the shared detail with readable Blocked reason and disabled start',await page.evaluate(`
+    document.querySelector('.detail [data-execution-problem]').textContent.includes('承認待ち') &&
+    document.querySelector('.detail-foot .btn-primary').disabled &&
+    document.querySelector('.task-control input[type="checkbox"]').checked
+  `))
+  if (!focused) return
+  try {
+    await until(() => page.evaluate(`document.querySelector('.task-control')?.contains(document.activeElement)`), label+' waiting editor focused')
+  } catch (error) {
+    const diagnostic = await page.evaluate(`(() => {
+      const target = document.querySelector('[data-task-detail-section="waiting"]');
+      const active = document.activeElement;
+      const rect = target?.getBoundingClientRect();
+      return { targetConnected: target?.isConnected ?? false, targetInert: Boolean(target?.closest('[inert]')), activeElement: { tag: active?.tagName, className: String(active?.className), section: active?.dataset?.taskDetailSection ?? null }, rect: rect ? { top: rect.top, bottom: rect.bottom } : null };
+    })()`)
+    fs.writeFileSync(path.join(RUN, 'waiting-focus-failure.json'), JSON.stringify({ label, ...diagnostic }, null, 2))
+    console.log('Waiting focus diagnostic: '+JSON.stringify({ label, ...diagnostic }))
+    throw error
+  }
+  const focusState = await page.evaluate(`(() => {
+    const target = document.querySelector('[data-task-detail-section="waiting"]');
+    const ancestors = [];
+    for (let element = target; element; element = element.parentElement) ancestors.push({ tag: element.tagName, className: String(element.className), inert: element.hasAttribute('inert') });
+    return { ancestors, targetInert: Boolean(target?.closest('[inert]')), targetFocused: document.activeElement === target };
+  })()`)
+  fs.writeFileSync(path.join(RUN, label.toLowerCase().replace(/\W+/g, '-')+'-waiting-focus.json'), JSON.stringify(focusState, null, 2))
+  check(label+' focuses after all ancestor saving locks are released',focusState.targetFocused && !focusState.targetInert && focusState.ancestors.every((ancestor) => !ancestor.inert),focusState)
+  check(label+' click itself focuses the visible waiting and predecessor editor',await page.evaluate(`(() => {
+    const r=document.querySelector('input[aria-label="Blocked の理由"]').getBoundingClientRect();
+    return r.top>=0 && r.bottom<=innerHeight && document.querySelector('.task-control').contains(document.activeElement) && Boolean(document.querySelector('.task-control .external-summary'));
+  })()`))
+}
+const effortInput='input[aria-label="残作業の見積（任意）"]'
+const bufferInput='input[aria-label="安全余裕（任意）"]'
+let exitCode=1
+try {
+  console.log(`Evidence: ${RUN}`)
+  await launch('first')
+  const initial=await call('state:get')
+  const legacy=initial.tasks.find(item=>item.id==='legacy-inbox')
+  check('Legacy load leaves optional planning and commitment fields absent', ['remainingEffortMinutes','safetyBufferMinutes','committedAt','lastProgressAt'].every(field=>!Object.hasOwn(legacy,field)))
+  await until(() => page.evaluate('Boolean(document.querySelector(".welcome"))'), 'Welcome overlay')
+  check('Welcome displays Warning, High Risk and Overdue with their reasons', await page.evaluate(`['Warning','High Risk','Overdue'].every(label=>document.querySelector('.welcome .task-warnings').innerText.includes(label))`))
+  check('Legacy Inbox and unobserved legacy Todo have no warning', await page.evaluate(`!document.querySelector('.welcome [data-warning-task="legacy-inbox"]') && !document.querySelector('.welcome [data-warning-task="legacy-todo"]')`))
+  const expectedWarnings=await warningSnapshot('.welcome')
+  check('Welcome excludes archived warnings and shows the Blocked start reason',expectedWarnings.length===3 && !expectedWarnings.some(item=>item.id==='archived-overdue') && expectedWarnings.find(item=>item.id==='deadline-overdue')?.disabled && expectedWarnings.find(item=>item.id==='deadline-overdue')?.problem.includes('承認待ち'))
+  const beforeBlocked=read()
+  const blockedStart=await raw('session:start',{taskId:'deadline-overdue',minutes:30})
+  check('Blocked start is rejected by public IPC without changing saved data',blockedStart.ok===false && JSON.stringify(read())===JSON.stringify(beforeBlocked))
+  await screenshot('01-welcome-warnings')
+  await click('.welcome [data-warning-task="deadline-overdue"] [data-warning-organize]')
+  await waitingDetail('Welcome warning')
+  await screenshot('01b-welcome-waiting-detail')
+  await click('.detail-close')
+  for (const surface of [{key:'1',code:'Digit1',selector:'.today',name:'Today'}, {key:'8',code:'Digit8',selector:'.week',name:'Week'}]) {
+    await key(surface.key,surface.code,2)
+    await until(()=>page.evaluate(`Boolean(document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')}))`),surface.name+' warnings')
+    check(surface.name+' initially keeps current warning context compact and the activity metrics visible',await page.evaluate(`(() => {
+      const panel=document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')});
+      const strip=document.querySelector(${JSON.stringify(surface.selector+' .today-strip')}).getBoundingClientRect();
+      return !panel.querySelector('[data-warning-disclosure]').open && panel.innerText.includes('現在') && panel.innerText.includes('締切') && panel.getBoundingClientRect().height<150 && strip.top>=0 && strip.bottom<innerHeight;
+    })()`))
+    await screenshot('01-'+surface.name.toLowerCase()+'-compact')
+    await page.send('Emulation.setDeviceMetricsOverride',{width:940,height:620,deviceScaleFactor:1,mobile:false})
+    const minimum=await page.evaluate(`(() => {
+      const view=document.querySelector(${JSON.stringify(surface.selector)});
+      const strip=view.querySelector('.today-strip').getBoundingClientRect();
+      return {width:innerWidth,height:innerHeight,overflow:Math.max(0,document.documentElement.scrollWidth-innerWidth,view.scrollWidth-view.clientWidth),metricsBottom:strip.bottom};
+    })()`)
+    check(surface.name+' keeps activity metrics visible without horizontal overflow at 940x620',minimum.width===940 && minimum.height===620 && minimum.overflow===0 && minimum.metricsBottom<620,minimum)
+    await screenshot('01-'+surface.name.toLowerCase()+'-compact-minimum')
+    await page.send('Emulation.clearDeviceMetricsOverride')
+    if (surface.name === 'Week') {
+      await click('.week-navigation button:first-child')
+      check('Past week keeps present warnings out of historical activity',await page.evaluate(`!document.querySelector('.week .task-warnings')`))
+      await click('.week-navigation button:last-child')
+      await click('.week-navigation button:last-child')
+      check('Future week keeps present warnings out of future activity',await page.evaluate(`!document.querySelector('.week .task-warnings')`))
+      await click('.week-navigation button:nth-child(2)')
+      await until(()=>page.evaluate(`Boolean(document.querySelector('.week .task-warnings'))`),'current week warnings restored')
+    }
+    await openWarnings(surface.selector)
+    const current=await warningSnapshot(surface.selector)
+    check(surface.name+' shows the same warnings, Blocked guard and archive exclusion',JSON.stringify(current)===JSON.stringify(expectedWarnings),current)
+    await screenshot('01-'+surface.name.toLowerCase()+'-warnings')
+    await click(`${surface.selector} [data-warning-task="deadline-overdue"] [data-warning-organize]`)
+    await waitingDetail(surface.name+' warning')
+    await click('.detail-close')
+  }
+  await board()
+  check('Board has the same three warnings', await page.evaluate('document.querySelectorAll(".board > .task-warnings [data-warning-task]").length===3'))
+  check('Board shows the same warnings, Blocked guard and archive exclusion',JSON.stringify(await warningSnapshot('.board'))===JSON.stringify(expectedWarnings))
+  check('ExternalWaiting is preserved alongside the warning panel',await page.evaluate(`Boolean(document.querySelector('[data-external-task-id="deadline-overdue"]'))`))
+  await click('.board-head .segmented-item:nth-child(2)')
+  await click('[data-warning-task="deadline-overdue"] .task-warning-title')
+  check('Warning title opens detail from the list view too',await page.evaluate(`Boolean(document.querySelector('.board-cols')) && document.querySelector('.detail-title').value==='deadline-overdue'`))
+  await waitingDetail('Board title', false)
+  await click('.detail-close')
+  await click('.board [data-warning-task="deadline-overdue"] [data-warning-organize]')
+  await waitingDetail('Board organize')
+  await fill('input[aria-label="Blocked の理由"]','次の確認日を調整している')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='deadline-overdue').blockReason==='次の確認日を調整している','waiting reason saved from UI')
+  check('Warning detail lets the user save waiting information',read().tasks.find(item=>item.id==='deadline-overdue').blocked===true)
+  await click('.detail-close')
+  const extraWarnings=[]
+  for (const title of ['additional-warning-one','additional-warning-two']) extraWarnings.push(await call('task:create',{title,status:'todo',due:calendar(now-DAY)}))
+  const expectedFive=['deadline-overdue','negative-slack','aging-warning',...extraWarnings.map(task=>task.id)].sort()
+  await call('settings:update',{patch:{lastWelcomeDate:dayKey(now-DAY,read().settings.dayStartHour)}})
+  await page.send('Page.reload')
+  await until(()=>page.evaluate(`Boolean(document.querySelector('.welcome .task-warnings'))`),'new-day five warning context')
+  check('Five warnings initially stay summarized at the daily welcome',await page.evaluate(`!document.querySelector('.welcome [data-warning-disclosure]').open && document.querySelector('.welcome .task-warnings').innerText.includes('5件')`))
+  await openWarnings('.welcome')
+  check('Welcome disclosure exposes all five warnings and their actions',await page.evaluate(`Array.from(document.querySelectorAll('.welcome [data-warning-task]')).every(row=>row.getBoundingClientRect().height>0 && row.querySelector('.btn-primary') && row.querySelector('[data-warning-organize]')) && document.querySelectorAll('.welcome [data-warning-task]').length===5`))
+  await click('.welcome-close')
+  for (const surface of [{key:'1',code:'Digit1',selector:'.today',name:'Today'}, {key:'8',code:'Digit8',selector:'.week',name:'Week'}, {key:'2',code:'Digit2',selector:'.board',name:'Board'}]) {
+    await key(surface.key,surface.code,2)
+    await until(()=>page.evaluate(`Boolean(document.querySelector(${JSON.stringify(surface.selector+' .task-warnings')}))`),surface.name+' five warning context')
+    await openWarnings(surface.selector)
+    const shown=await page.evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(surface.selector+' [data-warning-task]')}),row=>({id:row.dataset.warningTask,visible:row.getBoundingClientRect().height>0,start:Boolean(row.querySelector('.btn-primary')),organize:Boolean(row.querySelector('[data-warning-organize]'))}))`)
+    check(surface.name+' disclosure exposes all five warnings and their actions',JSON.stringify(shown.map(row=>row.id).sort())===JSON.stringify(expectedFive) && shown.every(row=>row.visible && row.start && row.organize),shown)
+    if (surface.name==='Today') await screenshot('01-today-five-warning-actions')
+  }
+  for (const task of extraWarnings) await call('task:delete',{id:task.id})
+  await board()
+  await key('4','Digit4',2)
+  await until(() => page.evaluate('Boolean(document.querySelector(".settings"))'), 'settings view')
+  await page.evaluate(`(() => { const row=[...document.querySelectorAll('.set-row')].find(item=>item.querySelector('.set-row-label')?.textContent==='Todo の警告までの日数'); if(!row) throw Error('Warning threshold setting missing'); row.querySelector('input').setAttribute('data-aging-threshold','true'); })()`)
+  await fill('[data-aging-threshold]','10')
+  await until(()=>read().settings.stallWarningDays===10,'warning threshold saved from UI')
+  await board()
+  check('User threshold changes Aging warnings while deadline warnings remain',await page.evaluate(`!document.querySelector('[data-warning-task="aging-warning"]') && Boolean(document.querySelector('[data-warning-task="deadline-overdue"]'))`))
+  await call('settings:update',{patch:{stallWarningDays:3}})
+  await until(() => page.evaluate(`Boolean(document.querySelector('[data-warning-task="aging-warning"]'))`), 'Aging warning restored after threshold reset')
+  await call('task:move',{id:'legacy-inbox',status:'todo',index:0})
+  const committed=read().tasks.find(item=>item.id==='legacy-inbox')
+  check('Old Inbox becomes newly committed Todo without an immediate warning', committed.committedAt >= now && await page.evaluate(`!document.querySelector('[data-warning-task="legacy-inbox"]')`))
+  await detail('legacy-inbox')
+  check('Unentered remaining effort and safety buffer stay blank; Slack is unknown', await page.evaluate(`document.querySelector(${JSON.stringify(effortInput)}).value==='' && document.querySelector(${JSON.stringify(bufferInput)}).value==='' && document.querySelector('.detail .task-risk-summary').innerText.includes('Slack: 不明')`))
+  await fill(effortInput,'90')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===90,'effort saved from UI')
+  await fill(bufferInput,'0')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').safetyBufferMinutes===0,'explicit zero buffer saved from UI')
+  await call('task:update',{id:'legacy-inbox',patch:{due:calendar(now + DAY)}})
+  await until(() => page.evaluate(`!document.querySelector('.detail .task-risk-summary').innerText.includes('Slack: 不明')`), 'Slack visible')
+  await page.evaluate(`(() => { const select=document.querySelector('select[aria-label="残作業の見積（任意）の単位"]'); select.value='60'; select.dispatchEvent(new Event('change',{bubbles:true})); })()`)
+  await until(() => page.evaluate(`document.querySelector(${JSON.stringify(effortInput)}).value==='1.5'`), 'hours displayed')
+  await fill(effortInput,'2')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===120,'two hours saved as minutes')
+  await fill(effortInput,'-2')
+  await click('.detail-title')
+  check('Negative UI input reports an error and keeps the saved effort',read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===120 && await page.evaluate(`Boolean(document.querySelector('.detail [role="alert"]'))`))
+  await fill(effortInput,'2')
+  await click('.detail-title')
+  await until(() => page.evaluate(`!document.querySelector('.detail [role="alert"]')`), 'corrected input clears error')
+  await fill(bufferInput,'')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').safetyBufferMinutes===null,'cleared buffer saved as unknown')
+  check('Clearing optional buffer makes Slack unknown',await page.evaluate(`document.querySelector('.detail .task-risk-summary').innerText.includes('Slack: 不明')`))
+  await fill(bufferInput,'0')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').safetyBufferMinutes===0,'explicit zero buffer restored')
+  const faultPath=path.join(DATA,'data.json.tmp')
+  assert.equal(fs.existsSync(faultPath),false,'fault fixture must not replace an existing path')
+  const beforeFailure=read().tasks.find(item=>item.id==='legacy-inbox')
+  fs.mkdirSync(faultPath)
+  try {
+    await fill(effortInput,'3')
+    await click('.detail-title')
+    await until(() => page.evaluate(`Boolean(document.querySelector('.detail [role="alert"]'))`), 'actual save failure shown')
+    const current=await call('state:get')
+    check('Actual save failure restores task state and keeps disk data unchanged',JSON.stringify(current.tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeFailure) && JSON.stringify(read().tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeFailure))
+    await page.evaluate(`document.querySelector('.detail [role="alert"]').scrollIntoView({block:'center'})`)
+    await screenshot('02b-save-failure-visible')
+    await click('.detail-close')
+    check('Failed duration save blocks detail close and retains the entered draft',await page.evaluate(`Boolean(document.querySelector('.detail')) && document.querySelector(${JSON.stringify(effortInput)}).value==='3'`))
+    await fill(effortInput,'2')
+    await click('.detail-title')
+    await until(() => page.evaluate(`!document.querySelector('.detail [role="alert"]')`), 'explicitly reverted duration clears error')
+    await click('.detail-close')
+    await until(() => page.evaluate('!document.querySelector(".detail")'), 'reverted detail closes')
+    await page.evaluate(`(() => {
+      const select=document.querySelector('[data-warning-task="deadline-overdue"] select');
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'high');
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    })()`)
+    await until(()=>page.evaluate(`Boolean(document.querySelector('.task-warnings [role="alert"]'))`),'warning action save failure shown')
+    await click('.board [data-warning-toggle]')
+    check('Folding warning details preserves the visible save error and the saved priority',await page.evaluate(`(() => {
+      const panel=document.querySelector('.board .task-warnings');
+      const r=panel.querySelector('[role="alert"]').getBoundingClientRect();
+      return !panel.querySelector('[data-warning-disclosure]').open && r.height>0 && r.top>=0 && r.bottom<=innerHeight;
+    })()`) && read().tasks.find(item=>item.id==='deadline-overdue').priority==='normal')
+    await screenshot('02c-folded-warning-save-error')
+    await openWarnings('.board')
+    await detail('legacy-inbox')
+    const reasonInput='input[aria-label="Blocked の理由"]'
+    const beforeReason=read().tasks.find(item=>item.id==='legacy-inbox')
+    const failedReason='保存に失敗しても残す待ちの理由'
+    await fill(reasonInput,failedReason)
+    await click('.detail-title')
+    await until(()=>page.evaluate('Boolean(document.querySelector(".detail [role=alert]"))'),'Blocked reason save failure shown')
+    await screenshot('02d-blocked-reason-save-failure')
+    await click('.detail-close')
+    await until(()=>page.evaluate('!document.querySelector(".detail") || document.querySelector(".detail").getAttribute("aria-busy")!=="true"'),'Blocked reason close attempt completed')
+    const reasonAfter=await page.evaluate(`({open:Boolean(document.querySelector('.detail')),draft:document.querySelector(${JSON.stringify(reasonInput)})?.value ?? null,alert:Boolean(document.querySelector('.detail [role="alert"]'))})`)
+    reasonAfter.savedUnchanged=JSON.stringify(read().tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeReason)
+    if(reasonAfter.open) {
+      await page.evaluate(`document.querySelector(${JSON.stringify(reasonInput)}).scrollIntoView({block:"center"})`)
+      await screenshot('02f-blocked-reason-retained-after-close')
+      await fill(reasonInput,beforeReason.blockReason ?? '')
+      await click('.detail-title')
+      await click('.detail-close')
+      await until(()=>page.evaluate('!document.querySelector(".detail")'),'explicitly reverted reason closes')
+    }
+    await detail('legacy-inbox')
+    await click('.task-control .task-control-actions button:first-child')
+    await until(()=>page.evaluate('Boolean(document.querySelector(".external-form"))'),'external waiting form opened for failure check')
+    await fill('.external-form label:nth-of-type(1) input','保存失敗の待ち担当')
+    await fill('.external-form label:nth-of-type(2) input','保存失敗の確認内容')
+    const beforeExternal=read().tasks.find(item=>item.id==='legacy-inbox')
+    await click('.external-form button[type="submit"]')
+    await until(()=>page.evaluate('Boolean(document.querySelector(".detail [role=alert]"))'),'external waiting save failure shown')
+    await screenshot('02e-external-wait-save-failure')
+    await click('.detail-close')
+    await until(()=>page.evaluate('!document.querySelector(".detail") || document.querySelector(".detail").getAttribute("aria-busy")!=="true"'),'external waiting close attempt completed')
+    const externalAfter=await page.evaluate(`({open:Boolean(document.querySelector('.detail')),who:document.querySelector('.external-form label:nth-of-type(1) input')?.value ?? null,what:document.querySelector('.external-form label:nth-of-type(2) input')?.value ?? null,alert:Boolean(document.querySelector('.detail [role="alert"]'))})`)
+    externalAfter.savedUnchanged=JSON.stringify(read().tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(beforeExternal)
+    if(externalAfter.open) {
+      await page.evaluate('document.querySelector(".external-form").scrollIntoView({block:"center"})')
+      await screenshot('02g-external-wait-retained-after-close')
+      await click('.external-form button[type="button"]')
+      await click('.detail-close')
+      await until(()=>page.evaluate('!document.querySelector(".detail")'),'explicitly cancelled external form closes')
+    }
+    fs.writeFileSync(path.join(RUN,'waiting-save-close.json'),JSON.stringify({reason:reasonAfter,external:externalAfter},null,2))
+    check('Failed Blocked reason save preserves detail, input, error and saved task',reasonAfter.open && reasonAfter.draft===failedReason && reasonAfter.alert && reasonAfter.savedUnchanged,reasonAfter)
+    check('Failed submitted external wait preserves form, error and saved task until explicit cancellation',externalAfter.open && externalAfter.who==='保存失敗の待ち担当' && externalAfter.what==='保存失敗の確認内容' && externalAfter.alert && externalAfter.savedUnchanged,externalAfter)
+    await detail('legacy-inbox')
+  } finally { fs.rmdirSync(faultPath) }
+  await page.evaluate(`(() => { const select=document.querySelector('select[aria-label="残作業の見積（任意）の単位"]'); select.value='60'; select.dispatchEvent(new Event('change',{bubbles:true})); })()`)
+  await until(() => page.evaluate(`document.querySelector(${JSON.stringify(effortInput)}).value==='2'`), 'reopened detail uses hours')
+  await fill(effortInput,'2')
+  await click('.detail-title')
+  await until(()=>read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===120,'reopened detail keeps the two-hour estimate')
+  await until(() => page.evaluate(`!document.querySelector('.detail [role="alert"]')`), 'save failure corrected')
+  const before=read().tasks.find(item=>item.id==='legacy-inbox')
+  for (const patch of [{remainingEffortMinutes:-1},{safetyBufferMinutes:'0'},{remainingEffortMinute:1},{committedAt:0}]) {
+    const result=await raw('task:update',{id:'legacy-inbox',patch})
+    check('Strict IPC rejects invalid planning input '+JSON.stringify(patch),result.ok===false)
+  }
+  check('Invalid IPC does not change saved values',JSON.stringify(read().tasks.find(item=>item.id==='legacy-inbox'))===JSON.stringify(before))
+  await page.evaluate(`document.querySelector('.detail .task-risk-summary').scrollIntoView({block:'center'})`)
+  await screenshot('02-board-effort-slack')
+  await click('.detail-close')
+  const agingAnchor=read().tasks.find(item=>item.id==='aging-warning').committedAt
+  await call('task:update',{id:'aging-warning',patch:{notes:'次の再開の手がかり'}})
+  check('Notes edit preserves the commitment and Aging warning',read().tasks.find(item=>item.id==='aging-warning').committedAt===agingAnchor && await page.evaluate(`Boolean(document.querySelector('[data-warning-task="aging-warning"]'))`))
+  await call('task:update',{id:'aging-warning',patch:{progress:10}})
+  await until(() => page.evaluate(`!document.querySelector('[data-warning-task="aging-warning"]')`), 'progress clears Aging warning')
+  check('Actual progress records its anchor',read().tasks.find(item=>item.id==='aging-warning').lastProgressAt>=now)
+  await click('[data-warning-task="negative-slack"] button.btn-ghost')
+  await until(()=>read().tasks.find(item=>item.id==='negative-slack').status==='inbox','warning action Inbox persisted')
+  check('Inbox action removes that warning',await page.evaluate(`!document.querySelector('[data-warning-task="negative-slack"]')`))
+  await detail('legacy-inbox')
+  await click('.detail-foot .btn-primary')
+  await until(()=>read().sessions.length===1,'chosen session saved')
+  check('User can start a chosen task even when another is Overdue',read().sessions[0].segments[0].taskId==='legacy-inbox')
+  await click('.detail-close')
+  await key('1','Digit1',2)
+  await until(()=>page.evaluate(`Boolean(document.querySelector('.today'))`),'active work activity view')
+  await board()
+  await until(()=>page.evaluate(`!document.querySelector('.board [data-warning-disclosure]').open`),'working warnings initially folded')
+  check('Active work initially folds warnings while retaining current context',await page.evaluate(`document.querySelector('.board .task-warnings').innerText.includes('現在')`))
+  await openWarnings('.board')
+  await wait(1200)
+  check('The user can keep warning details open during active work',await page.evaluate(`document.querySelector('.board [data-warning-disclosure]').open`))
+  await call('session:end')
+  const sessionId=read().sessions[0].id
+  await call('session:review',{sessionId,changes:[{taskId:'legacy-inbox',from:0,to:20,markedDone:false}]})
+  check('Working and review do not decrement the remaining estimate',read().tasks.find(item=>item.id==='legacy-inbox').remainingEffortMinutes===120)
+  await stop()
+  await launch('restart')
+  const restored=await call('state:get')
+  const saved=restored.tasks.find(item=>item.id==='legacy-inbox')
+  check('Restart restores effort, explicit buffer, progress and commitment',saved.remainingEffortMinutes===120 && saved.safetyBufferMinutes===0 && saved.progress===20 && saved.committedAt===committed.committedAt && saved.lastProgressAt>=now)
+  check('Restart preserves other legacy unknown fields',!Object.hasOwn(restored.tasks.find(item=>item.id==='legacy-todo'),'committedAt'))
+  await board()
+  await screenshot('03-board-after-restart')
+  check('Renderer has no console errors or uncaught exceptions',errors.length===0,errors)
+  exitCode=0
+} catch(error) {
+  console.error(error)
+  fs.writeFileSync(path.join(RUN,'failure.txt'),error.stack || String(error))
+  if (quitObserver && child) {
+    try { await captureLiveState(child, 'failure-live') } catch (captureError) { fs.writeFileSync(path.join(RUN, 'failure-live-error.txt'), captureError.stack || String(captureError)) }
+  }
+  if(page) { try { await screenshot('failure'); fs.writeFileSync(path.join(RUN,'failure-dom.txt'),await page.evaluate('document.body.innerText')) } catch {} }
+} finally {
+  try { await stop() } catch(error) { console.error(error); exitCode=1 }
+  fs.writeFileSync(path.join(RUN,'result.json'),JSON.stringify({exitCode,checks,errors},null,2))
+  console.log(`Evidence: ${RUN}`)
+  process.exit(exitCode)
+}

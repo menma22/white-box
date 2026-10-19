@@ -1,0 +1,508 @@
+Waiting for the White Box UI E2E lock...
+UI E2E lock acquired: .
+対象: .\release\White Box\White Box.exe
+PASS 壊れた引数は契約で拒否される
+PASS 未知のコマンドは拒否される
+PASS 綴り違いのキーは黙って捨てず拒否される
+PASS ショートカットが空のままでも設定の更新が通る
+PASS セッションが始まる
+PASS 一時停止すると paused になる — "paused"
+PASS 停止中は実作業が増えない — {"before":2865,"after":2865}
+PASS 休憩を始めると paused になる
+PASS 休憩終了時刻が状態に入る
+PASS ミニカードが休憩タイマーを表示する — {"labels":["経過","休憩"],"body":"経過\n0m\n休憩\n00:01"}
+PASS 休憩終了後も明示的な再開までは paused のまま
+PASS 休憩終了通知が記録される
+PASS 休憩通知から再開できる
+PASS タスクを切り替えると Foreground が変わる
+PASS 切り替えで区間が 2 つになる — 2
+PASS 終了後に live が消える
+PASS レビュー対象が指定される
+PASS セッションが 1 本保存されている — 1
+PASS 終了時刻が入っている
+PASS 一時停止と休憩が閉じている
+PASS 手動停止時間がテスト側の実測範囲に収まる — {"manualPausedMs":2531,"floor":2517,"ceil":2540}
+PASS 停止時間に手動停止と休憩の両方が入る — 5810
+PASS 停止ぶんが実作業から引かれている — {"gross":11180,"pausedTotal":5810}
+PASS 区間が 2 本、どちらも閉じている
+PASS イベントが記録されている — ["session_started","task_started","paused","resumed","paused","resumed","task_switched","session_ended","progress_updated","progress_updated"]
+PASS ひとことが保存されている
+PASS 進捗がタスクへ反映される — 45
+PASS 完了にしたタスクが Done になる — "done"
+PASS 進捗の変化が記録に残る
+PASS バックアップが作られている
+PASS 既にデータのある DB はオンボーディング済みになる — 1791290710831
+PASS ショートカットは空のまま保存される — {"startPause":"","currentWork":"","dashboard":""}
+
+すべて通った
+Quit response observation: {"error":null,"exitCode":0,"signalCode":null}
+PASS 保存した検証アプリが自然終了する
+Evidence: .\.e2e-goals\run-dL4uRC
+Electron PID: 46724
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Old database gets an empty goal map and retains tasks
+PASS Editing content preserves the structural history
+PASS Hide preserves descendants, links, reason and timestamp
+PASS History records hidden branch and its reason
+PASS Restoring a descendant restores hidden ancestors
+PASS Merge and promote preserve complete subtrees
+PASS Issue edit and resolution are saved
+PASS Linked task uses the shared task collection
+PASS Invalid goal:create is rejected atomically {"goal":"不正な親","parentId":"missing"}
+PASS Invalid goal:update is rejected atomically {"id":"goal_muwo8yqgdqdu74","patch":{"goal":"部分変更禁止","reason":123}}
+PASS Invalid goal:merge is rejected atomically {"ids":["goal_muwo8ys73jfder","missing"],"goal":"部分成功は禁止"}
+PASS Invalid goal:merge is rejected atomically {"ids":["goal_muwo8yq9eu1mb8"],"goal":"子の統合は禁止"}
+PASS Invalid goal:hide is rejected atomically {"id":"missing","reason":""}
+PASS Invalid issue:create is rejected atomically {"kind":"unknown","text":"不正種別"}
+PASS Invalid issue:create is rejected atomically {"kind":"idea","text":"参照切れ","nodeId":"missing"}
+PASS Invalid issue:update is rejected atomically {"id":"issue_muwo8yshce9b0k","patch":{"text":"  "}}
+PASS Invalid task:update is rejected atomically {"id":"tsk_muwo8yt2r3r2y4","patch":{"title":"部分変更禁止","due":"2026-02-30"}}
+PASS Invalid task:update is rejected atomically {"id":"tsk_muwo8yt2r3r2y4","patch":{"title":"  "}}
+PASS Invalid task:update is rejected atomically {"id":"tsk_muwo8yt2r3r2y4","patch":{"goalNodeId":"missing"}}
+PASS Invalid goal:ui is rejected atomically {"patch":{"view":"unknown"}}
+Before import UI: {"visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS Import preserves source node content and hierarchy
+PASS Import remaps issue and history references
+PASS Import keeps task completion, priority, due and creation time
+PASS Import retains all existing White Box records
+PASS Import retains disclosure preferences and opens the map
+PASS Duplicate import does not duplicate records
+PASS Broken import leaves the database unchanged
+PASS Ctrl+5 opens the goal map
+PASS UI rejects achievement without a recorded result
+PASS A head with no tasks can be achieved with a result
+PASS UI creates a head and a linked child
+PASS A goal without criteria is explicitly unconfigured
+PASS Unmeasured numerical criteria retain null instead of inventing zero
+PASS Reaching a numerical condition does not declare the whole goal achieved
+PASS UI goal editing autosaves without structural history
+PASS UI issue is linked to the selected goal
+PASS UI edits and resolves the same issue
+PASS Blank issue edit restores the saved text
+PASS UI creates a shared task linked to the goal
+PASS Goal task link opens the common task detail
+PASS Goal task starts real timing and saves its session
+PASS Hidden branch disappears from the visible map
+PASS Ctrl+6 opens the independent issues page
+PASS Issue jump exposes the hidden branch without restoring it
+PASS UI restore preserves the reason in history
+PASS Mouse drag pans the map
+PASS UI merge links both selected heads
+PASS Tooltip remains full size and preserves its content when zoomed out
+PASS Returning to the board does not reopen a closed task detail
+PASS Blank task edit restores the saved title
+PASS Open task detail synchronizes list edits and does not overwrite on blur
+PASS UI updates shared task title, priority, due and status
+PASS Board displays the exact task created in goals
+PASS History UI displays the hidden reason
+PASS Structural history opens the recorded goal on the map
+PASS 940x620 viewport retains visible map and scrollable detail {"width":940,"height":620,"canvas":329.41668701171875,"detail":329.41668701171875,"overflow":0}
+PASS Cancelling task deletion preserves parent and child
+PASS Confirmed task deletion removes descendants and retains timing records
+PASS Cancelling issue deletion preserves the issue
+PASS Confirmed issue deletion removes only the selected issue
+Cleanup: {"pid":46724,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Electron PID: 33636
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart retains complete goal map, shared tasks and timing records
+PASS Renderer has no console errors or uncaught exceptions []
+Cleanup: {"pid":33636,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+Evidence: .\.e2e-goals\run-dL4uRC
+Electron PID: 38124
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Legacy optional fields load without altering original task
+PASS A blocker update retains one waiting editor and one context editor {"waiting":1,"context":1}
+PASS Opening the external editor saves the entered Blocked reason
+PASS External save preserves progress, status and completion
+PASS External wait dates persist
+Screenshot state: 01-detail-external-wait {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS Dedicated external UI surfaces who, what, since and confirmation action
+Screenshot state: 02-external-follow-up {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS Confirmation action opens editable task details
+PASS Explicit unblock keeps 70% progress
+PASS Inbox external waits are visible, archived waits require explicit reveal
+PASS Archived external waits can be revealed without making them startable
+PASS Rejected session:start: {"taskId":"missing"}
+PASS Rejected command preserves saved and live state
+PASS Rejected session:start: {"taskId":"tsk_muwo9n7wb0vayl"}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:move: {"id":"tsk_muwo9n7wb0vayl","status":"doing","index":0}
+PASS Rejected command preserves saved and live state
+PASS Rejected session:start: {"taskId":"tsk_muwo9n9np9ew4t"}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n738zkiy9","patch":{"hardDependencies":["tsk_muwo9n7wb0vayl"]}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"hardDependencies":["tsk_muwo9n7wb0vayl"]}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"hardDependencies":["missing"]}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"hardDependancies":[]}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"externalBlock":{"who":"","what":"reply","since":"invalid","lastContactOn":null,"nextFollowUpOn":null}}}
+PASS Rejected command preserves saved and live state
+PASS Related task navigation works and rejected UI edits show an error without changing data
+Screenshot state: 08-cycle-error {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS start: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded {"blocked":true,"advisory":true,"archivedAbsent":true}
+Screenshot state: 06-start-candidates {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#start","visibility":"visible","hidden":false,"focused":true,"width":660,"height":592}
+PASS current: hard blockers are visible and disabled, recommended order is advisory, archived targets are excluded {"blocked":true,"advisory":true,"archivedAbsent":true}
+Screenshot state: 07-current-candidates {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#current","visibility":"visible","hidden":false,"focused":true,"width":760,"height":660}
+PASS Recommended predecessor never forces or prevents starting
+PASS Rejected session:switchTask: {"taskId":"tsk_muwo9n7wb0vayl"}
+PASS Rejected command preserves saved and live state
+PASS Completing the hard predecessor permits Inbox commitment
+PASS Rejected task:update: {"id":"tsk_muwo9n738zkiy9","patch":{"status":"todo"}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:delete: {"id":"tsk_muwo9n738zkiy9"}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"blocked":true}}
+PASS Rejected command preserves saved and live state
+PASS Rejected task:update: {"id":"tsk_muwo9n7wb0vayl","patch":{"externalBlock":{"who":"担当","what":"回答","since":"2026-10-06","lastContactOn":null,"nextFollowUpOn":"2026-10-06"}}}
+PASS Rejected command preserves saved and live state
+PASS Deleting a hard predecessor preserves its dangling link
+PASS Rejected session:start: {"taskId":"tsk_muwo9n7wb0vayl"}
+PASS Rejected command preserves saved and live state
+PASS Missing predecessor is visible with explicit removal action
+Screenshot state: 03-deleted-predecessor {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS Rejected session:start: {"taskId":"tsk_muwo9n7wb0vayl"}
+PASS Rejected command preserves saved and live state
+Cleanup: {"pid":38124,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Electron PID: 47708
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Control fields, task progress, histories and goal states survive restart
+PASS Rejected session:start: {"taskId":"legacy"}
+PASS Rejected command preserves saved and live state
+PASS Rejected session:start: {"taskId":"tsk_muwo9n7wb0vayl"}
+PASS Rejected command preserves saved and live state
+Screenshot state: 04-restarted-follow-up {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+Cleanup: {"pid":47708,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Electron PID: 41844
+PASS blocked-recovery: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Imported blocked live task is paused on restart
+PASS Rejected recovery:resume: {}
+PASS Rejected command preserves saved and live state
+PASS Recovery UI exposes blocker and disables resume
+Screenshot state: 05-blocked-recovery {"url":"file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main","visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752}
+PASS No renderer exceptions or console errors []
+Cleanup: {"pid":41844,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Evidence: .\.e2e-dependencies\run-xgyFky
+Evidence: .\.e2e\activity-run-olBgJt
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Isolated profile starts with no projects, tasks or sessions
+PASS Fixtures use IPC edits and preserve deleted-task session references
+PASS Editing times and completing tasks do not assess the linked goal
+PASS Previous week: total is the independently expected duration {"total":"3h05m","projects":[{"name":"Activity Alpha","time":"2h 15m"},{"name":"Activity Beta","time":"30m"},{"name":"プロジェクトなし・削除済み","time":"20m"}],"tasks":[{"name":"Alpha の実作業","time":"2h 15m"},{"name":"Beta の実作業","time":"30m"},{"name":"（削除されたタスク）","time":"20m"}]}
+PASS Previous week: project attribution and total agree {"Activity Alpha":135,"Activity Beta":30,"プロジェクトなし・削除済み":20}
+PASS Previous week: task attribution and total agree {"Alpha の実作業":135,"Beta の実作業":30,"（削除されたタスク）":20}
+PASS Weekly metrics count three worked days, five original sessions and one completed task [{"label":"記録のある日","value":"3"},{"label":"セッション","value":"5"},{"label":"完了したタスク","value":"1"}]
+PASS Week starts Monday and includes all seven daily totals, including zero days [{"label":"09/28 月","time":"2h"},{"label":"09/29 火","time":"45m"},{"label":"09/30 水","time":"20m"},{"label":"10/01 木","time":"0m"},{"label":"10/02 金","time":"0m"},{"label":"10/03 土","time":"0m"},{"label":"10/04 日","time":"0m"}]
+PASS In-period session values sum to the same 185 minutes ["30m","1h","30m","45m","20m"]
+PASS Original 60-minute boundary session is distinguished from the 30-minute daily portion
+PASS 02-minimum-week: 940x620 keeps readable panels without horizontal overflow {"width":940,"height":620,"documentOverflow":0,"contentOverflow":0,"viewOverflow":0,"panels":[{"width":612.6666870117188,"height":209.20834350585938},{"width":612.6666870117188,"height":275.66668701171875},{"width":612.6666870117188,"height":279.47918701171875}]}
+PASS Preceding week: total is the independently expected duration {"total":"30m","projects":[{"name":"Activity Alpha","time":"30m"}],"tasks":[{"name":"Alpha の実作業","time":"30m"}]}
+PASS Preceding week: project attribution and total agree {"Activity Alpha":30}
+PASS Preceding week: task attribution and total agree {"Alpha の実作業":30}
+PASS The other 30 boundary minutes belong to Sunday of the preceding week
+PASS Next week restores the original selection
+PASS Historical fixtures do not leak into today
+PASS Live stopwatch appears before a session is ended
+PASS Real pause/resume records an observed interval
+PASS Today: total is the independently expected duration {"total":"5m","projects":[{"name":"Activity Alpha","time":"5m"}],"tasks":[{"name":"Alpha の実作業","time":"5m"}]}
+PASS Today: project attribution and total agree {"Activity Alpha":5}
+PASS Today: task attribution and total agree {"Alpha の実作業":5}
+PASS Today shows declared progress, observed pause and exclusion separately
+PASS Timeline work descriptions remain accessible ["Alpha の実作業｜10/6 21:41–10/6 21:46｜実作業 4m","Alpha の実作業｜10/6 21:46–10/6 21:46｜実作業 1s"]
+PASS 04-minimum-today: 940x620 keeps readable panels without horizontal overflow {"width":940,"height":620,"documentOverflow":0,"contentOverflow":0,"viewOverflow":0,"panels":[{"width":612.6666870117188,"height":124.125},{"width":612.6666870117188,"height":149.58334350585938},{"width":612.6666870117188,"height":279.47918701171875}]}
+PASS Fourteen consecutive trend days include independently expected nonzero and zero values [{"key":"2026-09-23","time":"0m"},{"key":"2026-09-24","time":"0m"},{"key":"2026-09-25","time":"0m"},{"key":"2026-09-26","time":"0m"},{"key":"2026-09-27","time":"30m"},{"key":"2026-09-28","time":"2h"},{"key":"2026-09-29","time":"45m"},{"key":"2026-09-30","time":"20m"},{"key":"2026-10-01","time":"0m"},{"key":"2026-10-02","time":"0m"},{"key":"2026-10-03","time":"0m"},{"key":"2026-10-04","time":"0m"},{"key":"2026-10-05","time":"0m"},{"key":"2026-10-06","time":"5m"}]
+PASS Trend draws all fourteen points, including zero days
+PASS Expired live timer contributes only its one-minute work cap and stops growing {"total":"6m","projects":[{"name":"Activity Alpha","time":"5m"},{"name":"Activity Beta","time":"1m"}],"tasks":[{"name":"Alpha の実作業","time":"5m"},{"name":"Beta の実作業","time":"1m"}]}
+PASS Viewing activity never changes declared progress or goal achievement
+Cleanup: {"pid":25628,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart preserves every edited session, task declaration and unassessed goal
+PASS Restarted daily total retains the edited pause/exclusion and expired timer cap
+PASS The saved exclusion and historical session IDs survive reload
+PASS Previous week: total is the independently expected duration {"total":"3h05m","projects":[{"name":"Activity Alpha","time":"2h 15m"},{"name":"Activity Beta","time":"30m"},{"name":"プロジェクトなし・削除済み","time":"20m"}],"tasks":[{"name":"Alpha の実作業","time":"2h 15m"},{"name":"Beta の実作業","time":"30m"},{"name":"（削除されたタスク）","time":"20m"}]}
+PASS Previous week: project attribution and total agree {"Activity Alpha":135,"Activity Beta":30,"プロジェクトなし・削除済み":20}
+PASS Previous week: task attribution and total agree {"Alpha の実作業":135,"Beta の実作業":30,"（削除されたタスク）":20}
+PASS Weekly metrics count three worked days, five original sessions and one completed task [{"label":"記録のある日","value":"3"},{"label":"セッション","value":"5"},{"label":"完了したタスク","value":"1"}]
+PASS Week starts Monday and includes all seven daily totals, including zero days [{"label":"09/28 月","time":"2h"},{"label":"09/29 火","time":"45m"},{"label":"09/30 水","time":"20m"},{"label":"10/01 木","time":"0m"},{"label":"10/02 金","time":"0m"},{"label":"10/03 土","time":"0m"},{"label":"10/04 日","time":"0m"}]
+PASS In-period session values sum to the same 185 minutes ["30m","1h","30m","45m","20m"]
+PASS Original 60-minute boundary session is distinguished from the 30-minute daily portion
+PASS 02-minimum-week: 940x620 keeps readable panels without horizontal overflow {"width":940,"height":620,"documentOverflow":0,"contentOverflow":0,"viewOverflow":0,"panels":[{"width":612.6666870117188,"height":209.20834350585938},{"width":612.6666870117188,"height":275.66668701171875},{"width":612.6666870117188,"height":279.47918701171875}]}
+PASS Preceding week: total is the independently expected duration {"total":"30m","projects":[{"name":"Activity Alpha","time":"30m"}],"tasks":[{"name":"Alpha の実作業","time":"30m"}]}
+PASS Preceding week: project attribution and total agree {"Activity Alpha":30}
+PASS Preceding week: task attribution and total agree {"Alpha の実作業":30}
+PASS The other 30 boundary minutes belong to Sunday of the preceding week
+PASS Next week restores the original selection
+PASS Historical fixtures do not leak into today
+PASS History retains the independent all-time total across month paging
+PASS Selected history month preserves all corresponding daily minutes 2026-09
+PASS Selected history month preserves all corresponding daily minutes 2026-10
+PASS Minimum History view keeps bounded date navigation visible without horizontal overflow {"overflow":0,"buttons":3,"height":38,"month":"2026-10"}
+PASS Renderer has no console errors or uncaught exceptions []
+PASS Screenshots contain captured PNG evidence
+Cleanup: {"pid":44876,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Evidence: .\.e2e\activity-run-olBgJt
+Evidence: .\.e2e\task-priority-run-dcIeVq
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS first: the owned Main window is natively visible before CDP activation {"pid":39836,"windowPid":39836,"handle":5837044,"title":"White Box","visible":true}
+PASS Legacy load leaves optional planning and commitment fields absent
+PASS Welcome displays Warning, High Risk and Overdue with their reasons
+PASS Legacy Inbox and unobserved legacy Todo have no warning
+PASS Welcome excludes archived warnings and shows the Blocked start reason
+PASS Blocked start is rejected by public IPC without changing saved data
+PASS Welcome warning opens the shared detail with readable Blocked reason and disabled start
+PASS Welcome warning focuses after all ancestor saving locks are released {"ancestors":[{"tag":"SECTION","className":"task-control","inert":false},{"tag":"DIV","className":"detail-body","inert":false},{"tag":"ASIDE","className":"detail","inert":false},{"tag":"DIV","className":"board","inert":false},{"tag":"MAIN","className":"main-content","inert":false},{"tag":"DIV","className":"main-shell","inert":false},{"tag":"DIV","className":"win main","inert":false},{"tag":"DIV","className":"","inert":false},{"tag":"BODY","className":"","inert":false},{"tag":"HTML","className":"","inert":false}],"targetInert":false,"targetFocused":true}
+PASS Welcome warning click itself focuses the visible waiting and predecessor editor
+PASS Today initially keeps current warning context compact and the activity metrics visible
+PASS Today keeps activity metrics visible without horizontal overflow at 940x620 {"width":940,"height":620,"overflow":0,"metricsBottom":383.29168701171875}
+PASS Today shows the same warnings, Blocked guard and archive exclusion [{"id":"deadline-overdue","risk":"overdue","disabled":true,"problem":"開始できない理由: 承認待ち / 確認担当 · 承認の返答 待ち"},{"id":"negative-slack","risk":"high-risk","disabled":false,"problem":""},{"id":"aging-warning","risk":"warning","disabled":false,"problem":""}]
+PASS Today warning opens the shared detail with readable Blocked reason and disabled start
+PASS Today warning focuses after all ancestor saving locks are released {"ancestors":[{"tag":"SECTION","className":"task-control","inert":false},{"tag":"DIV","className":"detail-body","inert":false},{"tag":"ASIDE","className":"detail","inert":false},{"tag":"DIV","className":"board","inert":false},{"tag":"MAIN","className":"main-content","inert":false},{"tag":"DIV","className":"main-shell","inert":false},{"tag":"DIV","className":"win main","inert":false},{"tag":"DIV","className":"","inert":false},{"tag":"BODY","className":"","inert":false},{"tag":"HTML","className":"","inert":false}],"targetInert":false,"targetFocused":true}
+PASS Today warning click itself focuses the visible waiting and predecessor editor
+PASS Week initially keeps current warning context compact and the activity metrics visible
+PASS Week keeps activity metrics visible without horizontal overflow at 940x620 {"width":940,"height":620,"overflow":0,"metricsBottom":427.29168701171875}
+PASS Past week keeps present warnings out of historical activity
+PASS Future week keeps present warnings out of future activity
+PASS Week shows the same warnings, Blocked guard and archive exclusion [{"id":"deadline-overdue","risk":"overdue","disabled":true,"problem":"開始できない理由: 承認待ち / 確認担当 · 承認の返答 待ち"},{"id":"negative-slack","risk":"high-risk","disabled":false,"problem":""},{"id":"aging-warning","risk":"warning","disabled":false,"problem":""}]
+PASS Week warning opens the shared detail with readable Blocked reason and disabled start
+PASS Week warning focuses after all ancestor saving locks are released {"ancestors":[{"tag":"SECTION","className":"task-control","inert":false},{"tag":"DIV","className":"detail-body","inert":false},{"tag":"ASIDE","className":"detail","inert":false},{"tag":"DIV","className":"board","inert":false},{"tag":"MAIN","className":"main-content","inert":false},{"tag":"DIV","className":"main-shell","inert":false},{"tag":"DIV","className":"win main","inert":false},{"tag":"DIV","className":"","inert":false},{"tag":"BODY","className":"","inert":false},{"tag":"HTML","className":"","inert":false}],"targetInert":false,"targetFocused":true}
+PASS Week warning click itself focuses the visible waiting and predecessor editor
+PASS Board has the same three warnings
+PASS Board shows the same warnings, Blocked guard and archive exclusion
+PASS ExternalWaiting is preserved alongside the warning panel
+PASS Warning title opens detail from the list view too
+PASS Board title opens the shared detail with readable Blocked reason and disabled start
+PASS Board organize opens the shared detail with readable Blocked reason and disabled start
+PASS Board organize focuses after all ancestor saving locks are released {"ancestors":[{"tag":"SECTION","className":"task-control","inert":false},{"tag":"DIV","className":"detail-body","inert":false},{"tag":"ASIDE","className":"detail","inert":false},{"tag":"DIV","className":"board","inert":false},{"tag":"MAIN","className":"main-content","inert":false},{"tag":"DIV","className":"main-shell","inert":false},{"tag":"DIV","className":"win main","inert":false},{"tag":"DIV","className":"","inert":false},{"tag":"BODY","className":"","inert":false},{"tag":"HTML","className":"","inert":false}],"targetInert":false,"targetFocused":true}
+PASS Board organize click itself focuses the visible waiting and predecessor editor
+PASS Warning detail lets the user save waiting information
+PASS Five warnings initially stay summarized at the daily welcome
+PASS Welcome disclosure exposes all five warnings and their actions
+PASS Today disclosure exposes all five warnings and their actions [{"id":"deadline-overdue","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaof6a30v1w","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaofcd66uex","visible":true,"start":true,"organize":true},{"id":"negative-slack","visible":true,"start":true,"organize":true},{"id":"aging-warning","visible":true,"start":true,"organize":true}]
+PASS Week disclosure exposes all five warnings and their actions [{"id":"deadline-overdue","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaof6a30v1w","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaofcd66uex","visible":true,"start":true,"organize":true},{"id":"negative-slack","visible":true,"start":true,"organize":true},{"id":"aging-warning","visible":true,"start":true,"organize":true}]
+PASS Board disclosure exposes all five warnings and their actions [{"id":"deadline-overdue","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaof6a30v1w","visible":true,"start":true,"organize":true},{"id":"tsk_muwoaofcd66uex","visible":true,"start":true,"organize":true},{"id":"negative-slack","visible":true,"start":true,"organize":true},{"id":"aging-warning","visible":true,"start":true,"organize":true}]
+PASS User threshold changes Aging warnings while deadline warnings remain
+PASS Old Inbox becomes newly committed Todo without an immediate warning
+PASS Unentered remaining effort and safety buffer stay blank; Slack is unknown
+PASS Negative UI input reports an error and keeps the saved effort
+PASS Clearing optional buffer makes Slack unknown
+PASS Actual save failure restores task state and keeps disk data unchanged
+PASS Failed duration save blocks detail close and retains the entered draft
+PASS Folding warning details preserves the visible save error and the saved priority
+PASS Failed Blocked reason save preserves detail, input, error and saved task {"open":true,"draft":"保存に失敗しても残す待ちの理由","alert":true,"savedUnchanged":true}
+PASS Failed submitted external wait preserves form, error and saved task until explicit cancellation {"open":true,"who":"保存失敗の待ち担当","what":"保存失敗の確認内容","alert":true,"savedUnchanged":true}
+PASS Strict IPC rejects invalid planning input {"remainingEffortMinutes":-1}
+PASS Strict IPC rejects invalid planning input {"safetyBufferMinutes":"0"}
+PASS Strict IPC rejects invalid planning input {"remainingEffortMinute":1}
+PASS Strict IPC rejects invalid planning input {"committedAt":0}
+PASS Invalid IPC does not change saved values
+PASS Notes edit preserves the commitment and Aging warning
+PASS Actual progress records its anchor
+PASS Inbox action removes that warning
+PASS User can start a chosen task even when another is Overdue
+PASS Active work initially folds warnings while retaining current context
+PASS The user can keep warning details open during active work
+PASS Working and review do not decrement the remaining estimate
+Cleanup: {"pid":39836,"identity":{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"timedOut":false,"quitEvaluationReturnedAt":1791290821626,"pageClosedAt":1791290821627,"keepQuitPage":false,"quitObserver":false,"processesBefore":{"remaining":[{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},{"ProcessId":31408,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.7688520Z"},{"ProcessId":17544,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8245280Z"},{"ProcessId":39280,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8432370Z"}],"reused":[],"registered":[{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},{"ProcessId":31408,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.7688520Z"},{"ProcessId":17544,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8245280Z"},{"ProcessId":39280,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8432370Z"}]},"processes":{"remaining":[],"reused":[],"registered":[{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},{"ProcessId":31408,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.7688520Z"},{"ProcessId":17544,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8245280Z"},{"ProcessId":39280,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8432370Z"}]},"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS restart: the owned Main window is natively visible before CDP activation {"pid":25884,"windowPid":25884,"handle":4133260,"title":"White Box","visible":true}
+PASS Restart restores effort, explicit buffer, progress and commitment
+PASS Restart preserves other legacy unknown fields
+PASS Renderer has no console errors or uncaught exceptions []
+Cleanup: {"pid":25884,"identity":{"ProcessId":25884,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:03.9697740Z"},"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"timedOut":false,"quitEvaluationReturnedAt":1791290830756,"pageClosedAt":1791290830756,"keepQuitPage":false,"quitObserver":false,"processesBefore":{"remaining":[{"ProcessId":25884,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:03.9697740Z"},{"ProcessId":26948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.2488920Z"},{"ProcessId":14948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3159020Z"},{"ProcessId":32828,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3343800Z"}],"reused":[],"registered":[{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},{"ProcessId":31408,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.7688520Z"},{"ProcessId":17544,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8245280Z"},{"ProcessId":39280,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8432370Z"},{"ProcessId":25884,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:03.9697740Z"},{"ProcessId":26948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.2488920Z"},{"ProcessId":14948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3159020Z"},{"ProcessId":32828,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3343800Z"}]},"processes":{"remaining":[],"reused":[],"registered":[{"ProcessId":39836,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.4617850Z"},{"ProcessId":31408,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.7688520Z"},{"ProcessId":17544,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8245280Z"},{"ProcessId":39280,"ParentProcessId":39836,"Name":"White Box.exe","CreationDate":"2026-10-06T12:46:32.8432370Z"},{"ProcessId":25884,"ParentProcessId":29872,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:03.9697740Z"},{"ProcessId":26948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.2488920Z"},{"ProcessId":14948,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3159020Z"},{"ProcessId":32828,"ParentProcessId":25884,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:04.3343800Z"}]},"exitEventObserved":false,"exitCode":null,"signalCode":null,"pidAlive":false,"confirmedBy":"PID absent"}
+Evidence: .\.e2e\task-priority-run-dcIeVq
+Evidence: .\.e2e\phase2-planning-run-mJ7tos
+PASS main: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Legacy DB leaves new optional planning, Project Priority and structured Task context absent
+PASS Legacy free Notes, linked Note and day notes load unchanged
+PASS Week shows real activity before the closed, unset budget
+PASS 940x620 Week retains visible activity and no horizontal overflow
+PASS Unset living hours remain blank without invented values or calculations
+PASS Missing hours prevent a save
+PASS Partial budget draft survives a tab change
+PASS Partial budget draft survives a week change
+PASS Budget failed save retains all input and blocks leaving the Week tab
+PASS Weekly Budget failure: disk and exposed memory roll back completely
+PASS All four allocation modes and personal defaults persist exactly
+PASS Budget displays 91h available and the minimum allocation shortage
+PASS Reuse opens the saved personal defaults without silently saving the next week
+PASS Next week reuses every allocation and living input
+PASS Legacy Project Priority stays unset in the real editor
+PASS Selecting Project Priority updates the unsaved editor draft {"active":"重要","focus":{"tag":"BUTTON","label":null},"frozen":false,"events":[{"type":"pointerdown","target":"重要","tag":"BUTTON","x":610.7135620117188,"y":387.63543701171875,"defaultPrevented":false},{"type":"mousedown","target":"重要","tag":"BUTTON","x":610,"y":387,"defaultPrevented":false},{"type":"mouseup","target":"重要","tag":"BUTTON","x":610,"y":387,"defaultPrevented":false},{"type":"click","target":"重要","tag":"BUTTON","x":610,"y":387,"defaultPrevented":false}],"buttons":[{"text":"未設定","active":false,"type":"button"},{"text":"低","active":false,"type":"button"},{"text":"普通","active":false,"type":"button"},{"text":"重要","active":true,"type":"button"}]}
+PASS Project failed save retains priority and keeps the editor open
+PASS Project Priority failure: disk and exposed memory roll back completely
+PASS Project Priority changes independently from both Task priorities and unedited legacy Projects
+PASS The actual editor clears Project Priority through Electron without changing Task priorities
+PASS Fixed Work requires an external reason before registration
+PASS Fixed Work failed save retains Task, time and external reason
+PASS Fixed Work failure: disk and exposed memory roll back completely
+PASS Registering external schedules uses existing Tasks and does not create Tasks or Sessions
+PASS This week clips the boundary schedule to 30 minutes
+PASS Next week counts overlapping external schedules once: 150 minutes
+PASS Week exposes both real external schedules
+PASS Cancellation retains the original Fixed Work record and never starts a Session
+PASS Cancelled schedule remains inspectable in the actual UI
+PASS Today lists external work only when its interval belongs to today
+PASS Schedule registration and display still leave the app idle
+PASS Existing free Notes and linked Note are preserved before editing structured context
+PASS Problems, Decisions and Next Context save without replacing legacy Notes or linked Notes
+PASS Changing Task flushes the latest context draft
+PASS Changing tab flushes the selected Task context
+PASS Closing the detail flushes the latest decision
+PASS Task navigation flushes the existing linked Note editor
+PASS A failed linked Note save blocks tab navigation and retains the full draft
+PASS Linked Note failure: disk and exposed memory roll back completely
+PASS Retry flushes the linked Note and then permits navigation
+PASS start: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#start"
+PASS Start shows saved Next Context for the selected existing Task
+PASS Failed Task context blocks tab, close, Task switch and start while retaining input
+PASS Task Context failure: disk and exposed memory roll back completely
+PASS Successful start flushes the entire retained context first
+PASS current: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#current"
+PASS Conflicting Task edits retain both saved text and the local draft and block close
+PASS Explicit conflict resolution commits the chosen context text
+PASS Linked Note conflict stops autosave and preserves both texts
+PASS Accepting the latest Note explicitly restores the saved text
+PASS Current Work failed save blocks end, switch and close while retaining the context and active Session
+PASS External end and switch requests also respect the failed Current Work draft
+PASS An external close request reaches the native close event and retains the failed draft
+PASS Current Work failed update keeps persisted context unchanged
+PASS Switching current Task saves the latest context before the Session segment changes
+PASS current: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#current"
+PASS Closing and reopening Current Work retains the latest decision
+PASS An external end request flushes the Current Work context before ending the Session
+PASS review: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#review"
+PASS Strict public planning IPC rejects unknown keys without changing saved state
+PASS Existing free Notes, daily notes and linked Note identity remain intact
+PASS A new weekly draft remains distinct from the saved budget before quitting
+PASS An incomplete new week draft does not invent the remaining living hours or commit a budget
+PASS The final context draft is still unsaved before the actual quit request
+PASS first: natural quit exits with zero and leaves no owned PID {"pid":16760,"creationDate":"2026-10-06T12:47:13.6190200Z","quitError":null,"exitCode":0,"signalCode":null,"forcedCleanup":false,"remaining":[],"reused":[]}
+PASS Natural quit flushes the final Task context and preserves every other Database field
+PASS main: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart deeply restores the full saved file and every exposed Database field
+PASS Restarted Task detail shows saved Next Context and legacy Notes
+PASS Restarted linked Note editor retains the entire recovered draft
+PASS Restarted Week keeps personal budgets and default reuse available
+PASS Natural quit and restart retain the unsaved weekly draft without changing the saved budget
+PASS Restart also restores a partially entered new week with the missing hours still blank
+PASS restart: natural quit exits with zero and leaves no owned PID {"pid":10280,"creationDate":"2026-10-06T12:48:00.4240630Z","quitError":null,"exitCode":0,"signalCode":null,"forcedCleanup":false,"remaining":[],"reused":[]}
+PASS Final natural quit preserves the full restarted Database
+PASS Every monitored renderer has no console errors or uncaught exceptions []
+PASS App logs contain no unexpected application errors {"unexpected":[],"expectedRejections":18}
+PASS No owned Electron PID remains after both natural shutdowns {"remaining":[],"reused":[],"registered":[{"ProcessId":16760,"ParentProcessId":39204,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:13.6190200Z"},{"ProcessId":14972,"ParentProcessId":16760,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:13.9033320Z"},{"ProcessId":43860,"ParentProcessId":16760,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:13.9735800Z"},{"ProcessId":43980,"ParentProcessId":16760,"Name":"White Box.exe","CreationDate":"2026-10-06T12:47:13.9953340Z"},{"ProcessId":10280,"ParentProcessId":39204,"Name":"White Box.exe","CreationDate":"2026-10-06T12:48:00.4240630Z"},{"ProcessId":17904,"ParentProcessId":10280,"Name":"White Box.exe","CreationDate":"2026-10-06T12:48:00.6953570Z"},{"ProcessId":23568,"ParentProcessId":10280,"Name":"White Box.exe","CreationDate":"2026-10-06T12:48:00.7582590Z"},{"ProcessId":28052,"ParentProcessId":10280,"Name":"White Box.exe","CreationDate":"2026-10-06T12:48:00.7713020Z"}]}
+Evidence: .\.e2e\phase2-planning-run-mJ7tos
+Evidence: .\.e2e\notes-run-gYHiY1
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Legacy database loads empty notes and preserves tasks
+PASS Two clicks during creation produce one note
+PASS State broadcasts retain the current draft
+PASS Autosave stores title and body without creating more notes
+PASS Tab shortcut retains the failed draft and the note editor
+PASS Tab click also retains the failed draft
+PASS Leaving after retry persists the entire failed draft
+PASS Project, task, pin and future date persist
+PASS Strict IPC rejects misspelled changes without overwriting the body
+PASS Search matches all words across title and body
+PASS Creating another note flushes the selected note before switching
+PASS Archive preserves content, links, pin and date
+PASS Daily view displays the pinned reminder
+PASS Reminder opens the exact saved note
+PASS 940x620 viewport retains usable list and editor with no horizontal overflow {"width":940,"height":620,"editor":455.41668701171875,"body":230,"list":256.91668701171875,"overflow":0,"editorWidth":413.3333435058594}
+PASS Existing tasks and daily notes stay unchanged
+Cleanup: {"pid":52456,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart restores every note with content, links and reminder state
+PASS Restarted editor is linked to the original note
+PASS Acknowledging clears the date and retains the pinned content
+PASS Renderer has no console errors or uncaught exceptions []
+Cleanup: {"pid":45556,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+Evidence: .\.e2e\notes-run-gYHiY1
+Evidence: .\.e2e\agents-run-nbNHfK
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS AI integration is disabled by default in the isolated profile
+PASS Settings UI enables the local authenticated API
+PASS Copy settings UI writes the exact connection configuration to clipboard {"matches":true}
+Screenshot state: 01-settings-copy {"visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752,"pixelRatio":1.5}
+PASS Copied MCP settings point at this application and isolated connection file
+PASS MCP rejects tools before initialization
+PASS Real stdio MCP initializes with embedded task planning instructions
+PASS MCP exposes context, task registration and record proposals
+PASS MCP advertises deadlines in the task registration schema
+PASS MCP supplies the reusable task planning workflow
+PASS MCP reads the actual project, goal and execution record
+PASS MCP registers an Inbox hierarchy with project, goal, deadline and notes
+PASS MCP retry returns the same IDs and leaves storage unchanged
+PASS Changed retry is rejected without any storage mutation
+PASS Invalid deadline rejects the entire MCP batch
+PASS MCP proposal preserves tasks and timing until the user confirms
+Screenshot state: 02-proposal {"visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752,"pixelRatio":1.5}
+PASS Proposal identifies the exact session and shows its original note
+PASS Proposal and both confirmation actions are visible with usable dimensions {"width":887.3333740234375,"height":170.1666717529297,"top":155.95834350585938,"bottom":326.12501525878906,"viewport":752,"text":true,"actions":[{"width":96.57292175292969,"height":30},{"width":49.9375,"height":30}]}
+PASS User confirmation creates the unknown task, assigns its record and marks it done
+PASS MCP retry of an accepted proposal preserves the decision and all records
+PASS User dismissal keeps every task and timing record unchanged
+PASS The confirmed task appears in the actual session record UI
+Screenshot state: 03-confirmed-record {"visibility":"visible","hidden":false,"focused":true,"width":1240,"height":752,"pixelRatio":1.5}
+PASS Original task content and daily notes remain unchanged
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart preserves Inbox tasks and accepted/dismissed record suggestions
+PASS Copied MCP settings point at this application and isolated connection file
+PASS Persisted request IDs remain idempotent after app and MCP restart
+PASS Renderer has no console errors or uncaught exceptions []
+Evidence: .\.e2e\agents-run-nbNHfK
+PASS 設定画面に計測方式と休憩を表示
+PASS 開始画面で3方式を選べる
+PASS ポモドーロの自動再開は既定で無効
+PASS 選択したタスクでストップウォッチを実UIから開始
+PASS ストップウォッチの振り返りに予定時間を表示しない
+PASS 管理窓が開いている間は実作業が増えない
+PASS 管理窓に除外中の説明を表示
+PASS ×で閉じると元の実行中を再開
+PASS 閉じても元の手動停止を維持
+PASS タイマーは満了時刻で停止
+PASS 正確な満了時刻を保存
+PASS 放置しても実作業を加算しない
+PASS 満了後のショートカット再開は停止を維持
+PASS 満了後の休憩も再開だけでは停止を保つ
+PASS 休憩終了画面から明示延長を選べる
+PASS 明示延長から再開
+PASS ポモドーロは自動で休憩へ移る
+PASS 休憩後も明示再開まで停止
+PASS 明示再開で次の作業周期
+PASS 描画時の例外がない
+画像と隔離記録: .\.e2e\session-modes-wm3z92
+Evidence: .\.e2e\start-reminder-run-ApMQDj
+PASS first: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Legacy settings default to disabled with a three minute threshold
+PASS Disabled startup has no input helper
+PASS Settings UI displays disabled state and the default threshold
+PASS Enabling starts exactly one owned Windows input helper
+PASS Changing the threshold keeps the same helper
+PASS Strict IPC rejects invalid threshold without changing the setting
+Cleanup: {"pid":13140,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+PASS Quitting stops the owned input helper
+PASS restart: CDP is attached to this build "file:///<checkout>/release/White%20Box/resources/app/dist/index.html#main"
+PASS Restart restores the opt-in and threshold
+PASS Disabling from the real UI stops the helper and saves OFF
+PASS Renderer has no console errors or uncaught exceptions []
+Cleanup: {"pid":39540,"quitRequested":true,"quitError":null,"forcedKill":false,"killAccepted":null,"exitEventObserved":true,"exitCode":0,"signalCode":null,"pidAlive":false,"confirmedBy":"child exit state"}
+Evidence: .\.e2e\start-reminder-run-ApMQDj
+PASS このビルドの実画面へ接続
+PASS 実行中の除外反映を拒否
+PASS 候補内の実作業だけを表示
+PASS 未確認の候補は作業記録を変更しない
+PASS 確認後に停止済み区間を保持
+PASS 4つの実作業区間だけを追加
+PASS 見送りと再確認で記録を変えない
+PASS アプリの終了とPID消滅を確認
+PASS 再起動後も確認結果と作業記録を保持
+PASS 再起動後も記録画面から確認結果を読める
+PASS セッションがない記録画面でも確認結果へ戻れる
+PASS renderer例外なし
+PASS アプリの終了とPID消滅を確認
+Evidence: .\.e2e\presence-candidates-3ErbcW
+PASS: two rows, crossing pause, hover detail, keyboard navigation, exclusion, deleted task, narrow layout, no renderer errors, unchanged records before editing, expanded session boundaries
+Screenshots: .\.e2e\timeline-UeIGXe
+UI E2E lock released.

@@ -12,6 +12,10 @@ const tick: LiveTick = {
 }
 
 describe('休憩タイマー表示', () => {
+  it('ストップウォッチは残りや超過ではなく経過を表示する', () => {
+    const timer = liveTimerPresentation({ ...tick, state: 'running', mode: 'stopwatch' }, null, 0)
+    expect(timer).toMatchObject({ label: '経過', isOver: false, remainingMs: tick.elapsedMs, plannedMs: 0 })
+  })
   it('休憩中は作業タイマーではなく休憩の残り時間を表示する', () => {
     const timer = liveTimerPresentation(tick, { startedAt: 1_000, endsAt: 301_000, notifiedAt: null }, 61_000)
     expect(timer).toMatchObject({

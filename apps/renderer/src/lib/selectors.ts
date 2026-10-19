@@ -1,5 +1,7 @@
-import type { AppState, ID, Project, Session, Task, TaskStatus } from '@white-box/core/types'
-import { dayKey, focusByTaskAcross, focusMs, sessionsOfDay } from '@white-box/core/engine'
+import type { AppState, ID, Project, Session, Task, TaskStatus, TimeRange } from '@white-box/core/types'
+import { dayKey, focusByTaskAcross, sessionsOfDay } from '@white-box/core/engine'
+import { recommendTasks, taskWarnings } from '@white-box/core/task-priority'
+import { activityDayKeys, activitySummary, dayRange } from '@white-box/core/activity'
 
 export const STATUS_ORDER: TaskStatus[] = ['inbox', 'todo', 'doing', 'done']
 
@@ -82,33 +84,26 @@ export interface Stall {
  * 「重要だと決めたのに動いていない」タスク。Inbox は決めていないので対象外。
  */
 export function stalledTasks(state: AppState, now: number): Stall[] {
-  const limit = state.settings.stallWarningDays
-  const out: Stall[] = []
-  for (const task of state.tasks) {
-    if (task.priority !== 'high') continue
-    if (task.status === 'inbox' || task.status === 'done') continue
-    const since = lastTouchedAt(state, task.id) ?? task.createdAt
-    const days = Math.floor((now - since) / 86_400_000)
-    if (days >= limit) out.push({ task, days, since })
-  }
-  return out.sort((a, b) => b.days - a.days)
+  return taskWarnings(state.tasks, state.sessions, now, state.settings.stallWarningDays, state.projects)
+    .filter((control) => control.task.priority === 'high' && control.reasons.includes('aging'))
+    .map((control) => ({ task: control.task, days: Math.floor(control.agingDays!), since: control.agingSince! }))
+    .sort((a, b) => b.days - a.days)
 }
 
 export function todayKey(state: AppState, now: number): string {
   return dayKey(now, state.settings.dayStartHour)
 }
 
-export function sessionsForDay(state: AppState, key: string): Session[] {
-  return sessionsOfDay(state.sessions, key, state.settings.dayStartHour)
+export function sessionsForDay(state: AppState, key: string, now = Date.now()): Session[] {
+  return sessionsOfDay(state.sessions, key, state.settings.dayStartHour, now)
 }
 
-export function dayKeysWithSessions(state: AppState): string[] {
-  const keys = new Set(state.sessions.map((s) => dayKey(s.startedAt, state.settings.dayStartHour)))
-  return [...keys].sort().reverse()
+export function dayKeysWithSessions(state: AppState, now = Date.now(), period?: TimeRange): string[] {
+  return activityDayKeys(state.sessions, now, state.settings.dayStartHour, period)
 }
 
 export function dayTotalMs(state: AppState, key: string, now: number): number {
-  return sessionsForDay(state, key).reduce((sum, s) => sum + focusMs(s, now), 0)
+  return activitySummary(state.sessions, state.tasks, now, dayRange(key, state.settings.dayStartHour)).focusMs
 }
 
 export function projectColor(project: Project | null): string {
@@ -122,15 +117,9 @@ export function projectTint(project: Project | null, alpha = 0.16): string {
 }
 
 /** Start UI と切替 UI で共通の並び。今やる可能性が高い順。 */
-export function candidateTasks(state: AppState): Task[] {
-  const weight: Record<TaskStatus, number> = { doing: 0, todo: 1, inbox: 2, done: 9 }
-  const prio: Record<Task['priority'], number> = { high: 0, normal: 1, low: 2 }
-  return state.tasks
-    .filter((t) => t.status !== 'done')
-    .sort(
-      (a, b) =>
-        weight[a.status] - weight[b.status] || prio[a.priority] - prio[b.priority] || a.order - b.order,
-    )
+export function candidateTasks(state: AppState, now = Date.now()): Task[] {
+  const tasks = state.tasks.filter((task) => !state.projects.some((project) => project.id === task.projectId && project.archived))
+  return recommendTasks(tasks, state.sessions, now, state.settings.stallWarningDays, state.projects)
 }
 
 export function matchTask(state: AppState, task: Task, query: string): boolean {
