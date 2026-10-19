@@ -1,0 +1,47 @@
+Waiting for the White Box UI E2E lock...
+UI E2E lock acquired: C:\Users\mahim\.codex\worktrees\white-box\compact-session-card
+対象: C:\Users\mahim\.codex\worktrees\white-box\compact-session-card\node_modules\.pnpm\electron@33.4.11\node_modules\electron\dist\electron.exe
+PASS 壊れた引数は契約で拒否される
+PASS 未知のコマンドは拒否される
+PASS 綴り違いのキーは黙って捨てず拒否される
+PASS ショートカットが空のままでも設定の更新が通る
+PASS セッションが始まる
+PASS 一時停止すると paused になる — "paused"
+PASS 停止中は実作業が増えない — {"before":2903,"after":2903}
+PASS 休憩を始めると paused になる
+PASS 休憩終了時刻が状態に入る
+PASS ミニカードは経過の数字だけを表示し、ゲージは休憩の残り時間を示す — {"values":["00:00"],"body":"00:00","gauge":"0.9194444444444444 1"}
+PASS 休憩終了後も明示的な再開までは paused のまま
+PASS 休憩終了通知が記録される
+PASS 休憩通知から再開できる
+PASS タスクを切り替えると Foreground が変わる
+PASS 切り替えで区間が 2 つになる — 2
+PASS 終了後に live が消える
+PASS レビュー対象が指定される
+PASS セッションが 1 本保存されている — 1
+PASS 終了時刻が入っている
+PASS 一時停止と休憩が閉じている
+PASS 手動停止時間がテスト側の実測範囲に収まる — {"manualPausedMs":2567,"floor":2533,"ceil":2615}
+PASS 停止時間に手動停止と休憩の両方が入る — 5843
+PASS 停止ぶんが実作業から引かれている — {"gross":11212,"pausedTotal":5843}
+PASS 区間が 2 本、どちらも閉じている
+PASS イベントが記録されている — ["session_started","task_started","paused","resumed","paused","resumed","task_switched","session_ended","progress_updated","progress_updated"]
+PASS ひとことが保存されている
+PASS 進捗がタスクへ反映される — 45
+PASS 完了にしたタスクが Done になる — "done"
+PASS 進捗の変化が記録に残る
+PASS バックアップが作られている
+PASS 既にデータのある DB はオンボーディング済みになる — 1792397300909
+PASS ショートカットは空のまま保存される — {"startPause":"","currentWork":"","dashboard":""}
+
+すべて通った
+E2E の終了に失敗: Error: 検証アプリが自然終了しなかった
+    at file:///C:/Users/mahim/.codex/worktrees/white-box/compact-session-card/scripts/e2e.mjs:347:66
+UI E2E lock released.
+QA Electron processes remain: 51088, 74484, 36956
+At C:\Users\mahim\.codex\worktrees\white-box\compact-session-card\scripts\run-ui-e2e.ps1:63 char:47
++ ... deadline) { throw "QA Electron processes remain: $($owned.ProcessId - ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (QA Electron pro...8, 74484, 36956:String) [], RuntimeException
+    + FullyQualifiedErrorId : QA Electron processes remain: 51088, 74484, 36956
+ 
