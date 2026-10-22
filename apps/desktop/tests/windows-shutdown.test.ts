@@ -34,6 +34,18 @@ vi.mock('electron', async () => {
 })
 
 describe('編集用の窓の初回表示', () => {
+  it.each(['main', 'start'] as const)('displays %s when centering rounds both coordinates to negative zero', (kind) => {
+    const win = openWindow(kind)!
+    vi.spyOn(win, 'getSize').mockReturnValue([1921, 1081])
+    const position = vi.spyOn(win, 'setPosition').mockImplementation((x, y) => {
+      if (Object.is(x, -0) || Object.is(y, -0)) throw new TypeError('Electron rejects negative zero coordinates')
+    })
+    const show = vi.spyOn(win, 'show')
+    expect(() => win.emit('ready-to-show')).not.toThrow()
+    expect(position).toHaveBeenCalledWith(0, 0)
+    expect(show).toHaveBeenCalledOnce()
+  })
+
   it.each(['main', 'current'] as const)('shows %s after load without waiting for its first paint event', (kind) => {
     const win = openWindow(kind)!
     const position = vi.spyOn(win, 'setPosition')

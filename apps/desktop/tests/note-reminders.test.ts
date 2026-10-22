@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { Notification } from 'electron'
 import type { Note } from '@white-box/core/notes'
 import { createNoteReminders } from '../src/infra/note-reminders.js'
 import { normalizeDatabase } from '../src/infra/store.js'
@@ -32,6 +33,19 @@ function note(id: string, remindAt: number, patch: Partial<Note> = {}): Note {
 describe('窓に依存しないノート通知', () => {
   beforeEach(() => { vi.useFakeTimers(); native.supported = true; native.failNext = false; native.notices = []; vi.spyOn(console, 'error').mockImplementation(() => {}) })
   afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.restoreAllMocks() })
+
+  it('通知対象がない間はネイティブ通知を初期化せず、期限到達後に初めて確認する', () => {
+    const ctx = fakeCtx()
+    const supported = vi.spyOn(Notification, 'isSupported')
+    const service = createNoteReminders(ctx)
+    ctx.store.data.notes = [note('future', ctx.now() + 10000)]
+    ctx.advance(5000); vi.advanceTimersByTime(5000)
+    expect(supported).not.toHaveBeenCalled()
+    ctx.advance(5000); vi.advanceTimersByTime(5000)
+    expect(supported).toHaveBeenCalledTimes(1)
+    expect(native.notices.map((item) => item.title)).toEqual(['future'])
+    service.stop()
+  })
 
   it('ネイティブ通知が失敗した予定は未通知へ戻し、1分待って再試行する', () => {
     const ctx = fakeCtx()
