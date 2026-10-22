@@ -101,11 +101,12 @@ function place(kind: WindowKind, win: BrowserWindow): void {
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
   const area = display.workArea
   const [w, h] = win.getSize() as [number, number]
+  // Electron の整数引数は -0 を拒否するため、丸めた座標に 0 を足して正規化する。
   if (kind === 'start' || kind === 'expire') {
-    win.setPosition(Math.round(area.x + (area.width - w) / 2), Math.round(area.y + (area.height - h) / 2.6))
+    win.setPosition(Math.round(area.x + (area.width - w) / 2) + 0, Math.round(area.y + (area.height - h) / 2.6) + 0)
     return
   }
-  win.setPosition(Math.round(area.x + (area.width - w) / 2), Math.round(area.y + (area.height - h) / 2))
+  win.setPosition(Math.round(area.x + (area.width - w) / 2) + 0, Math.round(area.y + (area.height - h) / 2) + 0)
 }
 
 function hudHome(): Electron.Rectangle {

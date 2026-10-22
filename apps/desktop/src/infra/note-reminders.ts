@@ -8,10 +8,11 @@ export function createNoteReminders(ctx: Ctx) {
   const notices = new Set<Notification>()
   const retries = new Map<string, { remindAt: number; after: number }>()
   const tick = () => {
-    if (stopped || !Notification.isSupported()) return
+    if (stopped) return
     for (const note of selectDueNotes(ctx.store.data.notes, ctx.now())) {
       const retry = retries.get(note.id)
       if (retry?.remindAt === note.remindAt && ctx.now() < retry.after) continue
+      if (!Notification.isSupported()) return
       const markedAt = ctx.now()
       let notice: Notification | undefined
       const failed = (error: unknown) => {
